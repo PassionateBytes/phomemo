@@ -51,7 +51,6 @@ from phomemo.imaging import (
     image_to_bitmap,
     prepare_image,
 )
-from phomemo.profiles import PrinterProfile, get_profile
 from phomemo.protocol import (
     Density,
     QueryCommand,
@@ -63,6 +62,7 @@ from phomemo.protocol import (
     encode_paper_eject,
     encode_raster_header,
 )
+from phomemo.registry import PrinterProfile, get_profile
 from phomemo.transport import BleTransport
 
 logger = logging.getLogger(__name__)

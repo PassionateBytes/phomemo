@@ -1,11 +1,10 @@
-"""Printer hardware profiles.
+"""Printer profile registry.
 
 Each profile captures the physical and protocol characteristics of a
 specific Phomemo printer model: print width, BLE UUIDs, timing
 constraints, and supported features. The profile system is extensible —
-add new models by registering a ``PrinterProfile`` instance.
-
-Profile data is derived from the M08F Protocol Reference document.
+add new models by registering a ``PrinterProfile`` instance via
+``register_profile``.
 """
 
 import re
@@ -87,52 +86,7 @@ class PrinterProfile:
         return self.print_width_px // 8
 
 
-# ---------------------------------------------------------------------------
-# Built-in profiles
-# ---------------------------------------------------------------------------
-
 _REGISTRY: dict[str, PrinterProfile] = {}
-
-
-def _register(profile: PrinterProfile) -> PrinterProfile:
-    """Add a profile to the global registry.
-
-    Args:
-        profile: The printer profile to register.
-
-    Returns:
-        The same profile instance (allows inline use).
-    """
-    _REGISTRY[profile.name] = profile
-    return profile
-
-
-# M08F profiles — derived from the protocol reference document.
-_M08F_WRITE = "0000ff02-0000-1000-8000-00805f9b34fb"
-_M08F_NOTIFY = "0000ff01-0000-1000-8000-00805f9b34fb"
-_M08F_STATUS = "0000ff03-0000-1000-8000-00805f9b34fb"
-
-_register(
-    PrinterProfile(
-        name="M08F-A4",
-        ble_name_pattern=r"^M08F",
-        print_width_px=1680,
-        write_uuid=_M08F_WRITE,
-        notify_uuid=_M08F_NOTIFY,
-        status_uuid=_M08F_STATUS,
-    )
-)
-
-_register(
-    PrinterProfile(
-        name="M08F-Letter",
-        ble_name_pattern=r"^M08F",
-        print_width_px=1728,
-        write_uuid=_M08F_WRITE,
-        notify_uuid=_M08F_NOTIFY,
-        status_uuid=_M08F_STATUS,
-    )
-)
 
 
 def get_profile(name: str) -> PrinterProfile:

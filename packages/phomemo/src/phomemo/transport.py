@@ -20,7 +20,7 @@ from typing import Self
 from bleak import BleakClient
 from bleak.exc import BleakError
 
-from phomemo.profiles import PrinterProfile
+from phomemo.registry import PrinterProfile
 
 logger = logging.getLogger(__name__)
 

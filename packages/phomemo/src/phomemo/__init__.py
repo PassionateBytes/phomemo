@@ -29,13 +29,13 @@ from phomemo.events import (
 )
 from phomemo.imaging import DitherMode, ImageFit, image_to_bitmap, prepare_image
 from phomemo.printer import Printer
-from phomemo.profiles import (
+from phomemo.protocol import Density
+from phomemo.registry import (
     PrinterProfile,
     get_profile,
     list_profiles,
     register_profile,
 )
-from phomemo.protocol import Density
 
 __all__ = [
     "BatteryEvent",

@@ -1,7 +1,7 @@
 """Tests for PrinterProfile validation."""
 
 import pytest
-from phomemo.profiles import PrinterProfile
+from phomemo.registry import PrinterProfile
 
 _VALID_UUID = "0000ff00-0000-1000-8000-00805f9b34fb"
 _VALID_WRITE_UUID = "0000ff02-0000-1000-8000-00805f9b34fb"
