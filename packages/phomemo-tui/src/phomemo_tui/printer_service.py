@@ -47,7 +47,7 @@ from phomemo_tui.messages import (
 
 logger = logging.getLogger(__name__)
 
-PostMessageCallback = Callable[[Message], None]
+PostMessageCallback = Callable[[Message], bool]
 
 
 class ServiceState(Enum):
