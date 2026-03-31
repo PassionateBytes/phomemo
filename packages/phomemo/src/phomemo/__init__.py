@@ -8,6 +8,7 @@ Basic usage::
     from phomemo import Printer
 
     async with Printer("M08F-A4") as printer:
+        # connect() must be called after entering the context
         await printer.connect("60:6E:41:23:0B:D6")
         await printer.print_image("photo.png")
 """
@@ -17,14 +18,23 @@ from phomemo.events import (
     BatteryEvent,
     DeviceEvent,
     EventKind,
+    FirmwareEvent,
+    LidEvent,
     LidState,
     MotorStopEvent,
+    PaperEvent,
     PaperState,
-    SensorEvent,
+    SerialEvent,
+    TimerEvent,
 )
 from phomemo.imaging import DitherMode, ImageFit, image_to_bitmap, prepare_image
 from phomemo.printer import Printer
-from phomemo.profiles import PrinterProfile, get_profile, list_profiles
+from phomemo.profiles import (
+    PrinterProfile,
+    get_profile,
+    list_profiles,
+    register_profile,
+)
 from phomemo.protocol import Density
 
 __all__ = [
@@ -33,16 +43,21 @@ __all__ = [
     "DeviceEvent",
     "DitherMode",
     "EventKind",
+    "FirmwareEvent",
     "ImageFit",
+    "LidEvent",
     "LidState",
     "MotorStopEvent",
+    "PaperEvent",
     "PaperState",
     "Printer",
     "PrinterProfile",
-    "SensorEvent",
+    "SerialEvent",
+    "TimerEvent",
+    "discover",
     "get_profile",
     "image_to_bitmap",
     "list_profiles",
     "prepare_image",
-    "discover",
+    "register_profile",
 ]

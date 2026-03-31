@@ -28,6 +28,13 @@ Or with [uv](https://docs.astral.sh/uv/):
 uv add phomemo
 ```
 
+> **Note:** If the package is not yet published to PyPI, install from source:
+>
+> ```bash
+> git clone <repo-url> && cd phonemo-printer
+> uv pip install -e packages/phomemo
+> ```
+
 ## Requirements
 
 - Python 3.13+
@@ -152,13 +159,13 @@ await printer.eject_paper()
 Register a callback to receive typed events as they arrive from the printer:
 
 ```python
-from phomemo import DeviceEvent, SensorEvent, MotorStopEvent
+from phomemo import DeviceEvent, LidEvent, PaperEvent, MotorStopEvent
 
 def on_event(event: DeviceEvent):
     match event:
-        case SensorEvent(lid=lid) if lid is not None:
+        case LidEvent(lid=lid):
             print(f"Lid: {lid.value}")
-        case SensorEvent(paper=paper) if paper is not None:
+        case PaperEvent(paper=paper):
             print(f"Paper: {paper.value}")
         case MotorStopEvent():
             print("Print complete")

@@ -14,7 +14,7 @@ Commands are encoded as plain ``bytes`` objects — the transport layer
 handles chunking and BLE writes.
 """
 
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 
 class Density(IntEnum):
@@ -36,8 +36,13 @@ class Density(IntEnum):
 class ScaleMode(IntEnum):
     """GS v 0 raster scaling modes.
 
-    Controls how the printer scales raster data. The data format sent
-    must match the mode — double-width mode expects half-width data.
+    Controls how the printer scales raster data on output.
+
+    Note: Non-NORMAL modes require the caller to provide
+    appropriately sized data. The imaging pipeline does not
+    adjust image width based on scale mode — ``DOUBLE_WIDTH``
+    requires half-width bitmap data, which must be prepared
+    manually.
     """
 
     NORMAL = 0x00
@@ -163,14 +168,12 @@ def encode_paper_eject(repetitions: int = 12) -> bytes:
 # ---------------------------------------------------------------------------
 
 
-class QueryCommand:
+class QueryCommand(bytes, Enum):
     """Phomemo-specific device queries (``1f 11 XX``).
 
     Write these to ``ff02``; responses arrive on ``ff01`` as
     ``1a <sub-type> <data>`` messages. The response sub-type does NOT
     always match the query parameter.
-
-    Each class attribute holds the raw 3-byte command.
     """
 
     BATTERY = b"\x1f\x11\x08"
@@ -180,7 +183,10 @@ class QueryCommand:
     PAPER_STATE = b"\x1f\x11\x11"
     LID_STATE = b"\x1f\x11\x12"
     DEVICE_TIMER = b"\x1f\x11\x0e"
-    OTA_REBOOT = b"\x1f\x11\x0f"
+
+
+# Separated from QueryCommand — this is a destructive action, not a read-only query.
+OTA_REBOOT_COMMAND: bytes = b"\x1f\x11\x0f"
 
 
 # ---------------------------------------------------------------------------

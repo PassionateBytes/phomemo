@@ -13,11 +13,16 @@ Key protocol constraints from the M08F reference:
 """
 
 import asyncio
+import logging
 from collections.abc import Callable
+from typing import Self
 
 from bleak import BleakClient
+from bleak.exc import BleakError
 
 from phomemo.profiles import PrinterProfile
+
+logger = logging.getLogger(__name__)
 
 NotifyCallback = Callable[[bytes], None]
 
@@ -65,11 +70,17 @@ class BleTransport:
         if self._connected:
             raise RuntimeError("Already connected")
 
+        logger.debug("Connecting to %s", address)
         try:
             self._client = BleakClient(address)
             await self._client.connect()
             self._connected = True
+            logger.info("Connected to %s", address)
+        except BleakError as exc:
+            self._client = None
+            raise ConnectionError(f"Failed to connect to {address}: {exc}") from exc
 
+        try:
             if on_event is not None:
                 await self._client.start_notify(
                     self._profile.notify_uuid,
@@ -81,11 +92,12 @@ class BleTransport:
                     self._profile.status_uuid,
                     lambda _handle, data: on_status(bytes(data)),
                 )
-
-        except Exception as exc:
-            self._connected = False
-            self._client = None
-            raise ConnectionError(f"Failed to connect to {address}") from exc
+        except BleakError as exc:
+            await self.disconnect()
+            raise ConnectionError(
+                f"Connected to {address} but failed to subscribe "
+                f"to notifications: {exc}"
+            ) from exc
 
     async def disconnect(self) -> None:
         """Disconnect from the printer.
@@ -93,11 +105,13 @@ class BleTransport:
         Safe to call even if not connected.
         """
         if self._client is not None:
+            logger.debug("Disconnecting")
             try:
                 await self._client.disconnect()
             finally:
                 self._client = None
                 self._connected = False
+                logger.info("Disconnected")
 
     async def write(self, data: bytes) -> None:
         """Write raw bytes to the printer's command channel.
@@ -141,6 +155,7 @@ class BleTransport:
         max_size = self._profile.max_chunk_bytes
         delay = self._profile.chunk_delay_s
         total = (len(data) + max_size - 1) // max_size
+        logger.debug("Writing %d bytes in %d chunks", len(data), total)
 
         for i in range(total):
             start = i * max_size
@@ -149,9 +164,14 @@ class BleTransport:
             if delay > 0 and i < total - 1:
                 await asyncio.sleep(delay)
             if on_chunk is not None:
-                on_chunk(i + 1, total)
+                try:
+                    on_chunk(i + 1, total)
+                except Exception:
+                    logger.exception(
+                        "Progress callback failed on chunk %d/%d", i + 1, total
+                    )
 
-    async def __aenter__(self) -> "BleTransport":
+    async def __aenter__(self) -> Self:
         """Enter the async context manager.
 
         Returns:
