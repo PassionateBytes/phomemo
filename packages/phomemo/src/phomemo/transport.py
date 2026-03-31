@@ -15,6 +15,7 @@ Key protocol constraints from the M08F reference:
 import asyncio
 import logging
 from collections.abc import Callable
+from typing import Self
 
 from bleak import BleakClient
 from bleak.exc import BleakError
@@ -170,7 +171,7 @@ class BleTransport:
                         "Progress callback failed on chunk %d/%d", i + 1, total
                     )
 
-    async def __aenter__(self) -> "BleTransport":
+    async def __aenter__(self) -> Self:
         """Enter the async context manager.
 
         Returns:

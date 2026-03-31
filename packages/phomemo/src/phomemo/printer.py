@@ -27,6 +27,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Self
 
 from PIL import Image
 
@@ -630,7 +631,7 @@ class Printer:
     # Async context manager
     # ------------------------------------------------------------------
 
-    async def __aenter__(self) -> "Printer":
+    async def __aenter__(self) -> Self:
         """Enter the async context manager.
 
         Returns:
