@@ -268,7 +268,7 @@ class PhomemoApp(App):
         Args:
             address: BLE MAC address of the printer.
         """
-        self.printer = Printer("M08F-A4")
+        self.printer = Printer("M08F-A4", address=address)
 
         # Register event handler for the main screen
         self._main_screen = MainScreen()
@@ -280,7 +280,7 @@ class PhomemoApp(App):
         self.printer.on_event(on_event)
 
         try:
-            await self.printer.connect(address)
+            await self.printer.connect()
             self.switch_screen(self._main_screen)
         except Exception as exc:
             self.notify(f"Connection failed: {exc}", severity="error")

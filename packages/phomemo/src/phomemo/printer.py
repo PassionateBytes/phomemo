@@ -31,6 +31,7 @@ from typing import Self
 
 from PIL import Image
 
+from phomemo.discovery import discover
 from phomemo.events import (
     BatteryEvent,
     DeviceEvent,
@@ -103,14 +104,22 @@ class Printer:
     Args:
         profile: Either a profile name string (e.g. ``"M08F-A4"``) or
             a ``PrinterProfile`` instance.
+        address: BLE MAC address (e.g. ``"AA:BB:CC:DD:EE:FF"``). If
+            omitted, ``connect()`` will auto-discover a nearby device
+            matching the profile's ``ble_name_pattern``.
     """
 
-    def __init__(self, profile: str | PrinterProfile = "M08F-A4") -> None:
+    def __init__(
+        self,
+        profile: str | PrinterProfile = "M08F-A4",
+        address: str | None = None,
+    ) -> None:
         if isinstance(profile, str):
             self._profile = get_profile(profile)
         else:
             self._profile = profile
 
+        self._address = address
         self._transport = BleTransport(self._profile)
         self._event_callbacks: list[EventCallback] = []
         self._waiters: list[asyncio.Future[DeviceEvent]] = []
@@ -177,19 +186,36 @@ class Printer:
     # Connection
     # ------------------------------------------------------------------
 
-    async def connect(self, address: str) -> None:
-        """Connect to a printer by BLE MAC address.
+    async def connect(self, discovery_timeout: float = 5.0) -> None:
+        """Connect to the printer.
 
-        Establishes the BLE connection and subscribes to the event
-        notification channel (``ff01``).
+        If an ``address`` was provided at instantiation, connects directly to
+        that BLE MAC address. Otherwise, scans for a nearby device whose
+        advertised name matches the profile's ``ble_name_pattern`` and connects
+        to the first match found.
 
         Args:
-            address: BLE MAC address (e.g. ``"AA:BB:CC:DD:EE:FF"``).
+            discovery_timeout: Scan duration in seconds when auto-discovering.
+                Ignored if an address was provided at instantiation.
 
         Raises:
-            ConnectionError: If the connection fails.
+            ConnectionError: If the connection fails, or if auto-discovery
+                finds no matching device within ``discovery_timeout``.
             RuntimeError: If already connected.
         """
+        address = self._address
+        if address is None:
+            pattern = self._profile.ble_name_pattern
+            logger.debug("No address given, discovering with pattern %r", pattern)
+            devices = await discover(name_pattern=pattern, timeout=discovery_timeout)
+            if not devices:
+                raise ConnectionError(
+                    f"No device found matching profile {self._profile.name!r} "
+                    f"(pattern {pattern!r}) within {discovery_timeout}s"
+                )
+            address = devices[0].address
+            logger.info("Discovered %s at %s", devices[0].name, address)
+
         await self._transport.connect(
             address,
             on_event=self._on_notification,
