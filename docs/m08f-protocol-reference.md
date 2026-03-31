@@ -487,7 +487,7 @@ update) mode.
 | New MAC prefix | `F0:` instead of normal `60:`                               |
 | Recovery       | Power cycle (long-hold off, then on) returns to normal mode |
 
-> The firmeare update mode has not been interrogated further at time of writing.
+> The firmware update mode has not been interrogated further at time of writing.
 > I suspect the device likely exposes different BLE services not present during
 > normal operation when in OTA mode. This might enable ways to access more device
 > data, dump vendor firmware, or flash custom firmware.
