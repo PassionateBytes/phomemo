@@ -13,11 +13,15 @@ Key protocol constraints from the M08F reference:
 """
 
 import asyncio
+import logging
 from collections.abc import Callable
 
 from bleak import BleakClient
+from bleak.exc import BleakError
 
 from phomemo.profiles import PrinterProfile
+
+logger = logging.getLogger(__name__)
 
 NotifyCallback = Callable[[bytes], None]
 
@@ -69,7 +73,13 @@ class BleTransport:
             self._client = BleakClient(address)
             await self._client.connect()
             self._connected = True
+        except BleakError as exc:
+            self._client = None
+            raise ConnectionError(
+                f"Failed to connect to {address}: {exc}"
+            ) from exc
 
+        try:
             if on_event is not None:
                 await self._client.start_notify(
                     self._profile.notify_uuid,
@@ -81,11 +91,12 @@ class BleTransport:
                     self._profile.status_uuid,
                     lambda _handle, data: on_status(bytes(data)),
                 )
-
-        except Exception as exc:
-            self._connected = False
-            self._client = None
-            raise ConnectionError(f"Failed to connect to {address}") from exc
+        except BleakError as exc:
+            await self.disconnect()
+            raise ConnectionError(
+                f"Connected to {address} but failed to subscribe "
+                f"to notifications: {exc}"
+            ) from exc
 
     async def disconnect(self) -> None:
         """Disconnect from the printer.
@@ -149,7 +160,10 @@ class BleTransport:
             if delay > 0 and i < total - 1:
                 await asyncio.sleep(delay)
             if on_chunk is not None:
-                on_chunk(i + 1, total)
+                try:
+                    on_chunk(i + 1, total)
+                except Exception:
+                    logger.exception("Progress callback failed on chunk %d/%d", i + 1, total)
 
     async def __aenter__(self) -> "BleTransport":
         """Enter the async context manager.

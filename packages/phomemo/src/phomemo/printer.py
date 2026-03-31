@@ -23,11 +23,14 @@ Typical usage::
 """
 
 import asyncio
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 from phomemo.events import (
     BatteryEvent,
@@ -148,7 +151,10 @@ class Printer:
         """
         self._pending_events.put_nowait(event)
         for cb in self._event_callbacks:
-            cb(event)
+            try:
+                cb(event)
+            except Exception:
+                logger.exception("Event callback %r failed for %r", cb, event)
 
     def _on_notification(self, data: bytes) -> None:
         """Handle raw BLE notification data from ff01.
