@@ -9,6 +9,7 @@ import re
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
+from bleak.exc import BleakError
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,18 @@ async def discover(
 
     Returns:
         List of discovered ``BLEDevice`` objects, sorted by name.
+
+    Raises:
+        ConnectionError: If the Bluetooth adapter is unavailable or the
+            scan fails at the OS/adapter level.
     """
     logger.debug("Starting BLE scan (timeout=%.1fs, pattern=%s)", timeout, name_pattern)
-    discovered = await BleakScanner.discover(timeout=timeout, return_adv=True)
+    try:
+        discovered = await BleakScanner.discover(timeout=timeout, return_adv=True)
+    except BleakError as exc:
+        raise ConnectionError(
+            f"Bluetooth scan failed — is the adapter powered on? {exc}"
+        ) from exc
     devices = [dev for dev, _ in discovered.values()]
 
     if name_pattern is not None:

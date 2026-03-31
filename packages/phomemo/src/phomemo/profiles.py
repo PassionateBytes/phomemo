@@ -8,7 +8,13 @@ add new models by registering a ``PrinterProfile`` instance.
 Profile data is derived from the M08F Protocol Reference document.
 """
 
+import re
 from dataclasses import dataclass
+
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +54,22 @@ class PrinterProfile:
     status_uuid: str = "0000ff03-0000-1000-8000-00805f9b34fb"
     supports_density: bool = True
     supports_escpos_queries: bool = False
+
+    def __post_init__(self) -> None:
+        """Validate profile fields on construction.
+
+        Raises:
+            ValueError: If ``print_width_px`` is not a multiple of 8, or if
+                any UUID field does not match the standard UUID format.
+        """
+        if self.print_width_px % 8 != 0:
+            raise ValueError(
+                f"print_width_px must be a multiple of 8, got {self.print_width_px}"
+            )
+        for field_name in ("service_uuid", "write_uuid", "notify_uuid", "status_uuid"):
+            value = getattr(self, field_name)
+            if not _UUID_RE.match(value):
+                raise ValueError(f"{field_name} is not a valid UUID: {value!r}")
 
     @property
     def width_bytes(self) -> int:

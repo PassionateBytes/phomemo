@@ -86,11 +86,18 @@ class SensorEvent(DeviceEvent):
 class BatteryEvent(DeviceEvent):
     """Battery level report.
 
+    The ``percent`` field is clamped to 0–100 on construction to handle
+    corrupt or out-of-range BLE data gracefully.
+
     Attributes:
-        percent: Battery charge percentage (0–100).
+        percent: Battery charge percentage (0–100), clamped on construction.
     """
 
     percent: int = 0
+
+    def __post_init__(self) -> None:
+        """Clamp percent to 0–100 to handle corrupt BLE data."""
+        object.__setattr__(self, "percent", max(0, min(100, self.percent)))
 
 
 @dataclass(frozen=True, slots=True)
