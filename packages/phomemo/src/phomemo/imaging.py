@@ -78,10 +78,12 @@ def prepare_image(
             new_size = (target_width, target_height)
         case ImageFit.ORIGINAL:
             new_size = (w, h)
+        case _:
+            raise ValueError(f"Unsupported fit mode: {fit}")
 
     img = img.resize(new_size, Image.Resampling.LANCZOS)
 
-    # Pad or crop to exact target width, centered horizontally
+    # Pad to exact target width, centered horizontally
     if img.size[0] != target_width:
         padded = Image.new("RGB", (target_width, img.size[1]), (255, 255, 255))
         offset = max(0, (target_width - img.size[0]) // 2)
@@ -97,6 +99,8 @@ def prepare_image(
             img = img.point(lambda x: 0 if x < 128 else 255, mode="1")
         case DitherMode.NONE:
             img = img.convert("1", dither=Image.Dither.NONE)
+        case _:
+            raise ValueError(f"Unsupported dither mode: {dither}")
 
     return img
 
@@ -119,6 +123,10 @@ def image_to_bitmap(img: Image.Image) -> bytes:
     """
     if img.mode != "1":
         raise ValueError(f"Expected mode '1', got '{img.mode}'")
+
+    width = img.size[0]
+    if width % 8 != 0:
+        raise ValueError(f"Image width must be a multiple of 8, got {width}")
 
     # PIL mode "1": 0 = black, 255 = white
     # Printer: 1 = black (ink), 0 = white (no ink)
