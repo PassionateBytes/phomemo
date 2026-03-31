@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from pathlib import Path
 
 from textual.app import App
@@ -23,8 +24,9 @@ from phomemo_tui.messages import (
     PrintWaitingForPaper,
     PrintWaitingForReady,
 )
-from phomemo_tui.printer_service import PrinterService
+from phomemo_tui.printer_service import PrinterService, ServiceState
 from phomemo_tui.screens.main_menu import MainMenuScreen
+from phomemo_tui.widgets.status_panel import StatusPanel
 
 
 class PhomemoApp(App):
@@ -62,28 +64,16 @@ class PhomemoApp(App):
         self._update_status_panel()
 
     def on_device_connected(self, msg: DeviceConnected) -> None:
-        import contextlib
-
-        from phomemo_tui.widgets.status_panel import StatusPanel
-
         with contextlib.suppress(Exception):
             self.query_one(StatusPanel).handle_device_connected(msg)
         self._update_print_button()
 
     def on_device_disconnected(self, _: DeviceDisconnected) -> None:
-        import contextlib
-
-        from phomemo_tui.widgets.status_panel import StatusPanel
-
         with contextlib.suppress(Exception):
             self.query_one(StatusPanel).handle_device_disconnected()
         self._update_print_button()
 
     def on_device_state_updated(self, msg: DeviceStateUpdated) -> None:
-        import contextlib
-
-        from phomemo_tui.widgets.status_panel import StatusPanel
-
         with contextlib.suppress(Exception):
             self.query_one(StatusPanel).handle_state_updated(msg)
 
@@ -143,9 +133,6 @@ class PhomemoApp(App):
     # ------------------------------------------------------------------
 
     def _update_status_panel(self) -> None:
-        from phomemo_tui.printer_service import ServiceState
-        from phomemo_tui.widgets.status_panel import StatusPanel
-
         try:
             panel = self.query_one(StatusPanel)
         except Exception:
