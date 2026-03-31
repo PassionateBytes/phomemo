@@ -36,8 +36,13 @@ class Density(IntEnum):
 class ScaleMode(IntEnum):
     """GS v 0 raster scaling modes.
 
-    Controls how the printer scales raster data. The data format sent
-    must match the mode — double-width mode expects half-width data.
+    Controls how the printer scales raster data on output.
+
+    Note: Non-NORMAL modes require the caller to provide
+    appropriately sized data. The imaging pipeline does not
+    adjust image width based on scale mode — ``DOUBLE_WIDTH``
+    requires half-width bitmap data, which must be prepared
+    manually.
     """
 
     NORMAL = 0x00

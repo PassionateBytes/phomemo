@@ -28,6 +28,13 @@ Or with [uv](https://docs.astral.sh/uv/):
 uv add phomemo
 ```
 
+> **Note:** If the package is not yet published to PyPI, install from source:
+>
+> ```bash
+> git clone <repo-url> && cd phonemo-printer
+> uv pip install -e packages/phomemo
+> ```
+
 ## Requirements
 
 - Python 3.13+
