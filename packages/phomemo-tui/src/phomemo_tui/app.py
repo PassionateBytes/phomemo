@@ -7,9 +7,10 @@ Provides screens for scanning, connecting, monitoring, and printing.
 from phomemo import (
     BatteryEvent,
     DeviceEvent,
+    LidEvent,
     MotorStopEvent,
+    PaperEvent,
     Printer,
-    SensorEvent,
     discover,
 )
 from textual.app import App, ComposeResult
@@ -94,8 +95,6 @@ class MainScreen(Screen):
     paper management.
     """
 
-    _event_lines: list[str] = []
-
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("d", "disconnect", "Disconnect"),
@@ -103,6 +102,10 @@ class MainScreen(Screen):
         Binding("f", "feed", "Feed Paper"),
         Binding("e", "eject", "Eject Paper"),
     ]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._event_lines: list[str] = []
 
     def compose(self) -> ComposeResult:
         """Build the main screen layout."""
@@ -202,16 +205,16 @@ def _format_event(event: DeviceEvent) -> str:
         A human-readable string representation.
     """
     match event:
-        case SensorEvent(lid=lid) if lid is not None:
+        case LidEvent(lid=lid):
             return f"Lid: {lid.value}"
-        case SensorEvent(paper=paper) if paper is not None:
+        case PaperEvent(paper=paper):
             return f"Paper: {paper.value}"
         case BatteryEvent(percent=pct):
             return f"Battery: {pct}%"
         case MotorStopEvent():
             return "Print complete (motor stopped)"
         case _:
-            return f"Event: {event.raw.hex()}" if hasattr(event, "raw") else str(event)
+            return f"Event: {event.raw.hex()}"
 
 
 # ------------------------------------------------------------------

@@ -23,9 +23,11 @@ Typical usage::
 """
 
 import asyncio
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Self
 
 from PIL import Image
 
@@ -34,10 +36,11 @@ from phomemo.events import (
     DeviceEvent,
     EventKind,
     FirmwareEvent,
+    LidEvent,
     LidState,
     MotorStopEvent,
+    PaperEvent,
     PaperState,
-    SensorEvent,
     SerialEvent,
     TimerEvent,
     parse_notification,
@@ -62,11 +65,13 @@ from phomemo.protocol import (
 )
 from phomemo.transport import BleTransport
 
+logger = logging.getLogger(__name__)
+
 EventCallback = Callable[[DeviceEvent], None]
 ProgressCallback = Callable[[int, int], None]
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class DeviceInfo:
     """Snapshot of device state collected from query responses.
 
@@ -108,7 +113,7 @@ class Printer:
 
         self._transport = BleTransport(self._profile)
         self._event_callbacks: list[EventCallback] = []
-        self._pending_events: asyncio.Queue[DeviceEvent] = asyncio.Queue()
+        self._waiters: list[asyncio.Future[DeviceEvent]] = []
 
     # ------------------------------------------------------------------
     # Properties
@@ -131,9 +136,9 @@ class Printer:
     def on_event(self, callback: EventCallback) -> None:
         """Register a listener for parsed device events.
 
-        Callbacks receive typed event dataclasses (``SensorEvent``,
-        ``BatteryEvent``, ``MotorStopEvent``, etc.) as they arrive
-        from the printer.
+        Callbacks receive typed event dataclasses (``LidEvent``,
+        ``PaperEvent``, ``BatteryEvent``, ``MotorStopEvent``, etc.) as
+        they arrive from the printer.
 
         Args:
             callback: Called with each parsed ``DeviceEvent``.
@@ -141,14 +146,22 @@ class Printer:
         self._event_callbacks.append(callback)
 
     def _dispatch_event(self, event: DeviceEvent) -> None:
-        """Route a parsed event to callbacks and the internal queue.
+        """Route a parsed event to callbacks and any active waiters.
 
         Args:
             event: The parsed device event.
         """
-        self._pending_events.put_nowait(event)
         for cb in self._event_callbacks:
-            cb(event)
+            try:
+                cb(event)
+            except Exception:
+                logger.exception("Event callback %r failed for %r", cb, event)
+
+        # Deliver to the first waiting future (FIFO)
+        for future in self._waiters:
+            if not future.done():
+                future.set_result(event)
+                break
 
     def _on_notification(self, data: bytes) -> None:
         """Handle raw BLE notification data from ff01.
@@ -156,6 +169,7 @@ class Printer:
         Args:
             data: Raw bytes from the notification.
         """
+        logger.debug("Notification received: %s", data.hex())
         for event in parse_notification(data):
             self._dispatch_event(event)
 
@@ -254,14 +268,35 @@ class Printer:
     # Device queries
     # ------------------------------------------------------------------
 
+    async def _wait_for_event(self, timeout: float) -> DeviceEvent:
+        """Wait for the next event delivered to this waiter.
+
+        Args:
+            timeout: Maximum seconds to wait.
+
+        Returns:
+            The next device event.
+
+        Raises:
+            TimeoutError: If no event arrives within the timeout.
+        """
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[DeviceEvent] = loop.create_future()
+        self._waiters.append(future)
+        try:
+            return await asyncio.wait_for(future, timeout=timeout)
+        finally:
+            self._waiters.remove(future)
+
     async def _query(
         self,
-        command: bytes,
+        command: QueryCommand,
         timeout: float = 1.0,
     ) -> list[DeviceEvent]:
         """Send a Phomemo query and collect responses.
 
-        Drains the event queue, sends the query, then waits for events.
+        Sends the query command and collects events until timeout.
+        Events are still delivered to callbacks regardless.
 
         Args:
             command: The query command bytes.
@@ -270,22 +305,18 @@ class Printer:
         Returns:
             List of events received within the timeout.
         """
-        # Drain any stale events
-        while not self._pending_events.empty():
-            self._pending_events.get_nowait()
-
+        logger.debug("Query %s (timeout=%.1fs)", command.hex(), timeout)
         await self._transport.write(command)
 
+        loop = asyncio.get_running_loop()
         events: list[DeviceEvent] = []
-        deadline = asyncio.get_event_loop().time() + timeout
+        deadline = loop.time() + timeout
         while True:
-            remaining = deadline - asyncio.get_event_loop().time()
+            remaining = deadline - loop.time()
             if remaining <= 0:
                 break
             try:
-                event = await asyncio.wait_for(
-                    self._pending_events.get(), timeout=remaining
-                )
+                event = await self._wait_for_event(timeout=remaining)
                 events.append(event)
             except TimeoutError:
                 break
@@ -347,7 +378,7 @@ class Printer:
         """
         events = await self._query(QueryCommand.LID_STATE, timeout)
         for event in events:
-            if isinstance(event, SensorEvent) and event.lid is not None:
+            if isinstance(event, LidEvent):
                 return event.lid
         return None
 
@@ -365,7 +396,7 @@ class Printer:
         """
         events = await self._query(QueryCommand.PAPER_STATE, timeout)
         for event in events:
-            if isinstance(event, SensorEvent) and event.paper is not None:
+            if isinstance(event, PaperEvent):
                 return event.paper
         return None
 
@@ -385,23 +416,31 @@ class Printer:
         Returns:
             A ``DeviceInfo`` with all available fields populated.
         """
-        info = DeviceInfo()
-        info.battery = await self.query_battery(timeout)
-        info.firmware = await self.query_firmware(timeout)
-        info.serial = await self.query_serial(timeout)
-        info.lid = await self.query_lid(timeout)
+        battery = await self.query_battery(timeout)
+        firmware = await self.query_firmware(timeout)
+        serial = await self.query_serial(timeout)
+        lid = await self.query_lid(timeout)
 
         # Paper state is unreliable with lid open — only query if closed
-        if info.lid == LidState.CLOSED:
-            info.paper = await self.query_paper(timeout)
+        paper = None
+        if lid == LidState.CLOSED:
+            paper = await self.query_paper(timeout)
 
+        auto_off_minutes = None
         timer_events = await self._query(QueryCommand.DEVICE_TIMER, timeout)
         for event in timer_events:
             if isinstance(event, TimerEvent):
-                info.auto_off_minutes = event.minutes
+                auto_off_minutes = event.minutes
                 break
 
-        return info
+        return DeviceInfo(
+            battery=battery,
+            lid=lid,
+            paper=paper,
+            firmware=firmware,
+            serial=serial,
+            auto_off_minutes=auto_off_minutes,
+        )
 
     # ------------------------------------------------------------------
     # Pre-print readiness check
@@ -526,6 +565,7 @@ class Printer:
         """Wait for the print-complete (motor stop) signal.
 
         The printer fires ``1a 0f 0c`` on ``ff01`` when the motor stops.
+        Non-MotorStop events are ignored but still delivered to callbacks.
 
         Args:
             timeout: Maximum seconds to wait.
@@ -533,15 +573,14 @@ class Printer:
         Raises:
             TimeoutError: If the signal is not received in time.
         """
-        deadline = asyncio.get_event_loop().time() + timeout
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
         while True:
-            remaining = deadline - asyncio.get_event_loop().time()
+            remaining = deadline - loop.time()
             if remaining <= 0:
                 raise TimeoutError("Timed out waiting for print completion signal")
             try:
-                event = await asyncio.wait_for(
-                    self._pending_events.get(), timeout=remaining
-                )
+                event = await self._wait_for_event(timeout=remaining)
                 if isinstance(event, MotorStopEvent):
                     return
             except TimeoutError:
@@ -583,16 +622,19 @@ class Printer:
             RuntimeError: If not connected.
             FileNotFoundError: If the source path doesn't exist.
         """
-        img = Image.open(source) if isinstance(source, (str, Path)) else source
 
-        processed = prepare_image(
-            img,
-            target_width=self._profile.print_width_px,
-            fit=fit,
-            dither=dither,
-        )
-        bitmap = image_to_bitmap(processed)
-        height = processed.size[1]
+        def _process_image() -> tuple[bytes, int]:
+            """Load, resize, dither, and pack the image (CPU-bound)."""
+            img = Image.open(source) if isinstance(source, (str, Path)) else source
+            processed = prepare_image(
+                img,
+                target_width=self._profile.print_width_px,
+                fit=fit,
+                dither=dither,
+            )
+            return image_to_bitmap(processed), processed.size[1]
+
+        bitmap, height = await asyncio.to_thread(_process_image)
 
         await self.print_bitmap(
             bitmap,
@@ -608,7 +650,7 @@ class Printer:
     # Async context manager
     # ------------------------------------------------------------------
 
-    async def __aenter__(self) -> "Printer":
+    async def __aenter__(self) -> Self:
         """Enter the async context manager.
 
         Returns:

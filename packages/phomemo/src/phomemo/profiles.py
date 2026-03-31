@@ -8,7 +8,13 @@ add new models by registering a ``PrinterProfile`` instance.
 Profile data is derived from the M08F Protocol Reference document.
 """
 
+import re
 from dataclasses import dataclass
+
+_UUID_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +55,22 @@ class PrinterProfile:
     supports_density: bool = True
     supports_escpos_queries: bool = False
 
+    def __post_init__(self) -> None:
+        """Validate profile fields on construction.
+
+        Raises:
+            ValueError: If ``print_width_px`` is not a multiple of 8, or if
+                any UUID field does not match the standard UUID format.
+        """
+        if self.print_width_px % 8 != 0:
+            raise ValueError(
+                f"print_width_px must be a multiple of 8, got {self.print_width_px}"
+            )
+        for field_name in ("service_uuid", "write_uuid", "notify_uuid", "status_uuid"):
+            value = getattr(self, field_name)
+            if not _UUID_RE.match(value):
+                raise ValueError(f"{field_name} is not a valid UUID: {value!r}")
+
     @property
     def width_bytes(self) -> int:
         """Print width in bytes (8 pixels per byte, MSB-first)."""
@@ -76,9 +98,6 @@ def _register(profile: PrinterProfile) -> PrinterProfile:
 
 
 # M08F profiles — derived from the protocol reference document.
-# The M08F uses non-standard characteristic UUIDs with a zero-padded
-# base (00000000-0000-0000-0000-00000000XXXX) rather than the Bluetooth
-# SIG base (0000XXXX-0000-1000-8000-00805f9b34fb).
 _M08F_WRITE = "0000ff02-0000-1000-8000-00805f9b34fb"
 _M08F_NOTIFY = "0000ff01-0000-1000-8000-00805f9b34fb"
 _M08F_STATUS = "0000ff03-0000-1000-8000-00805f9b34fb"

@@ -12,8 +12,11 @@ Event sub-types and their semantics are documented in the M08F Protocol
 Reference under "Device Events".
 """
 
+import logging
 from dataclasses import dataclass
 from enum import IntEnum, StrEnum
+
+logger = logging.getLogger(__name__)
 
 
 class EventKind(IntEnum):
@@ -67,27 +70,43 @@ class DeviceEvent:
 
 
 @dataclass(frozen=True, slots=True)
-class SensorEvent(DeviceEvent):
-    """Lid or paper state change event.
+class LidEvent(DeviceEvent):
+    """Lid state change event.
 
     Attributes:
-        lid: Lid state (only set for lid events).
-        paper: Paper state (only set for paper events).
+        lid: Current lid state.
     """
 
-    lid: LidState | None = None
-    paper: PaperState | None = None
+    lid: LidState = LidState.CLOSED
+
+
+@dataclass(frozen=True, slots=True)
+class PaperEvent(DeviceEvent):
+    """Paper presence change event.
+
+    Attributes:
+        paper: Current paper state.
+    """
+
+    paper: PaperState = PaperState.ABSENT
 
 
 @dataclass(frozen=True, slots=True)
 class BatteryEvent(DeviceEvent):
     """Battery level report.
 
+    The ``percent`` field is clamped to 0–100 on construction to handle
+    corrupt or out-of-range BLE data gracefully.
+
     Attributes:
-        percent: Battery charge percentage (0–100).
+        percent: Battery charge percentage (0–100), clamped on construction.
     """
 
     percent: int = 0
+
+    def __post_init__(self) -> None:
+        """Clamp percent to 0–100 to handle corrupt BLE data."""
+        object.__setattr__(self, "percent", max(0, min(100, self.percent)))
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,10 +115,6 @@ class FirmwareEvent(DeviceEvent):
 
     The version bytes map to ``major.minor.patch``. Example:
     ``1a 07 01 01 03`` → v1.1.3.
-
-    Note: Firmware responses are variable-length (5 bytes total),
-    but the 3-byte parser captures the major version byte. For full
-    version parsing, use the ``parse_firmware_response`` helper.
 
     Attributes:
         major: Major version number.
@@ -130,11 +145,16 @@ class TimerEvent(DeviceEvent):
     Attributes:
         value: Raw timer byte. 0 = disabled, non-zero = timeout in
             5-minute increments.
-        minutes: Computed timeout in minutes (0 = disabled).
+        minutes: Computed timeout in minutes (0 = disabled). Derived
+            from ``value * 5``; cannot be set independently.
     """
 
     value: int = 0
     minutes: int = 0
+
+    def __post_init__(self) -> None:
+        """Derive minutes from value to enforce the invariant."""
+        object.__setattr__(self, "minutes", self.value * 5)
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,11 +186,11 @@ def _parse_one(data: bytes) -> DeviceEvent:
     match sub_type:
         case EventKind.LID:
             lid = LidState.OPEN if (value & 0x01) else LidState.CLOSED
-            return SensorEvent(kind=EventKind.LID, lid=lid, raw=data)
+            return LidEvent(kind=EventKind.LID, lid=lid, raw=data)
 
         case EventKind.PAPER:
             paper = PaperState.PRESENT if (value & 0x01) else PaperState.ABSENT
-            return SensorEvent(kind=EventKind.PAPER, paper=paper, raw=data)
+            return PaperEvent(kind=EventKind.PAPER, paper=paper, raw=data)
 
         case EventKind.BATTERY:
             return BatteryEvent(kind=EventKind.BATTERY, percent=value, raw=data)
@@ -186,7 +206,6 @@ def _parse_one(data: bytes) -> DeviceEvent:
             return TimerEvent(
                 kind=EventKind.DEVICE_TIMER,
                 value=value,
-                minutes=value * 5,
                 raw=data,
             )
 
@@ -238,9 +257,17 @@ def parse_notification(data: bytes) -> list[DeviceEvent]:
     offset = 0
     while offset + 3 <= len(data):
         if data[offset] != 0x1A:
+            logger.debug(
+                "Unexpected byte 0x%02x at offset %d, stopping parse",
+                data[offset],
+                offset,
+            )
             break
         chunk = bytes(data[offset : offset + 3])
         events.append(_parse_one(chunk))
         offset += 3
+
+    if not events and len(data) > 0:
+        logger.debug("No events parsed from %d bytes: %s", len(data), data.hex())
 
     return events
