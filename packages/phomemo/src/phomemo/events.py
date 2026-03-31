@@ -97,10 +97,6 @@ class FirmwareEvent(DeviceEvent):
     The version bytes map to ``major.minor.patch``. Example:
     ``1a 07 01 01 03`` → v1.1.3.
 
-    Note: Firmware responses are variable-length (5 bytes total),
-    but the 3-byte parser captures the major version byte. For full
-    version parsing, use the ``parse_firmware_response`` helper.
-
     Attributes:
         major: Major version number.
         minor: Minor version number.
