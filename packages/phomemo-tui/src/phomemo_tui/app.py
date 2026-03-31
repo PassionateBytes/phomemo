@@ -1,297 +1,146 @@
-"""Phomemo TUI application.
+"""Phomemo TUI application."""
 
-The main Textual application for interacting with Phomemo printers.
-Provides screens for scanning, connecting, monitoring, and printing.
-"""
+from __future__ import annotations
 
-from phomemo import (
-    BatteryEvent,
-    DeviceEvent,
-    LidEvent,
-    MotorStopEvent,
-    PaperEvent,
-    Printer,
-    discover,
+from pathlib import Path
+
+from textual.app import App
+
+from phomemo_tui.config import AppConfig, load_config
+from phomemo_tui.messages import (
+    CancelPrintRequested,
+    DeviceConnected,
+    DeviceDisconnected,
+    DeviceScanStarted,
+    DeviceStateUpdated,
+    FileSelected,
+    PrintCancelled,
+    PrintComplete,
+    PrintError,
+    PrintPageComplete,
+    PrintProgress,
+    PrintRequested,
+    PrintWaitingForPaper,
+    PrintWaitingForReady,
 )
-from textual.app import App, ComposeResult
-from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
-from textual.screen import Screen
-from textual.widgets import (
-    Button,
-    Footer,
-    Header,
-    Label,
-    ListItem,
-    ListView,
-    Static,
-)
-
-# ------------------------------------------------------------------
-# Scan screen
-# ------------------------------------------------------------------
-
-
-class ScanScreen(Screen):
-    """BLE device scanner screen.
-
-    Scans for nearby Phomemo printers and lets the user select one
-    to connect to.
-    """
-
-    BINDINGS = [
-        Binding("r", "scan", "Re-scan"),
-        Binding("escape", "app.pop_screen", "Back"),
-    ]
-
-    def compose(self) -> ComposeResult:
-        """Build the scan screen layout."""
-        yield Header()
-        yield Label("Scanning for printers...", id="scan-status")
-        yield ListView(id="device-list")
-        yield Footer()
-
-    async def on_mount(self) -> None:
-        """Start scanning when the screen mounts."""
-        await self.action_scan()
-
-    async def action_scan(self) -> None:
-        """Perform a BLE scan and populate the device list."""
-        status = self.query_one("#scan-status", Label)
-        device_list = self.query_one("#device-list", ListView)
-        status.update("Scanning...")
-        device_list.clear()
-
-        devices = await discover(timeout=5.0)
-        if not devices:
-            status.update("No devices found. Press [bold]r[/] to re-scan.")
-            return
-
-        for dev in devices:
-            name = dev.name or "Unknown"
-            device_list.append(
-                ListItem(Label(f"{name}  ({dev.address})"), name=dev.address)
-            )
-        status.update(f"Found {len(devices)} device(s). Select one to connect.")
-
-    async def on_list_view_selected(self, event: ListView.Selected) -> None:
-        """Handle device selection from the list."""
-        address = event.item.name
-        if address:
-            app = self.app
-            if isinstance(app, PhomemoApp):
-                await app.connect_to_printer(address)
-
-
-# ------------------------------------------------------------------
-# Main screen
-# ------------------------------------------------------------------
-
-
-class MainScreen(Screen):
-    """Main printer control screen.
-
-    Shows device status and provides controls for printing and
-    paper management.
-    """
-
-    BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("d", "disconnect", "Disconnect"),
-        Binding("i", "query_info", "Device Info"),
-        Binding("f", "feed", "Feed Paper"),
-        Binding("e", "eject", "Eject Paper"),
-    ]
-
-    def __init__(self) -> None:
-        super().__init__()
-        self._event_lines: list[str] = []
-
-    def compose(self) -> ComposeResult:
-        """Build the main screen layout."""
-        yield Header()
-        with Vertical():
-            yield Label("Connected", id="connection-status")
-            yield Static("", id="device-info")
-            yield Static("", id="event-log")
-            with Horizontal():
-                yield Button("Device Info", id="btn-info", variant="default")
-                yield Button("Feed", id="btn-feed", variant="default")
-                yield Button("Eject", id="btn-eject", variant="warning")
-                yield Button("Disconnect", id="btn-disconnect", variant="error")
-        yield Footer()
-
-    async def on_mount(self) -> None:
-        """Query device info on mount."""
-        await self.action_query_info()
-
-    async def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Route button presses to actions."""
-        match event.button.id:
-            case "btn-info":
-                await self.action_query_info()
-            case "btn-feed":
-                await self.action_feed()
-            case "btn-eject":
-                await self.action_eject()
-            case "btn-disconnect":
-                await self.action_disconnect()
-
-    async def action_query_info(self) -> None:
-        """Query and display device information."""
-        app = self.app
-        if not isinstance(app, PhomemoApp) or app.printer is None:
-            return
-
-        info_widget = self.query_one("#device-info", Static)
-        info_widget.update("Querying...")
-
-        try:
-            info = await app.printer.query_device_info(timeout=1.0)
-            bat = f"{info.battery}%" if info.battery is not None else "--"
-            lid = info.lid.value if info.lid else "--"
-            paper = info.paper.value if info.paper else "--"
-            aoff = info.auto_off_minutes
-            timer = f"{aoff}min" if aoff is not None else "--"
-            lines = [
-                f"Battery:   {bat}",
-                f"Firmware:  {info.firmware or '--'}",
-                f"Serial:    {info.serial or '--'}",
-                f"Lid:       {lid}",
-                f"Paper:     {paper}",
-                f"Auto-off:  {timer}",
-            ]
-            info_widget.update("\n".join(lines))
-        except Exception as exc:
-            info_widget.update(f"Error: {exc}")
-
-    async def action_feed(self) -> None:
-        """Feed paper a small amount."""
-        app = self.app
-        if isinstance(app, PhomemoApp) and app.printer is not None:
-            await app.printer.feed(20)
-
-    async def action_eject(self) -> None:
-        """Eject the current sheet."""
-        app = self.app
-        if isinstance(app, PhomemoApp) and app.printer is not None:
-            await app.printer.eject_paper()
-
-    async def action_disconnect(self) -> None:
-        """Disconnect and return to the scan screen."""
-        app = self.app
-        if isinstance(app, PhomemoApp):
-            await app.disconnect_printer()
-
-    def add_event(self, event: DeviceEvent) -> None:
-        """Append a device event to the event log display.
-
-        Args:
-            event: The parsed device event.
-        """
-        log = self.query_one("#event-log", Static)
-        self._event_lines.append(_format_event(event))
-        self._event_lines = self._event_lines[-10:]
-        log.update("\n".join(self._event_lines))
-
-
-def _format_event(event: DeviceEvent) -> str:
-    """Format a device event for display.
-
-    Args:
-        event: The parsed device event.
-
-    Returns:
-        A human-readable string representation.
-    """
-    match event:
-        case LidEvent(lid=lid):
-            return f"Lid: {lid.value}"
-        case PaperEvent(paper=paper):
-            return f"Paper: {paper.value}"
-        case BatteryEvent(percent=pct):
-            return f"Battery: {pct}%"
-        case MotorStopEvent():
-            return "Print complete (motor stopped)"
-        case _:
-            return f"Event: {event.raw.hex()}"
-
-
-# ------------------------------------------------------------------
-# Application
-# ------------------------------------------------------------------
+from phomemo_tui.printer_service import PrinterService
+from phomemo_tui.screens.main_menu import MainMenuScreen
 
 
 class PhomemoApp(App):
-    """Textual application for Phomemo thermal printers.
-
-    Manages the printer connection lifecycle and screen navigation.
-    """
+    """Textual application for Phomemo thermal printers."""
 
     TITLE = "Phomemo"
-    CSS = """
-    #device-info {
-        margin: 1 2;
-        padding: 1 2;
-        background: $surface;
-    }
-    #event-log {
-        margin: 1 2;
-        padding: 1 2;
-        background: $surface;
-        min-height: 5;
-    }
-    #scan-status {
-        margin: 1 2;
-    }
-    Horizontal {
-        margin: 1 2;
-        height: auto;
-    }
-    Button {
-        margin: 0 1;
-    }
-    """
+    CSS_PATH = "styles/app.tcss"
 
     def __init__(self) -> None:
         super().__init__()
-        self.printer: Printer | None = None
-        self._main_screen: MainScreen | None = None
+        self.config: AppConfig = load_config()
+        self.printer_service = PrinterService(
+            post_message=self.post_message,
+            config=self.config,
+        )
+        # Session state (not persisted)
+        self.current_file: Path | None = None
+        self.current_page: int = 1
 
     def on_mount(self) -> None:
-        """Show the scan screen on startup."""
-        self.push_screen(ScanScreen())
+        """Push main menu and start the printer service."""
+        self.push_screen(MainMenuScreen())
+        self.run_worker(
+            self.printer_service.start(),
+            exclusive=True,
+            group="connection",
+            name="printer-service",
+        )
 
-    async def connect_to_printer(self, address: str) -> None:
-        """Connect to a printer and switch to the main screen.
+    # ------------------------------------------------------------------
+    # Service → UI message routing
+    # ------------------------------------------------------------------
 
-        Args:
-            address: BLE MAC address of the printer.
-        """
-        self.printer = Printer("M08F-A4", address=address)
+    def on_device_scan_started(self, _: DeviceScanStarted) -> None:
+        self._update_status_panel()
 
-        # Register event handler for the main screen
-        self._main_screen = MainScreen()
+    def on_device_connected(self, msg: DeviceConnected) -> None:
+        self._update_status_panel()
+        self._update_print_button()
 
-        def on_event(event: DeviceEvent) -> None:
-            if self._main_screen is not None:
-                self.call_from_thread(self._main_screen.add_event, event)
+    def on_device_disconnected(self, _: DeviceDisconnected) -> None:
+        self._update_status_panel()
+        self._update_print_button()
 
-        self.printer.on_event(on_event)
+    def on_device_state_updated(self, msg: DeviceStateUpdated) -> None:
+        self._update_status_panel()
 
-        try:
-            await self.printer.connect()
-            self.switch_screen(self._main_screen)
-        except Exception as exc:
-            self.notify(f"Connection failed: {exc}", severity="error")
+    def on_print_waiting_for_ready(self, msg: PrintWaitingForReady) -> None:
+        self._update_preview_footer(msg)
+        self._update_print_button()
 
-    async def disconnect_printer(self) -> None:
-        """Disconnect the printer and return to the scan screen."""
-        if self.printer is not None:
-            await self.printer.disconnect()
-            self.printer = None
-        self._main_screen = None
-        self.switch_screen(ScanScreen())
+    def on_print_progress(self, msg: PrintProgress) -> None:
+        self._update_preview_footer(msg)
+
+    def on_print_page_complete(self, msg: PrintPageComplete) -> None:
+        self.current_page = min(msg.page + 1, msg.total_pages)
+        self._update_preview_panel()
+
+    def on_print_waiting_for_paper(self, msg: PrintWaitingForPaper) -> None:
+        self._update_preview_footer(msg)
+
+    def on_print_complete(self, _: PrintComplete) -> None:
+        self._update_preview_panel()
+        self._update_print_button()
+        self._set_panels_locked(False)
+
+    def on_print_error(self, msg: PrintError) -> None:
+        self.notify(msg.message, severity="error")
+        self._update_print_button()
+        self._set_panels_locked(False)
+
+    def on_print_cancelled(self, _: PrintCancelled) -> None:
+        self._update_print_button()
+        self._set_panels_locked(False)
+
+    # ------------------------------------------------------------------
+    # UI → Service message routing
+    # ------------------------------------------------------------------
+
+    def on_print_requested(self, msg: PrintRequested) -> None:
+        self._set_panels_locked(True)
+        self.run_worker(
+            self.printer_service.print_job(msg.source, msg.start_page),
+            exclusive=True,
+            group="print",
+            name="print-job",
+        )
+
+    def on_cancel_print_requested(self, _: CancelPrintRequested) -> None:
+        self.printer_service.request_cancel()
+
+    def on_file_selected(self, msg: FileSelected) -> None:
+        self.current_file = msg.path
+        self.current_page = 1
+        self.config.add_recent_file(str(msg.path))
+        self._update_preview_panel()
+        self._update_print_button()
+
+    # ------------------------------------------------------------------
+    # Widget refresh helpers (stubs — widgets added in later tasks)
+    # ------------------------------------------------------------------
+
+    def _update_status_panel(self) -> None:
+        pass  # wired in Task 7
+
+    def _update_preview_panel(self) -> None:
+        pass  # wired in Task 8
+
+    def _update_preview_footer(self, msg: object) -> None:
+        pass  # wired in Task 8
+
+    def _update_print_button(self) -> None:
+        pass  # wired in Task 9
+
+    def _set_panels_locked(self, locked: bool) -> None:
+        pass  # wired in Task 9
 
 
 def main() -> None:
