@@ -591,16 +591,19 @@ class Printer:
             RuntimeError: If not connected.
             FileNotFoundError: If the source path doesn't exist.
         """
-        img = Image.open(source) if isinstance(source, (str, Path)) else source
 
-        processed = prepare_image(
-            img,
-            target_width=self._profile.print_width_px,
-            fit=fit,
-            dither=dither,
-        )
-        bitmap = image_to_bitmap(processed)
-        height = processed.size[1]
+        def _process_image() -> tuple[bytes, int]:
+            """Load, resize, dither, and pack the image (CPU-bound)."""
+            img = Image.open(source) if isinstance(source, (str, Path)) else source
+            processed = prepare_image(
+                img,
+                target_width=self._profile.print_width_px,
+                fit=fit,
+                dither=dither,
+            )
+            return image_to_bitmap(processed), processed.size[1]
+
+        bitmap, height = await asyncio.to_thread(_process_image)
 
         await self.print_bitmap(
             bitmap,

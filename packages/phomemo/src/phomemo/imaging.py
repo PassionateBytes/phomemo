@@ -13,7 +13,7 @@ Bitmap format (from the M08F Protocol Reference):
 
 from enum import StrEnum
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 
 class DitherMode(StrEnum):
@@ -120,26 +120,8 @@ def image_to_bitmap(img: Image.Image) -> bytes:
     if img.mode != "1":
         raise ValueError(f"Expected mode '1', got '{img.mode}'")
 
-    width, height = img.size
-    pixels = img.load()
-    assert pixels is not None
-    data = bytearray()
-
-    for y in range(height):
-        byte = 0
-        bit_count = 0
-        for x in range(width):
-            # PIL mode "1": 0 = black, 255 = white
-            # Printer: 1 = black (ink), 0 = white (no ink)
-            bit = 0 if pixels[x, y] else 1
-            byte = (byte << 1) | bit
-            bit_count += 1
-            if bit_count == 8:
-                data.append(byte)
-                byte = 0
-                bit_count = 0
-        if bit_count:
-            byte <<= 8 - bit_count
-            data.append(byte)
-
-    return bytes(data)
+    # PIL mode "1": 0 = black, 255 = white
+    # Printer: 1 = black (ink), 0 = white (no ink)
+    # Invert so tobytes() packs black pixels as 1-bits.
+    inverted = ImageChops.invert(img)
+    return inverted.tobytes()
