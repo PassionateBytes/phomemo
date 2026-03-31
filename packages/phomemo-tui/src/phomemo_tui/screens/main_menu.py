@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
-
 
 # Grid navigation: widget-id → {direction: target-id}
 _GRID: dict[str, dict[str, str]] = {
@@ -45,7 +45,7 @@ class MainMenuScreen(Screen):
         """Focus the print button on startup."""
         self.query_one("#panel-print").focus()
 
-    def on_key(self, event) -> None:
+    def on_key(self, event: events.Key) -> None:
         """Arrow-key grid navigation + Enter to activate panels."""
         focused = self.focused
         if focused is None or focused.id not in _GRID:
