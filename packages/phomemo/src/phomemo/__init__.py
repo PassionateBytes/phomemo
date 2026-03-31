@@ -8,6 +8,7 @@ Basic usage::
     from phomemo import Printer
 
     async with Printer("M08F-A4") as printer:
+        # connect() must be called after entering the context
         await printer.connect("AA:BB:CC:DD:EE:FF")
         await printer.print_image("photo.png")
 """

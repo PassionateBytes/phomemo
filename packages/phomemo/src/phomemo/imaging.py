@@ -17,7 +17,14 @@ from PIL import Image, ImageChops
 
 
 class DitherMode(StrEnum):
-    """Image dithering algorithm for 1-bit conversion."""
+    """Image dithering algorithm for 1-bit conversion.
+
+    ``FLOYD_STEINBERG`` produces the best visual quality for
+    photographic content. ``THRESHOLD`` and ``NONE`` both apply
+    a simple threshold at value 128 with no dithering — they are
+    functionally equivalent but provided as separate options for
+    API clarity.
+    """
 
     FLOYD_STEINBERG = "floyd_steinberg"
     THRESHOLD = "threshold"
