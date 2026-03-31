@@ -264,7 +264,7 @@ class Printer:
 
     async def _query(
         self,
-        command: bytes,
+        command: QueryCommand,
         timeout: float = 1.0,
     ) -> list[DeviceEvent]:
         """Send a Phomemo query and collect responses.
