@@ -19,8 +19,8 @@ class StatusPanel(Static, can_focus=True):
     Colors: green=ok, yellow=warning, dim=unknown/scanning.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
         self._connected = False
         self._scanning = False
         self._device_name: str | None = None
