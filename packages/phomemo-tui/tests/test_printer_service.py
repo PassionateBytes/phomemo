@@ -2,22 +2,13 @@
 
 from __future__ import annotations
 
-import asyncio
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from phomemo.events import LidState, PaperState
 from phomemo_tui.config import AppConfig
 from phomemo_tui.messages import (
     DeviceConnected,
     DeviceDisconnected,
-    DeviceScanStarted,
-    PrintCancelled,
-    PrintComplete,
-    PrintError,
-    PrintProgress,
 )
 from phomemo_tui.printer_service import PrinterService, ServiceState
 
