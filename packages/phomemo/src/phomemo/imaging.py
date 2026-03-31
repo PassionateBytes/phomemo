@@ -11,9 +11,12 @@ Bitmap format (from the M08F Protocol Reference):
 - Rows are sequential top-to-bottom.
 """
 
+import logging
 from enum import StrEnum
 
 from PIL import Image, ImageChops
+
+logger = logging.getLogger(__name__)
 
 
 class DitherMode(StrEnum):
@@ -64,9 +67,9 @@ def prepare_image(
     Raises:
         ValueError: If ``target_height`` is required but not provided.
     """
-    # Resize image to fit the target width
     w, h = img.size
     target_width = (target_width // 8) * 8
+    logger.debug("prepare_image: source=%dx%d fit=%s dither=%s", w, h, fit, dither)
     match fit:
         case ImageFit.FIT_WIDTH:
             scale = target_width / w
@@ -86,6 +89,7 @@ def prepare_image(
             raise ValueError(f"Unsupported fit mode: {fit}")
 
     img = img.resize(new_size, Image.Resampling.LANCZOS)
+    logger.debug("prepare_image: resized to %dx%d", *new_size)
 
     # Pad to exact target width, centered horizontally
     if img.size[0] != target_width:
@@ -134,4 +138,8 @@ def image_to_bitmap(img: Image.Image) -> bytes:
     # Printer: 1 = black (ink), 0 = white (no ink)
     # Invert so tobytes() packs black pixels as 1-bits.
     inverted = ImageChops.invert(img)
-    return inverted.tobytes()
+    bitmap = inverted.tobytes()
+    logger.debug(
+        "image_to_bitmap: %dx%d -> %d bytes", img.size[0], img.size[1], len(bitmap)
+    )
+    return bitmap

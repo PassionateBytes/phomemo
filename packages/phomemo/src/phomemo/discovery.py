@@ -43,7 +43,14 @@ async def discover(
 
     if name_pattern is not None:
         compiled = re.compile(name_pattern)
-        devices = [d for d in devices if d.name and compiled.search(d.name)]
+        all_devices = devices
+        devices = [d for d in all_devices if d.name and compiled.search(d.name)]
+        logger.debug(
+            "Pattern %r matched %d of %d device(s)",
+            name_pattern,
+            len(devices),
+            len(all_devices),
+        )
 
     logger.debug("Scan complete: %d device(s) found", len(devices))
     return sorted(devices, key=lambda d: d.name or "")

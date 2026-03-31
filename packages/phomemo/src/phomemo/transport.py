@@ -79,7 +79,6 @@ class BleTransport:
         if self.is_connected:
             raise RuntimeError("Already connected")
 
-        logger.debug("Connecting to %s...", address)
         try:
             self._client = BleakClient(address)
             await self._client.connect()
@@ -90,15 +89,15 @@ class BleTransport:
             raise ConnectionError(f"Failed to connect to {address}: {exc}") from exc
 
         if self._profile.negotiate_mtu:
-            logger.debug("Negotiating effective max chunk size...")
-            try:
-                negotiated_chunk_bytes = self._client.mtu_size - 3
-                if negotiated_chunk_bytes > 0:
-                    self._effective_chunk_bytes = negotiated_chunk_bytes
-            finally:
-                logging.debug(
-                    "Using max chunk size of %s bytes", self._effective_chunk_bytes
-                )
+            backend = getattr(self._client, "_backend", self._client)
+            if hasattr(backend, "_acquire_mtu"):
+                try:
+                    negotiated_mtu = await backend._acquire_mtu()
+                    if negotiated_mtu is not None and negotiated_mtu > 3:
+                        self._effective_chunk_bytes = negotiated_mtu - 3
+                except Exception:
+                    pass
+            logger.debug("Chunk size: %d bytes", self._effective_chunk_bytes)
 
         try:
             if on_event is not None:
@@ -112,8 +111,14 @@ class BleTransport:
                     self._profile.status_uuid,
                     lambda _handle, data: on_status(bytes(data)),
                 )
-            logger.debug("Connected")
         except BleakError as exc:
+            logger.debug(
+                "Subscription failed; available services: %s",
+                {
+                    str(svc.uuid): [str(c.uuid) for c in svc.characteristics]
+                    for svc in self._client.services
+                },
+            )
             await self.disconnect()
             raise ConnectionError(
                 f"Connected to {address} but failed to subscribe "
@@ -126,7 +131,6 @@ class BleTransport:
         Safe to call even if not connected.
         """
         if self._client is not None:
-            logger.debug("Disconnecting...")
             try:
                 await self._client.disconnect()
             finally:

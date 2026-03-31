@@ -178,7 +178,6 @@ class Printer:
         Args:
             data: Raw bytes from the notification.
         """
-        logger.debug("Notification received: %s", data.hex())
         for event in parse_notification(data):
             self._dispatch_event(event)
 
@@ -206,7 +205,6 @@ class Printer:
         address = self._address
         if address is None:
             pattern = self._profile.ble_name_pattern
-            logger.debug("No address given, discovering with pattern %r", pattern)
             devices = await discover(name_pattern=pattern, timeout=discovery_timeout)
             if not devices:
                 raise ConnectionError(
@@ -238,6 +236,7 @@ class Printer:
         Should precede standalone ESC-prefix commands to prevent the
         BLE bridge chip from intercepting them.
         """
+        logger.debug("Sending ESC @")
         await self._transport.write(encode_init())
 
     async def set_density(self, level: Density) -> None:
@@ -248,6 +247,7 @@ class Printer:
         Args:
             level: Desired concentration level.
         """
+        logger.debug("Setting density: %s", level)
         await self._transport.write(encode_density(level))
 
     async def feed(self, lines: int = 20) -> None:
@@ -258,6 +258,7 @@ class Printer:
         Args:
             lines: Number of lines to feed (1-255).
         """
+        logger.debug("Feeding %d lines", lines)
         await self._transport.write(encode_feed_lines(lines))
 
     async def eject_paper(self, repetitions: int = 12) -> None:
@@ -269,6 +270,7 @@ class Printer:
         Args:
             repetitions: Number of ``ESC d 255`` commands.
         """
+        logger.debug("Ejecting paper (%d repetitions)", repetitions)
         payload = encode_paper_eject(repetitions)
         await self._transport.write_chunked(payload)
 
@@ -286,6 +288,7 @@ class Printer:
             raise ValueError(
                 f"Timer must be a non-negative multiple of 5, got {minutes}"
             )
+        logger.debug("Setting auto-off timer: %d minutes", minutes)
         value = minutes // 5
         await self.initialize()
         await self._transport.write(encode_auto_off_timer(value))
@@ -486,16 +489,21 @@ class Printer:
         """
         lid = await self.query_lid(timeout)
         if lid is None:
+            logger.debug("check_ready: lid query timed out")
             return False, "Could not query lid state"
         if lid == LidState.OPEN:
+            logger.debug("check_ready: lid is open")
             return False, "Lid is open"
 
         paper = await self.query_paper(timeout)
         if paper is None:
+            logger.debug("check_ready: paper query timed out")
             return False, "Could not query paper state"
         if paper == PaperState.ABSENT:
+            logger.debug("check_ready: no paper loaded")
             return False, "No paper loaded"
 
+        logger.debug("check_ready: ready")
         return True, "ready"
 
     # ------------------------------------------------------------------
@@ -581,11 +589,20 @@ class Printer:
         if not self.is_connected:
             raise RuntimeError("Not connected")
 
+        logger.debug(
+            "print_bitmap: %d rows, %d bitmap bytes, density=%s",
+            height,
+            len(bitmap),
+            density,
+        )
         payload = self._build_raster_payload(bitmap, height, density, mode, feed_lines)
+        logger.debug("print_bitmap: payload %d bytes", len(payload))
         await self._transport.write_chunked(payload, on_chunk=on_progress)
 
         if wait_for_completion:
+            logger.debug("print_bitmap: waiting for motor stop")
             await self._wait_for_motor_stop(completion_timeout)
+            logger.debug("print_bitmap: complete")
 
     async def _wait_for_motor_stop(self, timeout: float) -> None:
         """Wait for the print-complete (motor stop) signal.
@@ -649,6 +666,8 @@ class Printer:
             FileNotFoundError: If the source path doesn't exist.
         """
 
+        logger.debug("print_image: source=%r fit=%s dither=%s", source, fit, dither)
+
         def _process_image() -> tuple[bytes, int]:
             """Load, resize, dither, and pack the image (CPU-bound)."""
             img = Image.open(source) if isinstance(source, (str, Path)) else source
@@ -661,6 +680,7 @@ class Printer:
             return image_to_bitmap(processed), processed.size[1]
 
         bitmap, height = await asyncio.to_thread(_process_image)
+        logger.debug("print_image: processed to %d rows", height)
 
         await self.print_bitmap(
             bitmap,

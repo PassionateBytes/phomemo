@@ -100,7 +100,10 @@ class BatteryEvent(DeviceEvent):
 
     def __post_init__(self) -> None:
         """Clamp percent to 0-100 to handle corrupt BLE data."""
-        object.__setattr__(self, "percent", max(0, min(100, self.percent)))
+        clamped = max(0, min(100, self.percent))
+        if clamped != self.percent:
+            logger.debug("Battery percent clamped %d -> %d", self.percent, clamped)
+        object.__setattr__(self, "percent", clamped)
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,24 +231,24 @@ def parse_notification(data: bytes) -> list[DeviceEvent]:
 
     # Handle variable-length responses (firmware, serial ASCII)
     if len(data) >= 5 and data[0] == 0x1A and data[1] == EventKind.FIRMWARE:
-        return [
-            FirmwareEvent(
-                kind=EventKind.FIRMWARE,
-                major=data[2],
-                minor=data[3],
-                patch=data[4],
-                raw=bytes(data),
-            )
-        ]
+        event = FirmwareEvent(
+            kind=EventKind.FIRMWARE,
+            major=data[2],
+            minor=data[3],
+            patch=data[4],
+            raw=bytes(data),
+        )
+        logger.debug("Parsed event: %r", event)
+        return [event]
 
     if len(data) > 3 and data[0] == 0x1A and data[1] == EventKind.SERIAL_ASCII:
-        return [
-            SerialEvent(
-                kind=EventKind.SERIAL_ASCII,
-                value=data[2:].decode("ascii", errors="replace"),
-                raw=bytes(data),
-            )
-        ]
+        event = SerialEvent(
+            kind=EventKind.SERIAL_ASCII,
+            value=data[2:].decode("ascii", errors="replace"),
+            raw=bytes(data),
+        )
+        logger.debug("Parsed event: %r", event)
+        return [event]
 
     # Standard 3-byte event parsing (may be batched)
     offset = 0
@@ -258,7 +261,9 @@ def parse_notification(data: bytes) -> list[DeviceEvent]:
             )
             break
         chunk = bytes(data[offset : offset + 3])
-        events.append(_parse_one(chunk))
+        event = _parse_one(chunk)
+        logger.debug("Parsed event: %r", event)
+        events.append(event)
         offset += 3
 
     if not events and len(data) > 0:
