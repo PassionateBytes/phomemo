@@ -96,8 +96,9 @@ class BleTransport:
                 if negotiated_chunk_bytes > 0:
                     self._effective_chunk_bytes = negotiated_chunk_bytes
             finally:
-                logging.debug("Using max chunk size of %s bytes", self._effective_chunk_bytes)
-
+                logging.debug(
+                    "Using max chunk size of %s bytes", self._effective_chunk_bytes
+                )
 
         try:
             if on_event is not None:
