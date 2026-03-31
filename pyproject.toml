@@ -1,0 +1,26 @@
+[project]
+name = "phomemo-workspace"
+version = "0.0.0"
+description = "Workspace root for phomemo packages"
+requires-python = ">=3.13"
+dependencies = [
+    "phomemo",
+    "phomemo-tui",
+]
+
+[tool.uv.sources]
+phomemo = { workspace = true }
+phomemo-tui = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
