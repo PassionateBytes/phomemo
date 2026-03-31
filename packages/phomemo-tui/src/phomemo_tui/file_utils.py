@@ -10,8 +10,6 @@ SUPPORTED_EXTENSIONS: frozenset[str] = frozenset(
     {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tiff", ".webp", ".pdf"}
 )
 
-_IMAGE_EXTENSIONS: frozenset[str] = SUPPORTED_EXTENSIONS - {".pdf"}
-
 
 def get_page_count(path: Path) -> int:
     """Return the number of printable pages in a file.
@@ -33,10 +31,8 @@ def get_page_count(path: Path) -> int:
     if ext == ".pdf":
         import fitz  # pymupdf
 
-        doc = fitz.open(str(path))
-        count = len(doc)
-        doc.close()
-        return count
+        with fitz.open(str(path)) as doc:
+            return len(doc)
     return 1
 
 
@@ -60,22 +56,20 @@ def load_page_as_pil(path: Path, page: int) -> Image.Image:
     if ext == ".pdf":
         import fitz  # pymupdf
 
-        doc = fitz.open(str(path))
-        total = len(doc)
-        if page < 1 or page > total:
-            raise ValueError(
-                f"page {page} out of range for {path.name} ({total} pages)"
-            )
-        fitz_page = doc[page - 1]
-        mat = fitz.Matrix(2.0, 2.0)  # 2x scale for reasonable preview/print quality
-        pix = fitz_page.get_pixmap(matrix=mat)
-        doc.close()
+        with fitz.open(str(path)) as doc:
+            total = len(doc)
+            if page < 1 or page > total:
+                raise ValueError(
+                    f"page {page} out of range for {path.name} ({total} pages)"
+                )
+            fitz_page = doc[page - 1]
+            mat = fitz.Matrix(2.0, 2.0)  # 2x scale for reasonable preview/print quality
+            pix = fitz_page.get_pixmap(matrix=mat)
         return Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
 
     # Regular image
-    total = get_page_count(path)
     if page != 1:
         raise ValueError(
-            f"page {page} out of range for {path.name} ({total} pages)"
+            f"page {page} out of range for {path.name} (1 pages)"
         )
     return Image.open(path).convert("RGB")
