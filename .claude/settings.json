@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "touch .claude/changed"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -f .claude/changed ] && { rm .claude/changed; uv run ruff format . 2>/dev/null || true; uv run ruff check . 2>/dev/null || true; uv run ty check 2>/dev/null || true; } || true",
+            "statusMessage": "Formatting, linting, and type-checking..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "uv run pytest",
+            "statusMessage": "Running tests before commit..."
+          }
+        ]
+      }
+    ]
+  }
+}

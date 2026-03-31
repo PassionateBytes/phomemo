@@ -10,6 +10,7 @@ from phomemo.events import (
     MotorStopEvent,
 )
 from phomemo.printer import Printer
+from phomemo.protocol import QueryCommand
 
 
 class FakeTransport:
@@ -53,7 +54,7 @@ async def test_query_does_not_eat_unrelated_events():
         printer._dispatch_event(BatteryEvent(kind=EventKind.BATTERY, percent=75))
 
     asyncio.create_task(inject_events())
-    result = await printer._query(b"\x1f\x11\x08", timeout=0.5)
+    result = await printer._query(QueryCommand.BATTERY, timeout=0.5)
 
     # The battery event should be in the query result
     battery_events = [e for e in result if isinstance(e, BatteryEvent)]

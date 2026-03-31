@@ -21,7 +21,7 @@ def _make_profile(**overrides: object) -> PrinterProfile:
         "status_uuid": _VALID_STATUS_UUID,
     }
     defaults.update(overrides)
-    return PrinterProfile(**defaults)  # type: ignore[arg-type]
+    return PrinterProfile(**defaults)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_profile_rejects_non_multiple_of_8_width() -> None:
