@@ -4,10 +4,13 @@ Wraps ``bleak.BleakScanner`` to find nearby BLE devices, with optional
 regex filtering on advertised names.
 """
 
+import logging
 import re
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
+
+logger = logging.getLogger(__name__)
 
 
 async def discover(
@@ -24,6 +27,7 @@ async def discover(
     Returns:
         List of discovered ``BLEDevice`` objects, sorted by name.
     """
+    logger.debug("Starting BLE scan (timeout=%.1fs, pattern=%s)", timeout, name_pattern)
     discovered = await BleakScanner.discover(timeout=timeout, return_adv=True)
     devices = [dev for dev, _ in discovered.values()]
 
@@ -31,4 +35,5 @@ async def discover(
         compiled = re.compile(name_pattern)
         devices = [d for d in devices if d.name and compiled.search(d.name)]
 
+    logger.debug("Scan complete: %d device(s) found", len(devices))
     return sorted(devices, key=lambda d: d.name or "")

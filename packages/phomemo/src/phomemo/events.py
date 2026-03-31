@@ -12,8 +12,11 @@ Event sub-types and their semantics are documented in the M08F Protocol
 Reference under "Device Events".
 """
 
+import logging
 from dataclasses import dataclass
 from enum import IntEnum, StrEnum
+
+logger = logging.getLogger(__name__)
 
 
 class EventKind(IntEnum):
@@ -238,9 +241,17 @@ def parse_notification(data: bytes) -> list[DeviceEvent]:
     offset = 0
     while offset + 3 <= len(data):
         if data[offset] != 0x1A:
+            logger.debug(
+                "Unexpected byte 0x%02x at offset %d, stopping parse",
+                data[offset],
+                offset,
+            )
             break
         chunk = bytes(data[offset : offset + 3])
         events.append(_parse_one(chunk))
         offset += 3
+
+    if not events and len(data) > 0:
+        logger.debug("No events parsed from %d bytes: %s", len(data), data.hex())
 
     return events
