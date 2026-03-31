@@ -55,15 +55,15 @@ The M08F shares the Phomemo command dialect but differs from smaller models
 unit — findings may apply in part to related Phomemo models, but have not been
 verified on other hardware.
 
-| Area | M08F | M02/M02S/T02 (per community projects) |
-|------|------|---------------------------------------|
-| Density control | `ESC N 04` works; `ESC 7` has no effect | Both `ESC 7` and `ESC N 04` reported as functional |
-| NAK prefix (`15 11 XX`) | No effect (except `0a` = raw LF) | Used for concentration setting on some models |
-| Text mode | Not supported — raster only | Not supported on most models |
-| `0x0A` in raster data | Handled correctly (no escaping needed) | phomemo_m02s escapes `0x0A → 0x14` in bitmap data |
-| Connectivity | BLE only | Some models support Bluetooth Classic (RFCOMM) |
-| Print width | 1680 px (A4) / 1728 px (Letter) | 384 px (M02) / 576 px (M02S) |
-| Standard ESC/POS queries (GS I, DLE EOT) | All return generic `01 01` | Some models may return meaningful status bytes |
+| Area                                     | M08F                                    | M02/M02S/T02 (per community projects)              |
+| ---------------------------------------- | --------------------------------------- | -------------------------------------------------- |
+| Density control                          | `ESC N 04` works; `ESC 7` has no effect | Both `ESC 7` and `ESC N 04` reported as functional |
+| NAK prefix (`15 11 XX`)                  | No effect (except `0a` = raw LF)        | Used for concentration setting on some models      |
+| Text mode                                | Not supported — raster only             | Not supported on most models                       |
+| `0x0A` in raster data                    | Handled correctly (no escaping needed)  | phomemo_m02s escapes `0x0A → 0x14` in bitmap data  |
+| Connectivity                             | BLE only                                | Some models support Bluetooth Classic (RFCOMM)     |
+| Print width                              | 1680 px (A4) / 1728 px (Letter)         | 384 px (M02) / 576 px (M02S)                       |
+| Standard ESC/POS queries (GS I, DLE EOT) | All return generic `01 01`              | Some models may return meaningful status bytes     |
 
 All findings are based on direct observation unless marked **[assumed]**
 (inferred from context or external references).
@@ -84,8 +84,8 @@ All findings are based on direct observation unless marked **[assumed]**
 
 ```
 [Host]  ──BLE──  [BLE-UART Bridge Chip]  ──UART 460800 bps──  [Printer MCU]
-                  (ff80 AT interface)                           (ESC/POS + Phomemo extensions)
-                  (ff00 data relay)                             (thermal print head, sensors, motor)
+                 (ff80 AT interface)                          (ESC/POS + Phomemo extensions)
+                 (ff00 data relay)                            (thermal print head, sensors, motor)
 ```
 
 The M08F contains two processors:
@@ -109,13 +109,13 @@ host.
 
 ### Connection Parameters
 
-| Parameter | Value |
-|-----------|-------|
-| BLE name | `M08F` |
-| Negotiated MTU | 247 bytes |
-| Usable ATT payload | 244 bytes |
-| Maximum write size | 244 bytes per `write_gatt_char` call |
-| Write method | Write Without Response (`write_gatt_char(..., response=False)`) |
+| Parameter          | Value                                                           |
+| ------------------ | --------------------------------------------------------------- |
+| BLE name           | `M08F`                                                          |
+| Negotiated MTU     | 247 bytes                                                       |
+| Usable ATT payload | 244 bytes                                                       |
+| Maximum write size | 244 bytes per `write_gatt_char` call                            |
+| Write method       | Write Without Response (`write_gatt_char(..., response=False)`) |
 
 Writes larger than 244 bytes fail with `org.bluez.Error.Failed`.
 
@@ -130,11 +130,11 @@ small jobs but has not been stress-tested at scale.
 
 On BLE connect, the following notifications fire automatically:
 
-| Channel | Data | Timing | Notes |
-|---------|------|--------|-------|
-| `ff03` | `01 07` | Immediate | Connect greeting. Purpose of `07` unknown **[assumed — version or capability flag]** |
-| `ff03` | `02 f4 00` | Immediate | Fixed constant (`f4 00` = 244 LE). Not battery-related — identical plugged/unplugged. |
-| `fec8` | 26-byte protobuf | ~100ms | Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing. |
+| Channel | Data             | Timing    | Notes                                                                                   |
+| ------- | ---------------- | --------- | --------------------------------------------------------------------------------------- |
+| `ff03`  | `01 07`          | Immediate | Connect greeting. Purpose of `07` unknown **[assumed — version or capability flag]**    |
+| `ff03`  | `02 f4 00`       | Immediate | Fixed constant (`f4 00` = 244 LE). Not battery-related — identical plugged/unplugged.   |
+| `fec8`  | 26-byte protobuf | ~100ms    | Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing. |
 
 ---
 
@@ -144,20 +144,20 @@ On BLE connect, the following notifications fire automatically:
 
 The main communication channel for printing and status.
 
-| Short UUID | Properties | Handle | Role |
-|------------|-----------|--------|------|
-| `ff02` | write-without-response, write | 41 | **Command/data write channel** — all print data and commands go here |
-| `ff01` | notify | 43 | **Device event channel** — sensor events, query responses, print completion |
-| `ff03` | notify | 46 | **Status echo channel** — returns `01 01` for most writes; connect greeting on startup |
+| Short UUID | Properties                    | Handle | Role                                                                                   |
+| ---------- | ----------------------------- | ------ | -------------------------------------------------------------------------------------- |
+| `ff02`     | write-without-response, write | 41     | **Command/data write channel** — all print data and commands go here                   |
+| `ff01`     | notify                        | 43     | **Device event channel** — sensor events, query responses, print completion            |
+| `ff03`     | notify                        | 46     | **Status echo channel** — returns `01 01` for most writes; connect greeting on startup |
 
 ### Service `0000ff80` — AT Command Interface
 
 Exposes the BLE bridge chip's configuration. Not the printer MCU.
 
-| Short UUID | Properties | Handle | Role |
-|------------|-----------|--------|------|
-| `ff82` | write-without-response, write | 25 | AT command write |
-| `ff81` | notify | 27 | AT response notify |
+| Short UUID | Properties                    | Handle | Role               |
+| ---------- | ----------------------------- | ------ | ------------------ |
+| `ff82`     | write-without-response, write | 25     | AT command write   |
+| `ff81`     | notify                        | 27     | AT response notify |
 
 See [BLE Bridge Chip](#ble-bridge-chip-at-interface) for command details.
 
@@ -177,26 +177,26 @@ bands → feed paper.
 ### Print Job Structure
 
 ```
-ESC @                           # 1b 40 — initialise printer state
-ESC N 04 <density>              # 1b 4e 04 XX — set print density (optional)
-┌─ repeat for each band ────────────────────────────────────────┐
-│  GS v 0 <mode> <wL> <wH> <hL> <hH>   # raster header        │
-│  <bitmap data>                          # w × h bytes         │
-└───────────────────────────────────────────────────────────────┘
-ESC d <n>                       # 1b 64 XX — feed paper (standalone)
+ESC @                           # 1b 40        — initialise printer state
+ESC N 04 <density>              # 1b 4e 04 XX  — set print density (optional)
+┌─ repeat for each band ──────────────────────────────────────────────────────┐
+│  GS v 0 <mode> <wL> <wH> <hL> <hH>         # - raster header                │
+│  <bitmap data>                             # - w × h bytes                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+ESC d <n>                       # 1b 64 XX     — feed paper (standalone)
 ```
 
 All bytes are written to `ff02` as a single chunked stream. The printer
 processes commands sequentially.
 ### GS v 0 — Raster Bit Image
 
-| Byte(s) | Value | Description |
-|---------|-------|-------------|
-| 0–2 | `1d 76 30` | GS v 0 command prefix |
-| 3 | `<mode>` | Scale mode (see table below) |
-| 4–5 | `<wL> <wH>` | Width in bytes, 16-bit little-endian (pixels ÷ 8) |
-| 6–7 | `<hL> <hH>` | Height in rows, 16-bit little-endian |
-| 8+ | `<data>` | Raw 1-bit bitmap: `width_bytes × height` bytes, MSB-first per byte |
+| Byte(s) | Value       | Description                                                        |
+| ------- | ----------- | ------------------------------------------------------------------ |
+| 0–2     | `1d 76 30`  | GS v 0 command prefix                                              |
+| 3       | `<mode>`    | Scale mode (see table below)                                       |
+| 4–5     | `<wL> <wH>` | Width in bytes, 16-bit little-endian (pixels ÷ 8)                  |
+| 6–7     | `<hL> <hH>` | Height in rows, 16-bit little-endian                               |
+| 8+      | `<data>`    | Raw 1-bit bitmap: `width_bytes × height` bytes, MSB-first per byte |
 
 **Bitmap format:** 1 bit per pixel. `1` = black, `0` = white. Most significant
 bit of each byte is the leftmost pixel. Rows are sequential top-to-bottom.
@@ -207,12 +207,12 @@ back-to-back. Each band needs its own full header.
 
 ### GS v 0 Scaling Modes
 
-| Mode | Name | Effect | Data impact |
-|------|------|--------|-------------|
-| `00` | Normal | 1:1 rendering | Full resolution |
-| `01` | Double width | Each pixel doubled horizontally | Send half-width data for full-width output. Left-edge aligned, expands rightward. |
-| `02` | Double height | Skips every other scan line | Same data size. Draft/low-density mode, NOT actual 2× height. |
-| `03` | Quadruple | Mode 01 + mode 02 combined | Half-width data, draft vertical quality |
+| Mode | Name          | Effect                          | Data impact                                                                       |
+| ---- | ------------- | ------------------------------- | --------------------------------------------------------------------------------- |
+| `00` | Normal        | 1:1 rendering                   | Full resolution                                                                   |
+| `01` | Double width  | Each pixel doubled horizontally | Send half-width data for full-width output. Left-edge aligned, expands rightward. |
+| `02` | Double height | Skips every other scan line     | Same data size. Draft/low-density mode, NOT actual 2× height.                     |
+| `03` | Quadruple     | Mode 01 + mode 02 combined      | Half-width data, draft vertical quality                                           |
 
 **Print origin:** Left-aligned. Narrow images are NOT automatically centered.
 Mode 0 may appear centered because the print head width exceeds the image width
@@ -240,12 +240,12 @@ The printer fires `1a 0f 0c` on `ff01` the moment the motor stops after a
 print job. This is a **real-time motor-stop signal** that can be used as a
 print-complete indicator.
 
-| Condition | Approx. delay after last chunk |
-|-----------|-------------------------------|
-| Normal print with paper | ~1–2s |
-| No paper loaded | ~1s |
-| Lid opened mid-print | ~2.5s |
-| Paper pulled out mid-print | ~5s |
+| Condition                  | Approx. delay after last chunk |
+| -------------------------- | ------------------------------ |
+| Normal print with paper    | ~1–2s                          |
+| No paper loaded            | ~1s                            |
+| Lid opened mid-print       | ~2.5s                          |
+| Paper pulled out mid-print | ~5s                            |
 
 The third byte (`0c`) is invariant across all tested conditions.
 ---
@@ -258,15 +258,15 @@ The primary information API. These are Phomemo-specific extensions (NOT standard
 ESC/POS). Write to `ff02`; responses arrive on **`ff01`** in `1a <sub-type>
 <data>` format. `ff03` echoes `01 01` for every command (uninformative).
 
-| Command | Label | Response format | Example | Notes |
-|---------|-------|----------------|---------|-------|
-| `1f 11 08` | Battery | `1a 04 <pct>` | `1a 04 41` = 65% | Live value, changes with charge state |
-| `1f 11 07` | Firmware | `1a 07 <maj> <min> <patch>` | `1a 07 01 01 03` = v1.1.3 | |
-| `1f 11 09` | Serial (ASCII) | `1a 08 <string>` | `1a 08 Q059E35I0030870` | Full serial number |
-| `1f 11 13` | Serial (short) | `1a 03 <byte>` | `1a 03 a8` | Possibly hardware revision |
-| `1f 11 11` | Paper state | `1a 06 <state>` | `88`=absent, `89`=present | Reports the **combined** state of all three optical sensors (see Physical Characteristics). `89` means paper is fully loaded past the print head. **Unreliable with lid open** — reports present even without paper. Query lid first. |
-| `1f 11 12` | Lid state | `1a 05 <state>` | `98`=closed, `99`=open | Reliable in all conditions |
-| `1f 11 0e` | Device timer | `1a 09 <value>` | `1a 09 00` = disabled | Auto-off timer setting. See [Device Configuration](#device-configuration). |
+| Command    | Label          | Response format             | Example                   | Notes                                                                                                                                                                                                                                 |
+| ---------- | -------------- | --------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `1f 11 08` | Battery        | `1a 04 <pct>`               | `1a 04 41` = 65%          | Live value, changes with charge state                                                                                                                                                                                                 |
+| `1f 11 07` | Firmware       | `1a 07 <maj> <min> <patch>` | `1a 07 01 01 03` = v1.1.3 |                                                                                                                                                                                                                                       |
+| `1f 11 09` | Serial (ASCII) | `1a 08 <string>`            | `1a 08 Q059E35I0030870`   | Full serial number                                                                                                                                                                                                                    |
+| `1f 11 13` | Serial (short) | `1a 03 <byte>`              | `1a 03 a8`                | Possibly hardware revision                                                                                                                                                                                                            |
+| `1f 11 11` | Paper state    | `1a 06 <state>`             | `88`=absent, `89`=present | Reports the **combined** state of all three optical sensors (see Physical Characteristics). `89` means paper is fully loaded past the print head. **Unreliable with lid open** — reports present even without paper. Query lid first. |
+| `1f 11 12` | Lid state      | `1a 05 <state>`             | `98`=closed, `99`=open    | Reliable in all conditions                                                                                                                                                                                                            |
+| `1f 11 0e` | Device timer   | `1a 09 <value>`             | `1a 09 00` = disabled     | Auto-off timer setting. See [Device Configuration](#device-configuration).                                                                                                                                                            |
 
 **Response routing:** The sub-type byte in the response does NOT always match
 the query parameter. Parsers must identify responses by the `1a <sub-type>`
@@ -289,19 +289,19 @@ settings or unimplemented. The phomemo-tools init sequence uses `1f 11 02 04`
 The following standard ESC/POS information commands all return `01 01` on `ff03`
 with no useful data. The MCU does not implement them. The `1f 11 XX` commands
 provide this information instead.
-| Command | Bytes | Standard purpose |
-|---------|-------|-----------------|
-| GS I n=1 | `1d 49 01` | Model ID |
-| GS I n=2 | `1d 49 02` | Type ID |
-| GS I n=65 | `1d 49 41` | Firmware version |
-| GS I n=67 | `1d 49 43` | Printer name |
-| GS I n=68 | `1d 49 44` | Serial number |
-| DLE EOT n=1 | `10 04 01` | Printer status |
-| DLE EOT n=2 | `10 04 02` | Offline status |
-| DLE EOT n=4 | `10 04 04` | Error status |
+| Command     | Bytes      | Standard purpose      |
+| ----------- | ---------- | --------------------- |
+| GS I n=1    | `1d 49 01` | Model ID              |
+| GS I n=2    | `1d 49 02` | Type ID               |
+| GS I n=65   | `1d 49 41` | Firmware version      |
+| GS I n=67   | `1d 49 43` | Printer name          |
+| GS I n=68   | `1d 49 44` | Serial number         |
+| DLE EOT n=1 | `10 04 01` | Printer status        |
+| DLE EOT n=2 | `10 04 02` | Offline status        |
+| DLE EOT n=4 | `10 04 04` | Error status          |
 | DLE EOT n=5 | `10 04 05` | Near-end paper sensor |
-| DLE EOT n=6 | `10 04 06` | Paper present sensor |
-| GS r 1 | `1d 72 01` | Paper sensor status |
+| DLE EOT n=6 | `10 04 06` | Paper present sensor  |
+| GS r 1      | `1d 72 01` | Paper sensor status   |
 
 DLE EOT queries return `01 01` even under error conditions (no paper, lid open,
 mid-print errors). They do not reflect actual device state on this printer.
@@ -315,26 +315,26 @@ All events arrive on `ff01` as `1a <sub-type> <data>` messages. Events can be
 to `1f 11 XX` queries). Both use the same format.
 ### Event Sub-Types
 
-| Sub-type | Meaning | Spontaneous | Queryable via |
-|----------|---------|-------------|---------------|
-| `03` | Serial (short) | No | `1f 11 13` |
-| `04` | Battery level | No | `1f 11 08` |
-| `05` | Lid state | Yes | `1f 11 12` |
-| `06` | Paper sensor | Yes | `1f 11 11` |
-| `07` | Firmware version | No | `1f 11 07` |
-| `08` | Serial (ASCII) | No | `1f 11 09` |
-| `09` | Device timer | No | `1f 11 0e` |
-| `0f` | Motor stop / print complete | Yes | — |
+| Sub-type | Meaning                     | Spontaneous | Queryable via |
+| -------- | --------------------------- | ----------- | ------------- |
+| `03`     | Serial (short)              | No          | `1f 11 13`    |
+| `04`     | Battery level               | No          | `1f 11 08`    |
+| `05`     | Lid state                   | Yes         | `1f 11 12`    |
+| `06`     | Paper sensor                | Yes         | `1f 11 11`    |
+| `07`     | Firmware version            | No          | `1f 11 07`    |
+| `08`     | Serial (ASCII)              | No          | `1f 11 09`    |
+| `09`     | Device timer                | No          | `1f 11 0e`    |
+| `0f`     | Motor stop / print complete | Yes         | —             |
 
 ### Spontaneous Events
 
-| Bytes | Meaning |
-|-------|---------|
-| `1a 05 99` | Lid opened |
-| `1a 05 98` | Lid closed |
+| Bytes      | Meaning                            |
+| ---------- | ---------------------------------- |
+| `1a 05 99` | Lid opened                         |
+| `1a 05 98` | Lid closed                         |
 | `1a 06 89` | Paper inserted / gripped by roller |
-| `1a 06 88` | Paper removed / absent |
-| `1a 0f 0c` | Motor stopped (print complete) |
+| `1a 06 88` | Paper removed / absent             |
+| `1a 0f 0c` | Motor stopped (print complete)     |
 
 ### Event Byte Format
 
@@ -384,12 +384,12 @@ Example: `1a 05 98  1a 06 88` = lid closed + paper absent (single notification).
 
 ## Paper Feed and Transport
 
-| Command | Bytes | Behaviour |
-|---------|-------|-----------|
-| ESC d `<n>` | `1b 64 <n>` | **Feed `n` lines.** Works standalone. 1 line ≈ 1 dot row (0.125mm at 203 DPI). Max 255 per call. ESC d 255 ≈ 32mm. |
-| ESC J `<n>` | `1b 4a <n>` | Feed `n` dots. **Non-functional standalone** — no motor movement. Works only embedded in a print data stream. |
-| GS V 1 | `1d 56 01` | Cut command. **Non-functional** — no cutter hardware. |
-| `0x0A` (raw) | `0a` | Line feed. Triggers ~5mm paper advance per byte. Works standalone outside raster data. |
+| Command      | Bytes       | Behaviour                                                                                                          |
+| ------------ | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| ESC d `<n>`  | `1b 64 <n>` | **Feed `n` lines.** Works standalone. 1 line ≈ 1 dot row (0.125mm at 203 DPI). Max 255 per call. ESC d 255 ≈ 32mm. |
+| ESC J `<n>`  | `1b 4a <n>` | Feed `n` dots. **Non-functional standalone** — no motor movement. Works only embedded in a print data stream.      |
+| GS V 1       | `1d 56 01`  | Cut command. **Non-functional** — no cutter hardware.                                                              |
+| `0x0A` (raw) | `0a`        | Line feed. Triggers ~5mm paper advance per byte. Works standalone outside raster data.                             |
 
 ### Paper Eject
 
@@ -410,15 +410,15 @@ continues running briefly after the paper exits the rollers.
 
 The **only working density command** on the M08F.
 
-| Bytes | Description |
-|-------|-------------|
+| Bytes          | Description                                                                     |
+| -------------- | ------------------------------------------------------------------------------- |
 | `1b 4e 04 <n>` | Set print concentration. Persistent until ESC @ reset or another ESC N 04 call. |
 
-| Value range | Visual density |
-|-------------|---------------|
-| 0–4 | Light (default) |
-| 5 | Medium |
-| 6+ | Dark (saturated, no further increase) |
+| Value range | Visual density                        |
+| ----------- | ------------------------------------- |
+| 0–4         | Light                                 |
+| 5           | Medium                                |
+| 6+          | Dark (saturated, no further increase) |
 
 Tested density mappings: low=1, medium=5, high=6.
 
@@ -440,10 +440,10 @@ change in print density.
 
 ### Auto-Off Timer
 
-| Operation | Command | Notes |
-|-----------|---------|-------|
-| Query | `1f 11 0e` → response `1a 09 <value>` on `ff01` | |
-| Set | `1b 4e 07 <value>` | Must be preceded by ESC @ |
+| Operation | Command                                         | Notes                     |
+| --------- | ----------------------------------------------- | ------------------------- |
+| Query     | `1f 11 0e` → response `1a 09 <value>` on `ff01` |                           |
+| Set       | `1b 4e 07 <value>`                              | Must be preceded by ESC @ |
 
 Value `00` = disabled. Non-zero values set the auto-off timeout in **5-minute
 increments** (value `01` = 5 min, value `02` = 10 min, etc.). Timer counts
@@ -467,11 +467,11 @@ Both `\r` and `\r\n` terminators are accepted.
 
 ### Known Commands
 
-| Command | Response | Notes |
-|---------|----------|-------|
-| `AT+NAME?\r\n` | `+NAME:M08F` | BLE device name |
-| `AT+BAUD?\r\n` | `+BAUD:460800` | Internal UART baud rate |
-| All others | `ERROR` | Comprehensive sweep of HM-10 and JDY command sets — all return ERROR. Custom/locked firmware. |
+| Command        | Response       | Notes                                                                                         |
+| -------------- | -------------- | --------------------------------------------------------------------------------------------- |
+| `AT+NAME?\r\n` | `+NAME:M08F`   | BLE device name                                                                               |
+| `AT+BAUD?\r\n` | `+BAUD:460800` | Internal UART baud rate                                                                       |
+| All others     | `ERROR`        | Comprehensive sweep of HM-10 and JDY command sets — all return ERROR. Custom/locked firmware. |
 
 ---
 
@@ -480,12 +480,17 @@ Both `\r` and `\r\n` terminators are accepted.
 **`1f 11 0f`** triggers an immediate reboot into OTA (Over-The-Air firmware
 update) mode.
 
-| Behaviour | Detail |
-|-----------|--------|
-| Response | `01 01` on `ff03`, then BLE disconnect within ~55ms |
-| New BLE name | `M08F-OTA[XXXXXX]` (where XXXXXX = last 6 of MAC) |
-| New MAC prefix | `F0:` instead of normal `60:` |
-| Recovery | Power cycle (long-hold off, then on) returns to normal mode |
+| Behaviour      | Detail                                                      |
+| -------------- | ----------------------------------------------------------- |
+| Response       | `01 01` on `ff03`, then BLE disconnect within ~55ms         |
+| New BLE name   | `M08F-OTA[XXXXXX]` (where XXXXXX = last 6 of MAC)           |
+| New MAC prefix | `F0:` instead of normal `60:`                               |
+| Recovery       | Power cycle (long-hold off, then on) returns to normal mode |
+
+> The firmeare update mode has not been interrogated further at time of writing.
+> I suspect the device likely exposes different BLE services not present during
+> normal operation when in OTA mode. This might enable ways to access more device
+> data, dump vendor firmware, or flash custom firmware.
 
 ---
 
@@ -493,18 +498,18 @@ update) mode.
 
 Commands tested and observed to have no effect on the M08F:
 
-| Command | Bytes | Standard purpose | M08F behaviour |
-|---------|-------|-----------------|----------------|
-| ESC 7 | `1b 37 <n1> <n2> <n3>` | Heat/density settings | No visible effect |
-| ESC a | `1b 61 <n>` | Text alignment | No effect on raster images |
-| ESC E | `1b 45 <n>` | Bold/emphasis | No visible effect |
-| ESC J | `1b 4a <n>` | Feed (dots) | Non-functional standalone |
-| GS V | `1d 56 01` | Paper cut | No effect (no cutter) |
-| GS I | `1d 49 <n>` | Printer info queries | Returns generic `01 01` |
-| DLE EOT | `10 04 <n>` | Status queries | Returns `01 01` in all conditions |
-| GS r | `1d 72 01` | Paper sensor status | Returns `01 01` |
-| Text mode | ASCII chars | Print text with built-in font | No built-in font — chars ignored, only `0x0A` triggers feed |
-| NAK `15 11 XX` | `15 11 <n>` | Alt. concentration (M02/M02S) | No effect except `0a` which triggers LF — the third byte appears to be passed through as a raw control code to the MCU |
+| Command        | Bytes                  | Standard purpose              | M08F behaviour                                                                                                         |
+| -------------- | ---------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| ESC 7          | `1b 37 <n1> <n2> <n3>` | Heat/density settings         | No visible effect                                                                                                      |
+| ESC a          | `1b 61 <n>`            | Text alignment                | No effect on raster images                                                                                             |
+| ESC E          | `1b 45 <n>`            | Bold/emphasis                 | No visible effect                                                                                                      |
+| ESC J          | `1b 4a <n>`            | Feed (dots)                   | Non-functional standalone                                                                                              |
+| GS V           | `1d 56 01`             | Paper cut                     | No effect (no cutter)                                                                                                  |
+| GS I           | `1d 49 <n>`            | Printer info queries          | Returns generic `01 01`                                                                                                |
+| DLE EOT        | `10 04 <n>`            | Status queries                | Returns `01 01` in all conditions                                                                                      |
+| GS r           | `1d 72 01`             | Paper sensor status           | Returns `01 01`                                                                                                        |
+| Text mode      | ASCII chars            | Print text with built-in font | No built-in font — chars ignored, only `0x0A` triggers feed                                                            |
+| NAK `15 11 XX` | `15 11 <n>`            | Alt. concentration (M02/M02S) | No effect except `0a` which triggers LF — the third byte appears to be passed through as a raw control code to the MCU |
 
 ---
 
@@ -513,29 +518,29 @@ Commands tested and observed to have no effect on the M08F:
 The following services produced no clear or interpretable responses when probed
 with ESC/POS commands, AT commands, and raw bytes. Some channels occasionally
 produced data (noted per-entry), but nothing that could be reliably attributed
-to a specific function. They may serve purposessuch as firmware updates, or
+to a specific function. They may serve purposes such as firmware updates, or
 features that require specific activation sequences.
 
-### Service `0000ff10` — Unknown (possibly firmware update)
+### Service `0000ff10`: Unknown (possibly firmware update)
 
-| UUID | Properties | Handle | Status |
-|------|-----------|--------|--------|
-| `ff11` | write-without-response, notify | 10 | Silent — accepts writes, no response |
-| `ff12` | write-without-response, notify | 13 | Silent — accepts writes, no response |
+| UUID   | Properties                     | Handle | Status                               |
+| ------ | ------------------------------ | ------ | ------------------------------------ |
+| `ff11` | write-without-response, notify | 10     | Silent — accepts writes, no response |
+| `ff12` | write-without-response, notify | 13     | Silent — accepts writes, no response |
 
-### Service `000018f0` — contains `2af0` ("Electric Current Specification")
+### Service `000018f0`: contains `2af0` ("Electric Current Specification")
 
 `2af0` is a standardised Bluetooth GATT UUID that the BLE spec names "Electric
 Current Specification". This label is assigned by the Bluetooth SIG, not by
 Phomemo — whether it reflects the intended purpose or is a coincidental UUID
 choice is unknown. No charging or current-related data was observed.
 
-| UUID | Properties | Handle | Status |
-|------|-----------|--------|--------|
-| `2af1` | write-without-response, write | 31 | Silent |
-| `2af0` | notify | 33 | Fired `1a 06 88` once on connect in early testing; not reproducible in controlled tests |
+| UUID   | Properties                    | Handle | Status                                                                                  |
+| ------ | ----------------------------- | ------ | --------------------------------------------------------------------------------------- |
+| `2af1` | write-without-response, write | 31     | Silent                                                                                  |
+| `2af0` | notify                        | 33     | Fired `1a 06 88` once on connect in early testing; not reproducible in controlled tests |
 
-### Service `0000fee7` — Tencent BLE SDK
+### Service `0000fee7`: Tencent BLE SDK
 
 UUID `fee7` is assigned to "Tencent Holdings Limited" in the Bluetooth SIG's
 16-bit UUID registry. This is the [Tencent LLSync IoT BLE SDK](https://github.com/TencentCloud/tencentcloud-iot-explorer-ble-sdk-embedded),
@@ -558,13 +563,13 @@ Interacting with this channel further would require implementing the LLSync
 handshake sequence, which is specific to Phomemo's app-level registration flow
 and not related to print functionality.
 
-| UUID | Properties | Handle | Status |
-|------|-----------|--------|--------|
-| `fec7` | write | 17 | Silent — no response observed to probe writes |
-| `fec8` | indicate | 19 | Fires a 26-byte structured packet on connect (last 6 bytes = BLE MAC address). Not required for printing. |
-| `fec9` | read | 22 | Empty string |
+| UUID   | Properties | Handle | Status                                                                                                    |
+| ------ | ---------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| `fec7` | write      | 17     | Silent — no response observed to probe writes                                                             |
+| `fec8` | indicate   | 19     | Fires a 26-byte structured packet on connect (last 6 bytes = BLE MAC address). Not required for printing. |
+| `fec9` | read       | 22     | Empty string                                                                                              |
 
-### Service `49535343-fe7d-...` — ISSC BLE UART
+### Service `49535343-fe7d-...`: ISSC BLE UART
 
 The UUID prefix `49535343` is ASCII for "ISSC" — Integrated System Solution
 Corporation, a Taiwanese semiconductor company now part of Microchip Technology.
@@ -579,40 +584,42 @@ primary `ff00` print service. The `1e4d` notify characteristic fired a delayed
 paper state event on connect in one test, hinting it may act as a secondary
 data relay — but this was not consistently reproducible.
 
-| UUID | Properties | Handle | Status |
-|------|-----------|--------|--------|
-| `49535343-6daa-4d02-...` | write | 2 | Silent |
-| `49535343-8841-...` | write-without-response, write | 4 | Silent |
-| `49535343-1e4d-...` | notify | 6 | Fired `1a 06 88` (paper absent) ~1.5s after connect in one test — not reliably reproducible |
+| UUID                     | Properties                    | Handle | Status                                                                                      |
+| ------------------------ | ----------------------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `49535343-6daa-4d02-...` | write                         | 2      | Silent                                                                                      |
+| `49535343-8841-...`      | write-without-response, write | 4      | Silent                                                                                      |
+| `49535343-1e4d-...`      | notify                        | 6      | Fired `1a 06 88` (paper absent) ~1.5s after connect in one test — not reliably reproducible |
 
-### Service `e7810a71-...` — Unknown
+### Service `e7810a71-...`: Unknown
 
-| UUID | Properties | Handle | Status |
-|------|-----------|--------|--------|
-| `bef8d6c9-...` | write-without-response, write, notify | 37 | Silent |
+| UUID           | Properties                            | Handle | Status |
+| -------------- | ------------------------------------- | ------ | ------ |
+| `bef8d6c9-...` | write-without-response, write, notify | 37     | Silent |
 
 ---
 
 ## Physical Characteristics
 
-| Property | Value |
-|----------|-------|
-| Print technology | Direct thermal |
-| Print resolution | 203 DPI |
-| Print width (A4 profile) | 1680 px = 210 bytes/row |
-| Print width (Letter profile) | 1728 px = 216 bytes/row |
-| Paper feed | Manual single-sheet insertion (no tray) |
-| Paper sensors (front) | 2 optical sensors at paper entry — AND logic, both must detect paper. Triggers auto-feed motor. No direct BLE event. |
-| Paper sensor (rear) | 1 optical sensor behind print head, center. Detects paper fully loaded. Triggers `1a 06 89` event and stops feed motor. |
-| Lid sensors | 2 push buttons (AND logic — both must be depressed) |
-| Connectivity | BLE (primary), USB (charging) |
-| Power button | Long hold (~3s) = power off. No BLE events from button presses. |
-| LED indicator | Red/green. Not controllable via BLE. Possibly battery charge state indicator. |
-| Charging | USB. Charge state not reported over BLE. |
+| Property                     | Value                                                                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Print technology             | Direct thermal                                                                                                          |
+| Print resolution             | 203 DPI                                                                                                                 |
+| Print width (A4 profile)     | 1680 px = 210 bytes/row                                                                                                 |
+| Print width (Letter profile) | 1728 px = 216 bytes/row                                                                                                 |
+| Paper feed                   | Manual single-sheet insertion (no tray)                                                                                 |
+| Paper sensors (front)        | 2 optical sensors at paper entry — AND logic, both must detect paper. Triggers auto-feed motor. No direct BLE event.    |
+| Paper sensor (rear)          | 1 optical sensor behind print head, center. Detects paper fully loaded. Triggers `1a 06 89` event and stops feed motor. |
+| Lid sensors                  | 2 push buttons (AND logic — both must be depressed)                                                                     |
+| Connectivity                 | BLE (primary), USB (charging)                                                                                           |
+| Power button                 | Long hold (~3s) = power off. No BLE events from button presses.                                                         |
+| LED indicator                | Red/green. Not controllable via BLE. Possibly battery charge state indicator.                                           |
+| Charging                     | USB. Charge state not reported over BLE.                                                                                |
 
 ---
 
 ## Driver Implementation Notes
+
+Below are recommendations for implementing a printer driver or script.
 
 ### Minimum Viable Print Sequence
 
@@ -631,16 +638,16 @@ payload  = init + density + header + data + feed
 
 ### Key Parameters
 
-| Parameter | Tested value |
-|-----------|-------------|
-| Chunk size | 244 bytes (MTU - 3) |
-| Inter-chunk delay | 20ms (reliable for full-page jobs) |
-| Band height | 256 rows per GS v 0 command |
-| Print-complete signal | `1a 0f 0c` on `ff01` |
-| Density (low) | `1b 4e 04 01` |
-| Density (medium) | `1b 4e 04 05` |
-| Density (high) | `1b 4e 04 06` |
-| Paper eject | `1b 64 ff` × 12 |
+| Parameter             | Tested value                       |
+| --------------------- | ---------------------------------- |
+| Chunk size            | 244 bytes (MTU - 3)                |
+| Inter-chunk delay     | 20ms (reliable for full-page jobs) |
+| Band height           | 256 rows per GS v 0 command        |
+| Print-complete signal | `1a 0f 0c` on `ff01`               |
+| Density (low)         | `1b 4e 04 01`                      |
+| Density (medium)      | `1b 4e 04 05`                      |
+| Density (high)        | `1b 4e 04 06`                      |
+| Paper eject           | `1b 64 ff` × 12                    |
 
 ### Pre-Print State Check
 
@@ -662,8 +669,8 @@ Paper state is **unreliable when lid is open** — always check lid first.
 DLE EOT queries always return `01 01` regardless of state. Monitor `ff01` for
 spontaneous events during print instead:
 
-| Event | Meaning | Action |
-|-------|---------|--------|
-| `1a 05 99` | Lid opened | Pause/abort — print head exposed |
-| `1a 06 88` | Paper absent | Paper ran out or was pulled out |
-| `1a 0f 0c` | Motor stopped | Print complete (or aborted) |
+| Event      | Meaning       | Action                           |
+| ---------- | ------------- | -------------------------------- |
+| `1a 05 99` | Lid opened    | Pause/abort — print head exposed |
+| `1a 06 88` | Paper absent  | Paper ran out or was pulled out  |
+| `1a 0f 0c` | Motor stopped | Print complete (or aborted)      |

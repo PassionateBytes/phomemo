@@ -2,7 +2,7 @@
 
 Open-source Python toolkit for Phomemo portable thermal printers over Bluetooth Low Energy.
 
-This project provides everything needed to control Phomemo printers from Python — from low-level BLE communication to a ready-to-use terminal interface. It is built from a [reverse-engineered protocol specification](docs/m08f-protocol-reference.md) for the Phomemo M08F A4 portable thermal printer.
+This project provides everything needed to control Phomemo printers from Python — from low-level BLE communication to a ready-to-use terminal interface. It is built from a [reverse-engineered protocol specification](docs/m08f-protocol-reference.md) for the **Phomemo M08F A4 portable thermal printer**, but should be adaptable for other devices of the Phomemo family.
 
 ## Packages
 
