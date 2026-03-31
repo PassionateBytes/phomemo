@@ -39,7 +39,12 @@ class PrinterProfile:
         service_uuid: BLE GATT service UUID for the print data service.
         write_uuid: BLE characteristic UUID for writing commands/data.
         notify_uuid: BLE characteristic UUID for device events (``ff01``).
-        status_uuid: BLE characteristic UUID for status echo (``ff03``).
+            All meaningful notifications arrive here: sensor state changes,
+            query responses, and print completion signals.
+        status_uuid: BLE characteristic UUID for the status echo channel
+            (``ff03``). Echoes ``01 01`` for most writes and sends a fixed
+            connect greeting on startup. Does not carry query responses or
+            actionable device state; useful only for low-level debugging.
         supports_density: Whether ESC N 04 concentration is functional.
         supports_escpos_queries: Whether standard ESC/POS queries return
             meaningful data (False for M08F — use Phomemo queries instead).
