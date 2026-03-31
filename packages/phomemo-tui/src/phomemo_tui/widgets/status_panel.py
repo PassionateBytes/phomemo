@@ -19,30 +19,27 @@ class StatusPanel(Static, can_focus=True):
     Colors: green=ok, yellow=warning, dim=unknown/scanning.
     """
 
-    def __init__(self, **kwargs: object) -> None:
-        super().__init__(**kwargs)
+    def on_mount(self) -> None:
         self._connected = False
         self._scanning = False
         self._device_name: str | None = None
         self._battery: int | None = None
         self._lid: LidState | None = None
         self._paper: PaperState | None = None
-
-    def on_mount(self) -> None:
-        self._render()
+        self._rebuild()
 
     def handle_device_scan_started(self) -> None:
         """Called by app when scanning begins."""
         self._scanning = True
         self._connected = False
-        self._render()
+        self._rebuild()
 
     def handle_device_connected(self, msg: DeviceConnected) -> None:
         """Called by app on successful connection."""
         self._connected = True
         self._scanning = False
         self._device_name = msg.name
-        self._render()
+        self._rebuild()
 
     def handle_device_disconnected(self) -> None:
         """Called by app on disconnection."""
@@ -51,16 +48,16 @@ class StatusPanel(Static, can_focus=True):
         self._battery = None
         self._lid = None
         self._paper = None
-        self._render()
+        self._rebuild()
 
     def handle_state_updated(self, msg: DeviceStateUpdated) -> None:
         """Called by app when device sensor state changes."""
         self._battery = msg.battery
         self._lid = msg.lid
         self._paper = msg.paper
-        self._render()
+        self._rebuild()
 
-    def _render(self) -> None:
+    def _rebuild(self) -> None:
         """Rebuild the widget markup from current state."""
         if self._scanning:
             conn_line = " [dim]◌[/dim] Scanning…"

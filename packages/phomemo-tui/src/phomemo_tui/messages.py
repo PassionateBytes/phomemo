@@ -8,7 +8,6 @@ from typing import Literal
 from phomemo.events import LidState, PaperState
 from textual.message import Message
 
-
 # ---------------------------------------------------------------------------
 # Service → UI
 # ---------------------------------------------------------------------------

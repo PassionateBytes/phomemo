@@ -145,12 +145,12 @@ class PrinterService:
             if match:
                 address = match.address
                 device_name = match.name
-                profile_name = cfg.profile_override or self._match_profile(match.name)
+                profile_name = cfg.profile_override or match_profile(match.name)
 
         # Priority 2: first device matching any profile pattern
         if address is None:
             for device in devices:
-                matched = self._match_profile(device.name)
+                matched = match_profile(device.name)
                 if matched:
                     address = device.address
                     device_name = device.name
@@ -418,18 +418,22 @@ class PrinterService:
         self._state = state
 
     def _match_profile(self, name: str | None) -> str | None:
-        """Return the first profile name whose ble_name_pattern matches name.
+        return match_profile(name)
 
-        Args:
-            name: BLE advertised device name, or None.
 
-        Returns:
-            Profile name string, or None if no match.
-        """
-        if not name:
-            return None
-        for profile_name in list_profiles():
-            profile = get_profile(profile_name)
-            if re.search(profile.ble_name_pattern, name):
-                return profile_name
+def match_profile(name: str | None) -> str | None:
+    """Return the first profile name whose ble_name_pattern matches name.
+
+    Args:
+        name: BLE advertised device name, or None.
+
+    Returns:
+        Profile name string, or None if no match.
+    """
+    if not name:
         return None
+    for profile_name in list_profiles():
+        profile = get_profile(profile_name)
+        if re.search(profile.ble_name_pattern, name):
+            return profile_name
+    return None

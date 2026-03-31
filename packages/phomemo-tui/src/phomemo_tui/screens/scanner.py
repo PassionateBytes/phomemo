@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-import re
-
 from bleak.backends.device import BLEDevice
-from phomemo import discover, get_profile, list_profiles
+from phomemo import discover
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, Vertical
-from textual.screen import Screen
+from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
     Footer,
@@ -21,26 +19,10 @@ from textual.widgets import (
     LoadingIndicator,
 )
 
-
-def _match_profile(name: str | None) -> str | None:
-    """Return profile name if device name matches any registered profile.
-
-    Args:
-        name: BLE advertised device name.
-
-    Returns:
-        Profile name string, or None if no match.
-    """
-    if not name:
-        return None
-    for profile_name in list_profiles():
-        profile = get_profile(profile_name)
-        if re.search(profile.ble_name_pattern, name):
-            return profile_name
-    return None
+from phomemo_tui.printer_service import match_profile as _match_profile
 
 
-class ScannerScreen(Screen):
+class ScannerScreen(ModalScreen):
     """BLE device discovery and selection modal."""
 
     BINDINGS = [
