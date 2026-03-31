@@ -9,9 +9,9 @@ instances and pass them to ``register_profile``.
 
 from phomemo.registry import PrinterProfile
 
-_M08F_WRITE = "0000ff02-0000-1000-8000-00805f9b34fb"
-_M08F_NOTIFY = "0000ff01-0000-1000-8000-00805f9b34fb"
-_M08F_STATUS = "0000ff03-0000-1000-8000-00805f9b34fb"
+_M08F_WRITE = "00000000-0000-0000-0000-00000000ff02"
+_M08F_NOTIFY = "00000000-0000-0000-0000-00000000ff01"
+_M08F_STATUS = "00000000-0000-0000-0000-00000000ff03"
 
 M08F_A4 = PrinterProfile(
     name="M08F-A4",

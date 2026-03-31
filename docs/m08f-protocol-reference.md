@@ -140,6 +140,13 @@ On BLE connect, the following notifications fire automatically:
 
 ## BLE Services and Characteristics
 
+> **UUID format note:** The `ff00`-family service UUIDs use the standard Bluetooth base UUID expansion
+> (`0000ff00-0000-1000-8000-00805f9b34fb`). However, the *characteristics* within those services
+> use a non-standard format where the short UUID appears in the last two bytes:
+> `00000000-0000-0000-0000-00000000ff01`. This is **not** the standard 16-bit expansion
+> (`0000ff01-0000-1000-8000-00805f9b34fb`). Driver code must use the non-standard form or
+> Bleak will report "Characteristic not found".
+
 ### Service `0000ff00` — Print Service (primary)
 
 The main communication channel for printing and status.
@@ -538,7 +545,7 @@ choice is unknown. No charging or current-related data was observed.
 | UUID   | Properties                    | Handle | Status                                                                                  |
 | ------ | ----------------------------- | ------ | --------------------------------------------------------------------------------------- |
 | `2af1` | write-without-response, write | 31     | Silent                                                                                  |
-| `2af0` | notify                        | 33     | Fired `1a 06 88` once on connect in early testing; not reproducible in controlled tests |
+| `2af0` | notify                        | 33     | Fires `1a 06 88` (paper sensor event) on connect; observed consistently when subscribing to all characteristics simultaneously |
 
 ### Service `0000fee7`: Tencent BLE SDK
 
@@ -612,7 +619,7 @@ data relay — but this was not consistently reproducible.
 | Lid sensors                  | 2 push buttons (AND logic — both must be depressed)                                                                     |
 | Connectivity                 | BLE (primary), USB (charging)                                                                                           |
 | Power button                 | Long hold (~3s) = power off. No BLE events from button presses.                                                         |
-| LED indicator                | Red/green. Not controllable via BLE. Possibly battery charge state indicator.                                           |
+| LED indicator                | Red/green. Not controllable via BLE. Indicates print-ready state: **green** when lid is closed AND paper is present; **red** otherwise. |
 | Charging                     | USB. Charge state not reported over BLE.                                                                                |
 
 ---
