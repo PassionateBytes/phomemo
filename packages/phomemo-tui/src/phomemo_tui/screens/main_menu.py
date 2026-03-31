@@ -9,32 +9,30 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
-# Grid navigation: widget-id → {direction: target-id}
+from phomemo_tui.widgets.status_panel import StatusPanel
+
 _GRID: dict[str, dict[str, str]] = {
-    "panel-status":   {"right": "panel-preview",  "down": "panel-settings"},
-    "panel-settings": {"right": "panel-print",    "up":   "panel-status"},
-    "panel-preview":  {"left":  "panel-status",   "down": "panel-print"},
-    "panel-print":    {"left":  "panel-settings", "up":   "panel-preview"},
+    "panel-status": {"right": "panel-preview", "down": "panel-settings"},
+    "panel-settings": {"right": "panel-print", "up": "panel-status"},
+    "panel-preview": {"left": "panel-status", "down": "panel-print"},
+    "panel-print": {"left": "panel-settings", "up": "panel-preview"},
 }
 
 
 class Panel(Static, can_focus=True):
-    """A focusable dashboard tile."""
+    """A focusable dashboard tile (used for settings, preview, print)."""
 
 
 class MainMenuScreen(Screen):
     """4-panel dashboard: status, settings, preview, print button."""
 
-    BINDINGS = [
-        Binding("q", "quit", "Quit"),
-    ]
+    BINDINGS = [Binding("q", "quit", "Quit")]
 
     def compose(self) -> ComposeResult:
-        """Build the 2x2 grid layout."""
         yield Header()
         with Horizontal(id="dashboard"):
             with Vertical(id="left-column"):
-                yield Panel(id="panel-status", classes="panel")
+                yield StatusPanel(id="panel-status").add_class("panel")
                 yield Panel(id="panel-settings", classes="panel")
             with Vertical(id="right-column"):
                 yield Panel(id="panel-preview", classes="panel")
@@ -42,11 +40,9 @@ class MainMenuScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
-        """Focus the print button on startup."""
         self.query_one("#panel-print").focus()
 
     def on_key(self, event: events.Key) -> None:
-        """Arrow-key grid navigation + Enter to activate panels."""
         focused = self.focused
         if focused is None or focused.id not in _GRID:
             return
@@ -62,14 +58,18 @@ class MainMenuScreen(Screen):
             event.stop()
 
     def _activate_panel(self, panel_id: str) -> None:
-        """Open the sub-screen or action for a panel.
+        from phomemo_tui.screens.scanner import ScannerScreen
 
-        Args:
-            panel_id: The CSS id of the activated panel.
-        """
-        # Panels will be wired to real screens/actions in later tasks
-        pass
+        locked = self.app.printer_service.state.value.startswith(  # type: ignore[union-attr]
+            ("waiting", "printing")
+        )
+        match panel_id:
+            case "panel-status" if not locked:
+                self.app.push_screen(ScannerScreen())
+            case "panel-settings" if not locked:
+                pass  # wired in Task 10
+            case "panel-preview" if not locked:
+                pass  # wired in Task 8
 
     def action_quit(self) -> None:
-        """Quit the application."""
         self.app.exit()

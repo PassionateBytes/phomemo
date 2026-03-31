@@ -62,15 +62,30 @@ class PhomemoApp(App):
         self._update_status_panel()
 
     def on_device_connected(self, msg: DeviceConnected) -> None:
-        self._update_status_panel()
+        import contextlib
+
+        from phomemo_tui.widgets.status_panel import StatusPanel
+
+        with contextlib.suppress(Exception):
+            self.query_one(StatusPanel).handle_device_connected(msg)
         self._update_print_button()
 
     def on_device_disconnected(self, _: DeviceDisconnected) -> None:
-        self._update_status_panel()
+        import contextlib
+
+        from phomemo_tui.widgets.status_panel import StatusPanel
+
+        with contextlib.suppress(Exception):
+            self.query_one(StatusPanel).handle_device_disconnected()
         self._update_print_button()
 
     def on_device_state_updated(self, msg: DeviceStateUpdated) -> None:
-        self._update_status_panel()
+        import contextlib
+
+        from phomemo_tui.widgets.status_panel import StatusPanel
+
+        with contextlib.suppress(Exception):
+            self.query_one(StatusPanel).handle_state_updated(msg)
 
     def on_print_waiting_for_ready(self, msg: PrintWaitingForReady) -> None:
         self._update_preview_footer(msg)
@@ -128,7 +143,19 @@ class PhomemoApp(App):
     # ------------------------------------------------------------------
 
     def _update_status_panel(self) -> None:
-        pass  # wired in Task 7
+        from phomemo_tui.printer_service import ServiceState
+        from phomemo_tui.widgets.status_panel import StatusPanel
+
+        try:
+            panel = self.query_one(StatusPanel)
+        except Exception:
+            return
+
+        state = self.printer_service.state
+        if state == ServiceState.SCANNING:
+            panel.handle_device_scan_started()
+        elif state == ServiceState.DISCONNECTED:
+            panel.handle_device_disconnected()
 
     def _update_preview_panel(self) -> None:
         pass  # wired in Task 8
