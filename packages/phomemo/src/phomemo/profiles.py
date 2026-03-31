@@ -76,9 +76,6 @@ def _register(profile: PrinterProfile) -> PrinterProfile:
 
 
 # M08F profiles — derived from the protocol reference document.
-# The M08F uses non-standard characteristic UUIDs with a zero-padded
-# base (00000000-0000-0000-0000-00000000XXXX) rather than the Bluetooth
-# SIG base (0000XXXX-0000-1000-8000-00805f9b34fb).
 _M08F_WRITE = "0000ff02-0000-1000-8000-00805f9b34fb"
 _M08F_NOTIFY = "0000ff01-0000-1000-8000-00805f9b34fb"
 _M08F_STATUS = "0000ff03-0000-1000-8000-00805f9b34fb"
