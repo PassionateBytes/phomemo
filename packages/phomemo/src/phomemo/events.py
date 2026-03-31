@@ -7,9 +7,6 @@ use the same ``1a``-prefixed format.
 
 Multiple 3-byte events can arrive concatenated in a single BLE
 notification. The parser consumes 3 bytes at a time.
-
-Event sub-types and their semantics are documented in the M08F Protocol
-Reference under "Device Events".
 """
 
 import logging
@@ -95,17 +92,14 @@ class PaperEvent(DeviceEvent):
 class BatteryEvent(DeviceEvent):
     """Battery level report.
 
-    The ``percent`` field is clamped to 0–100 on construction to handle
-    corrupt or out-of-range BLE data gracefully.
-
     Attributes:
-        percent: Battery charge percentage (0–100), clamped on construction.
+        percent: Battery charge percentage (0-100).
     """
 
     percent: int = 0
 
     def __post_init__(self) -> None:
-        """Clamp percent to 0–100 to handle corrupt BLE data."""
+        """Clamp percent to 0-100 to handle corrupt BLE data."""
         object.__setattr__(self, "percent", max(0, min(100, self.percent)))
 
 

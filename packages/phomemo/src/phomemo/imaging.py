@@ -20,15 +20,12 @@ class DitherMode(StrEnum):
     """Image dithering algorithm for 1-bit conversion.
 
     ``FLOYD_STEINBERG`` produces the best visual quality for
-    photographic content. ``THRESHOLD`` and ``NONE`` both apply
-    a simple threshold at value 128 with no dithering — they are
-    functionally equivalent but provided as separate options for
-    API clarity.
+    photographic content. ``THRESHOLD`` applies a simple threshold
+    at value 128 with no dithering.
     """
 
     FLOYD_STEINBERG = "floyd_steinberg"
     THRESHOLD = "threshold"
-    NONE = "none"
 
 
 class ImageFit(StrEnum):
@@ -67,9 +64,9 @@ def prepare_image(
     Raises:
         ValueError: If ``target_height`` is required but not provided.
     """
-    target_width = (target_width // 8) * 8
-
+    # Resize image to fit the target width
     w, h = img.size
+    target_width = (target_width // 8) * 8
     match fit:
         case ImageFit.FIT_WIDTH:
             scale = target_width / w
@@ -104,8 +101,6 @@ def prepare_image(
             img = img.convert("1")
         case DitherMode.THRESHOLD:
             img = img.point(lambda x: 0 if x < 128 else 255, mode="1")
-        case DitherMode.NONE:
-            img = img.convert("1", dither=Image.Dither.NONE)
         case _:
             raise ValueError(f"Unsupported dither mode: {dither}")
 

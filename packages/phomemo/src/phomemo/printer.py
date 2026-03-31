@@ -76,7 +76,7 @@ class DeviceInfo:
     """Snapshot of device state collected from query responses.
 
     Attributes:
-        battery: Battery percentage (0–100), or None if not queried.
+        battery: Battery percentage (0-100), or None if not queried.
         lid: Lid state, or None if not queried.
         paper: Paper state, or None if not queried.
         firmware: Firmware version string, or None if not queried.
@@ -230,7 +230,7 @@ class Printer:
         Each line is approximately one dot row (0.125mm at 203 DPI).
 
         Args:
-            lines: Number of lines to feed (1–255).
+            lines: Number of lines to feed (1-255).
         """
         await self._transport.write(encode_feed_lines(lines))
 
@@ -329,7 +329,7 @@ class Printer:
             timeout: Seconds to wait for a response.
 
         Returns:
-            Battery percentage (0–100), or None if no response.
+            Battery percentage (0-100), or None if no response.
         """
         events = await self._query(QueryCommand.BATTERY, timeout)
         for event in events:

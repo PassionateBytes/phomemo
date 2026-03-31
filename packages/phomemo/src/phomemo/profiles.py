@@ -29,6 +29,10 @@ class PrinterProfile:
         dpi: Print resolution in dots per inch.
         max_chunk_bytes: Maximum BLE write payload in bytes. Determined by
             the negotiated ATT MTU minus 3 bytes of ATT overhead.
+        negotiate_mtu: If ``True`` (default), the transport will attempt to read the
+            negotiated BLE MTU at connect time and derive the effective chunk
+            size from it (MTU minus 3 bytes ATT overhead). Falls back to
+            ``max_chunk_bytes`` if the MTU cannot be determined.
         chunk_delay_s: Minimum delay between BLE writes in seconds. 0.02s
             is reliable for full-page jobs on the M08F.
         band_height: Maximum rows per GS v 0 raster command.
@@ -46,6 +50,7 @@ class PrinterProfile:
     print_width_px: int
     dpi: int = 203
     max_chunk_bytes: int = 244
+    negotiate_mtu: bool = True
     chunk_delay_s: float = 0.02
     band_height: int = 256
     service_uuid: str = "0000ff00-0000-1000-8000-00805f9b34fb"

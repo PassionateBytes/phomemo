@@ -24,7 +24,7 @@ class Density(IntEnum):
     saturates at level 6 — higher values produce no further darkening.
 
     From the reference doc:
-        0–4 = light (default), 5 = medium, 6+ = dark (saturated).
+        0-4 = light (default), 5 = medium, 6+ = dark (saturated).
     Tested mappings: low=1, medium=5, high=6.
     """
 
@@ -134,16 +134,16 @@ def encode_feed_lines(lines: int) -> bytes:
     Maximum 255 per call. ``ESC d 255`` feeds approximately 32mm.
 
     Args:
-        lines: Number of lines to feed (1–255).
+        lines: Number of lines to feed (1-255).
 
     Returns:
         The 3-byte ESC d command.
 
     Raises:
-        ValueError: If lines is outside the 1–255 range.
+        ValueError: If lines is outside the 1-255 range.
     """
     if not 1 <= lines <= 255:
-        raise ValueError(f"Feed lines must be 1–255, got {lines}")
+        raise ValueError(f"Feed lines must be 1-255, got {lines}")
     return b"\x1b\x64" + bytes([lines])
 
 
@@ -207,8 +207,8 @@ def encode_auto_off_timer(value: int) -> bytes:
         The 4-byte ESC N 07 command.
 
     Raises:
-        ValueError: If value is outside 0–255.
+        ValueError: If value is outside 0-255.
     """
     if not 0 <= value <= 255:
-        raise ValueError(f"Timer value must be 0–255, got {value}")
+        raise ValueError(f"Timer value must be 0-255, got {value}")
     return b"\x1b\x4e\x07" + bytes([value])

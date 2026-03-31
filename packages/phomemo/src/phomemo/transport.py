@@ -4,7 +4,7 @@ Handles the low-level BLE connection, chunked writes, and notification
 subscription. All communication with the printer passes through this
 layer.
 
-Key protocol constraints from the M08F reference:
+Key protocol constraints for the Phomemo M08F device:
 - Maximum write size: 244 bytes per ``write_gatt_char`` call.
 - Write method: Write Without Response (``response=False``).
 - Inter-chunk delay: 20ms is reliable for full-page jobs.
@@ -41,6 +41,7 @@ class BleTransport:
         self._profile = profile
         self._client: BleakClient | None = None
         self._connected = False
+        self._effective_chunk_bytes: int = profile.max_chunk_bytes
 
     @property
     def is_connected(self) -> bool:
@@ -67,10 +68,10 @@ class BleTransport:
             ConnectionError: If the connection fails.
             RuntimeError: If already connected.
         """
-        if self._connected:
+        if self.is_connected:
             raise RuntimeError("Already connected")
 
-        logger.debug("Connecting to %s", address)
+        logger.debug("Connecting to %s...", address)
         try:
             self._client = BleakClient(address)
             await self._client.connect()
@@ -79,6 +80,16 @@ class BleTransport:
         except BleakError as exc:
             self._client = None
             raise ConnectionError(f"Failed to connect to {address}: {exc}") from exc
+
+        if self._profile.negotiate_mtu:
+            logger.debug("Negotiating effective max chunk size...")
+            try:
+                negotiated_chunk_bytes = self._client.mtu_size - 3
+                if negotiated_chunk_bytes > 0:
+                    self._effective_chunk_bytes = negotiated_chunk_bytes
+            finally:
+                logging.debug("Using max chunk size of %s bytes", self._effective_chunk_bytes)
+
 
         try:
             if on_event is not None:
@@ -92,6 +103,7 @@ class BleTransport:
                     self._profile.status_uuid,
                     lambda _handle, data: on_status(bytes(data)),
                 )
+            logger.debug("Connected")
         except BleakError as exc:
             await self.disconnect()
             raise ConnectionError(
@@ -105,12 +117,13 @@ class BleTransport:
         Safe to call even if not connected.
         """
         if self._client is not None:
-            logger.debug("Disconnecting")
+            logger.debug("Disconnecting...")
             try:
                 await self._client.disconnect()
             finally:
                 self._client = None
                 self._connected = False
+                self._effective_chunk_bytes = self._profile.max_chunk_bytes
                 logger.info("Disconnected")
 
     async def write(self, data: bytes) -> None:
@@ -127,7 +140,7 @@ class BleTransport:
         """
         if self._client is None:
             raise RuntimeError("Not connected")
-        max_size = self._profile.max_chunk_bytes
+        max_size = self._effective_chunk_bytes
         if len(data) > max_size:
             raise ValueError(f"Write size {len(data)} exceeds max {max_size} bytes")
         await self._client.write_gatt_char(
@@ -152,7 +165,7 @@ class BleTransport:
         Raises:
             RuntimeError: If not connected.
         """
-        max_size = self._profile.max_chunk_bytes
+        max_size = self._effective_chunk_bytes
         delay = self._profile.chunk_delay_s
         total = (len(data) + max_size - 1) // max_size
         logger.debug("Writing %d bytes in %d chunks", len(data), total)
