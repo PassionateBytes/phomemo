@@ -36,10 +36,11 @@ from phomemo.events import (
     DeviceEvent,
     EventKind,
     FirmwareEvent,
+    LidEvent,
     LidState,
     MotorStopEvent,
+    PaperEvent,
     PaperState,
-    SensorEvent,
     SerialEvent,
     TimerEvent,
     parse_notification,
@@ -135,9 +136,9 @@ class Printer:
     def on_event(self, callback: EventCallback) -> None:
         """Register a listener for parsed device events.
 
-        Callbacks receive typed event dataclasses (``SensorEvent``,
-        ``BatteryEvent``, ``MotorStopEvent``, etc.) as they arrive
-        from the printer.
+        Callbacks receive typed event dataclasses (``LidEvent``,
+        ``PaperEvent``, ``BatteryEvent``, ``MotorStopEvent``, etc.) as
+        they arrive from the printer.
 
         Args:
             callback: Called with each parsed ``DeviceEvent``.
@@ -358,7 +359,7 @@ class Printer:
         """
         events = await self._query(QueryCommand.LID_STATE, timeout)
         for event in events:
-            if isinstance(event, SensorEvent) and event.lid is not None:
+            if isinstance(event, LidEvent):
                 return event.lid
         return None
 
@@ -376,7 +377,7 @@ class Printer:
         """
         events = await self._query(QueryCommand.PAPER_STATE, timeout)
         for event in events:
-            if isinstance(event, SensorEvent) and event.paper is not None:
+            if isinstance(event, PaperEvent):
                 return event.paper
         return None
 

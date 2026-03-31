@@ -70,16 +70,25 @@ class DeviceEvent:
 
 
 @dataclass(frozen=True, slots=True)
-class SensorEvent(DeviceEvent):
-    """Lid or paper state change event.
+class LidEvent(DeviceEvent):
+    """Lid state change event.
 
     Attributes:
-        lid: Lid state (only set for lid events).
-        paper: Paper state (only set for paper events).
+        lid: Current lid state.
     """
 
-    lid: LidState | None = None
-    paper: PaperState | None = None
+    lid: LidState = LidState.CLOSED
+
+
+@dataclass(frozen=True, slots=True)
+class PaperEvent(DeviceEvent):
+    """Paper presence change event.
+
+    Attributes:
+        paper: Current paper state.
+    """
+
+    paper: PaperState = PaperState.ABSENT
 
 
 @dataclass(frozen=True, slots=True)
@@ -177,11 +186,11 @@ def _parse_one(data: bytes) -> DeviceEvent:
     match sub_type:
         case EventKind.LID:
             lid = LidState.OPEN if (value & 0x01) else LidState.CLOSED
-            return SensorEvent(kind=EventKind.LID, lid=lid, raw=data)
+            return LidEvent(kind=EventKind.LID, lid=lid, raw=data)
 
         case EventKind.PAPER:
             paper = PaperState.PRESENT if (value & 0x01) else PaperState.ABSENT
-            return SensorEvent(kind=EventKind.PAPER, paper=paper, raw=data)
+            return PaperEvent(kind=EventKind.PAPER, paper=paper, raw=data)
 
         case EventKind.BATTERY:
             return BatteryEvent(kind=EventKind.BATTERY, percent=value, raw=data)

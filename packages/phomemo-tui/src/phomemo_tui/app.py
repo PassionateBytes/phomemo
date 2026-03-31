@@ -7,9 +7,10 @@ Provides screens for scanning, connecting, monitoring, and printing.
 from phomemo import (
     BatteryEvent,
     DeviceEvent,
+    LidEvent,
     MotorStopEvent,
+    PaperEvent,
     Printer,
-    SensorEvent,
     discover,
 )
 from textual.app import App, ComposeResult
@@ -204,9 +205,9 @@ def _format_event(event: DeviceEvent) -> str:
         A human-readable string representation.
     """
     match event:
-        case SensorEvent(lid=lid) if lid is not None:
+        case LidEvent(lid=lid):
             return f"Lid: {lid.value}"
-        case SensorEvent(paper=paper) if paper is not None:
+        case PaperEvent(paper=paper):
             return f"Paper: {paper.value}"
         case BatteryEvent(percent=pct):
             return f"Battery: {pct}%"
