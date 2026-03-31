@@ -69,15 +69,15 @@ class BleTransport:
         if self._connected:
             raise RuntimeError("Already connected")
 
+        logger.debug("Connecting to %s", address)
         try:
             self._client = BleakClient(address)
             await self._client.connect()
             self._connected = True
+            logger.info("Connected to %s", address)
         except BleakError as exc:
             self._client = None
-            raise ConnectionError(
-                f"Failed to connect to {address}: {exc}"
-            ) from exc
+            raise ConnectionError(f"Failed to connect to {address}: {exc}") from exc
 
         try:
             if on_event is not None:
@@ -104,11 +104,13 @@ class BleTransport:
         Safe to call even if not connected.
         """
         if self._client is not None:
+            logger.debug("Disconnecting")
             try:
                 await self._client.disconnect()
             finally:
                 self._client = None
                 self._connected = False
+                logger.info("Disconnected")
 
     async def write(self, data: bytes) -> None:
         """Write raw bytes to the printer's command channel.
@@ -152,6 +154,7 @@ class BleTransport:
         max_size = self._profile.max_chunk_bytes
         delay = self._profile.chunk_delay_s
         total = (len(data) + max_size - 1) // max_size
+        logger.debug("Writing %d bytes in %d chunks", len(data), total)
 
         for i in range(total):
             start = i * max_size
@@ -163,7 +166,9 @@ class BleTransport:
                 try:
                     on_chunk(i + 1, total)
                 except Exception:
-                    logger.exception("Progress callback failed on chunk %d/%d", i + 1, total)
+                    logger.exception(
+                        "Progress callback failed on chunk %d/%d", i + 1, total
+                    )
 
     async def __aenter__(self) -> "BleTransport":
         """Enter the async context manager.

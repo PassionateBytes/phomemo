@@ -162,6 +162,7 @@ class Printer:
         Args:
             data: Raw bytes from the notification.
         """
+        logger.debug("Notification received: %s", data.hex())
         for event in parse_notification(data):
             self._dispatch_event(event)
 
@@ -276,6 +277,8 @@ class Printer:
         Returns:
             List of events received within the timeout.
         """
+        logger.debug("Query %s (timeout=%.1fs)", command.hex(), timeout)
+
         # Drain any stale events
         while not self._pending_events.empty():
             self._pending_events.get_nowait()
