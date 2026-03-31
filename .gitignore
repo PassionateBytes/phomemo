@@ -15,3 +15,6 @@ wheels/
 # Generated review reports and plans
 docs/reports/
 docs/superpowers/
+
+# Claude Code hook sentinel
+.claude/changed
