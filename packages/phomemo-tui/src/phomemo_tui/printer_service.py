@@ -7,12 +7,14 @@ Textual messages via the ``post_message`` callback for UI updates.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import re
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import Literal
 
 from phomemo import Printer, discover, get_profile, list_profiles
 from phomemo.events import (
@@ -20,7 +22,6 @@ from phomemo.events import (
     DeviceEvent,
     LidEvent,
     LidState,
-    MotorStopEvent,
     PaperEvent,
     PaperState,
 )
@@ -289,11 +290,13 @@ class PrinterService:
         cfg = self._config
 
         total_pages = get_page_count(source)
-        first = start_page or 1
+        first = start_page if start_page is not None else 1
 
-        if total_pages == 1 or start_page is not None:
-            pages = [first]
-        elif cfg.multi_page_mode == "manual":
+        if (
+            total_pages == 1
+            or start_page is not None
+            or cfg.multi_page_mode == "manual"
+        ):
             pages = [first]
         else:
             # auto: print from first page to end
@@ -357,14 +360,14 @@ class PrinterService:
         if lid_ok and paper_ok:
             return
 
-        reason: str
+        reason: Literal["lid", "paper", "both"]
         if not lid_ok and not paper_ok:
             reason = "both"
         elif not lid_ok:
             reason = "lid"
         else:
             reason = "paper"
-        self._post(PrintWaitingForReady(reason=reason))  # type: ignore[arg-type]
+        self._post(PrintWaitingForReady(reason=reason))
 
         while True:
             await asyncio.sleep(1.0)
@@ -386,8 +389,8 @@ class PrinterService:
         """
         while True:
             await asyncio.sleep(1.5)
+            assert self._printer is not None
             try:
-                assert self._printer is not None
                 info = await self._printer.query_device_info(timeout=2.0)
                 self._snapshot.paper = info.paper
             except Exception:
@@ -398,10 +401,8 @@ class PrinterService:
     async def _eject_and_cancel(self) -> None:
         """Eject paper and post PrintCancelled."""
         if self._printer and self._printer.is_connected:
-            try:
+            with contextlib.suppress(Exception):
                 await self._printer.eject_paper()
-            except Exception:
-                pass
         self._post(PrintCancelled())
 
     def request_cancel(self) -> None:
