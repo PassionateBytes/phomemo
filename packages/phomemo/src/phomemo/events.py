@@ -126,11 +126,16 @@ class TimerEvent(DeviceEvent):
     Attributes:
         value: Raw timer byte. 0 = disabled, non-zero = timeout in
             5-minute increments.
-        minutes: Computed timeout in minutes (0 = disabled).
+        minutes: Computed timeout in minutes (0 = disabled). Derived
+            from ``value * 5``; cannot be set independently.
     """
 
     value: int = 0
     minutes: int = 0
+
+    def __post_init__(self) -> None:
+        """Derive minutes from value to enforce the invariant."""
+        object.__setattr__(self, "minutes", self.value * 5)
 
 
 @dataclass(frozen=True, slots=True)
@@ -182,7 +187,6 @@ def _parse_one(data: bytes) -> DeviceEvent:
             return TimerEvent(
                 kind=EventKind.DEVICE_TIMER,
                 value=value,
-                minutes=value * 5,
                 raw=data,
             )
 

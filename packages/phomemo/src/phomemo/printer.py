@@ -69,7 +69,7 @@ EventCallback = Callable[[DeviceEvent], None]
 ProgressCallback = Callable[[int, int], None]
 
 
-@dataclass
+@dataclass(frozen=True, slots=True)
 class DeviceInfo:
     """Snapshot of device state collected from query responses.
 
@@ -392,23 +392,31 @@ class Printer:
         Returns:
             A ``DeviceInfo`` with all available fields populated.
         """
-        info = DeviceInfo()
-        info.battery = await self.query_battery(timeout)
-        info.firmware = await self.query_firmware(timeout)
-        info.serial = await self.query_serial(timeout)
-        info.lid = await self.query_lid(timeout)
+        battery = await self.query_battery(timeout)
+        firmware = await self.query_firmware(timeout)
+        serial = await self.query_serial(timeout)
+        lid = await self.query_lid(timeout)
 
         # Paper state is unreliable with lid open — only query if closed
-        if info.lid == LidState.CLOSED:
-            info.paper = await self.query_paper(timeout)
+        paper = None
+        if lid == LidState.CLOSED:
+            paper = await self.query_paper(timeout)
 
+        auto_off_minutes = None
         timer_events = await self._query(QueryCommand.DEVICE_TIMER, timeout)
         for event in timer_events:
             if isinstance(event, TimerEvent):
-                info.auto_off_minutes = event.minutes
+                auto_off_minutes = event.minutes
                 break
 
-        return info
+        return DeviceInfo(
+            battery=battery,
+            lid=lid,
+            paper=paper,
+            firmware=firmware,
+            serial=serial,
+            auto_off_minutes=auto_off_minutes,
+        )
 
     # ------------------------------------------------------------------
     # Pre-print readiness check
