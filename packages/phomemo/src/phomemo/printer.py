@@ -113,7 +113,7 @@ class Printer:
 
         self._transport = BleTransport(self._profile)
         self._event_callbacks: list[EventCallback] = []
-        self._pending_events: asyncio.Queue[DeviceEvent] = asyncio.Queue()
+        self._waiters: list[asyncio.Future[DeviceEvent]] = []
 
     # ------------------------------------------------------------------
     # Properties
@@ -146,17 +146,22 @@ class Printer:
         self._event_callbacks.append(callback)
 
     def _dispatch_event(self, event: DeviceEvent) -> None:
-        """Route a parsed event to callbacks and the internal queue.
+        """Route a parsed event to callbacks and any active waiters.
 
         Args:
             event: The parsed device event.
         """
-        self._pending_events.put_nowait(event)
         for cb in self._event_callbacks:
             try:
                 cb(event)
             except Exception:
                 logger.exception("Event callback %r failed for %r", cb, event)
+
+        # Deliver to the first waiting future (FIFO)
+        for future in self._waiters:
+            if not future.done():
+                future.set_result(event)
+                break
 
     def _on_notification(self, data: bytes) -> None:
         """Handle raw BLE notification data from ff01.
@@ -263,6 +268,26 @@ class Printer:
     # Device queries
     # ------------------------------------------------------------------
 
+    async def _wait_for_event(self, timeout: float) -> DeviceEvent:
+        """Wait for the next event delivered to this waiter.
+
+        Args:
+            timeout: Maximum seconds to wait.
+
+        Returns:
+            The next device event.
+
+        Raises:
+            TimeoutError: If no event arrives within the timeout.
+        """
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[DeviceEvent] = loop.create_future()
+        self._waiters.append(future)
+        try:
+            return await asyncio.wait_for(future, timeout=timeout)
+        finally:
+            self._waiters.remove(future)
+
     async def _query(
         self,
         command: QueryCommand,
@@ -270,7 +295,8 @@ class Printer:
     ) -> list[DeviceEvent]:
         """Send a Phomemo query and collect responses.
 
-        Drains the event queue, sends the query, then waits for events.
+        Sends the query command and collects events until timeout.
+        Events are still delivered to callbacks regardless.
 
         Args:
             command: The query command bytes.
@@ -280,11 +306,6 @@ class Printer:
             List of events received within the timeout.
         """
         logger.debug("Query %s (timeout=%.1fs)", command.hex(), timeout)
-
-        # Drain any stale events
-        while not self._pending_events.empty():
-            self._pending_events.get_nowait()
-
         await self._transport.write(command)
 
         loop = asyncio.get_running_loop()
@@ -295,9 +316,7 @@ class Printer:
             if remaining <= 0:
                 break
             try:
-                event = await asyncio.wait_for(
-                    self._pending_events.get(), timeout=remaining
-                )
+                event = await self._wait_for_event(timeout=remaining)
                 events.append(event)
             except TimeoutError:
                 break
@@ -546,6 +565,7 @@ class Printer:
         """Wait for the print-complete (motor stop) signal.
 
         The printer fires ``1a 0f 0c`` on ``ff01`` when the motor stops.
+        Non-MotorStop events are ignored but still delivered to callbacks.
 
         Args:
             timeout: Maximum seconds to wait.
@@ -560,9 +580,7 @@ class Printer:
             if remaining <= 0:
                 raise TimeoutError("Timed out waiting for print completion signal")
             try:
-                event = await asyncio.wait_for(
-                    self._pending_events.get(), timeout=remaining
-                )
+                event = await self._wait_for_event(timeout=remaining)
                 if isinstance(event, MotorStopEvent):
                     return
             except TimeoutError:
