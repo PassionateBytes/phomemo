@@ -1,5 +1,6 @@
 import asyncio
 
+import phomemo.profiles  # noqa: F401 — registers built-in profiles
 import pytest
 from phomemo.events import (
     BatteryEvent,

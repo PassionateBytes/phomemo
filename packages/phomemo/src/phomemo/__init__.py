@@ -13,6 +13,7 @@ Basic usage::
         await printer.print_image("photo.png")
 """
 
+from phomemo import profiles  # noqa F401  # auto-load profiles at import time
 from phomemo.discovery import discover
 from phomemo.events import (
     BatteryEvent,
