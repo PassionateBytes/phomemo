@@ -122,6 +122,7 @@ def image_to_bitmap(img: Image.Image) -> bytes:
 
     width, height = img.size
     pixels = img.load()
+    assert pixels is not None
     data = bytearray()
 
     for y in range(height):

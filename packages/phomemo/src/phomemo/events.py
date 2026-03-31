@@ -52,37 +52,46 @@ class PaperState(StrEnum):
 
 
 @dataclass(frozen=True, slots=True)
-class SensorEvent:
-    """Lid or paper state change event.
+class DeviceEvent:
+    """Base class for all device events.
+
+    Used directly as a fallback for unrecognised event sub-types.
 
     Attributes:
-        kind: Whether this is a lid or paper event.
-        lid: Lid state (only set for lid events).
-        paper: Paper state (only set for paper events).
-        raw: The original 3-byte event.
+        kind: The event sub-type byte.
+        raw: The original raw bytes from the notification.
     """
 
-    kind: EventKind
-    lid: LidState | None = None
-    paper: PaperState | None = None
+    kind: int
     raw: bytes = b""
 
 
 @dataclass(frozen=True, slots=True)
-class BatteryEvent:
+class SensorEvent(DeviceEvent):
+    """Lid or paper state change event.
+
+    Attributes:
+        lid: Lid state (only set for lid events).
+        paper: Paper state (only set for paper events).
+    """
+
+    lid: LidState | None = None
+    paper: PaperState | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class BatteryEvent(DeviceEvent):
     """Battery level report.
 
     Attributes:
         percent: Battery charge percentage (0–100).
-        raw: The original 3-byte event.
     """
 
-    percent: int
-    raw: bytes = b""
+    percent: int = 0
 
 
 @dataclass(frozen=True, slots=True)
-class FirmwareEvent:
+class FirmwareEvent(DeviceEvent):
     """Firmware version report.
 
     The version bytes map to ``major.minor.patch``. Example:
@@ -96,70 +105,45 @@ class FirmwareEvent:
         major: Major version number.
         minor: Minor version number.
         patch: Patch version number.
-        raw: The original response bytes.
     """
 
-    major: int
+    major: int = 0
     minor: int = 0
     patch: int = 0
-    raw: bytes = b""
 
 
 @dataclass(frozen=True, slots=True)
-class SerialEvent:
+class SerialEvent(DeviceEvent):
     """Serial number report (ASCII or short form).
 
     Attributes:
-        kind: ``SERIAL_ASCII`` for the full string, ``SERIAL_SHORT``
-            for the single-byte hardware revision.
         value: The serial string or hex representation.
-        raw: The original response bytes.
     """
 
-    kind: EventKind
-    value: str
-    raw: bytes = b""
+    value: str = ""
 
 
 @dataclass(frozen=True, slots=True)
-class TimerEvent:
+class TimerEvent(DeviceEvent):
     """Auto-off timer setting report.
 
     Attributes:
         value: Raw timer byte. 0 = disabled, non-zero = timeout in
             5-minute increments.
         minutes: Computed timeout in minutes (0 = disabled).
-        raw: The original 3-byte event.
     """
 
-    value: int
-    minutes: int
-    raw: bytes = b""
+    value: int = 0
+    minutes: int = 0
 
 
 @dataclass(frozen=True, slots=True)
-class MotorStopEvent:
+class MotorStopEvent(DeviceEvent):
     """Motor stop / print complete signal.
 
     Fires when the motor stops after a print job. The third byte
     (``0x0c``) is invariant across all tested conditions.
-
-    Attributes:
-        raw: The original 3-byte event.
     """
-
-    raw: bytes = b""
-
-
-# Union of all parsed event types
-DeviceEvent = (
-    SensorEvent
-    | BatteryEvent
-    | FirmwareEvent
-    | SerialEvent
-    | TimerEvent
-    | MotorStopEvent
-)
 
 
 # ---------------------------------------------------------------------------
@@ -181,15 +165,15 @@ def _parse_one(data: bytes) -> DeviceEvent:
 
     match sub_type:
         case EventKind.LID:
-            state = LidState.OPEN if (value & 0x01) else LidState.CLOSED
-            return SensorEvent(kind=EventKind.LID, lid=state, raw=data)
+            lid = LidState.OPEN if (value & 0x01) else LidState.CLOSED
+            return SensorEvent(kind=EventKind.LID, lid=lid, raw=data)
 
         case EventKind.PAPER:
-            state = PaperState.PRESENT if (value & 0x01) else PaperState.ABSENT
-            return SensorEvent(kind=EventKind.PAPER, paper=state, raw=data)
+            paper = PaperState.PRESENT if (value & 0x01) else PaperState.ABSENT
+            return SensorEvent(kind=EventKind.PAPER, paper=paper, raw=data)
 
         case EventKind.BATTERY:
-            return BatteryEvent(percent=value, raw=data)
+            return BatteryEvent(kind=EventKind.BATTERY, percent=value, raw=data)
 
         case EventKind.SERIAL_SHORT:
             return SerialEvent(
@@ -200,17 +184,17 @@ def _parse_one(data: bytes) -> DeviceEvent:
 
         case EventKind.DEVICE_TIMER:
             return TimerEvent(
+                kind=EventKind.DEVICE_TIMER,
                 value=value,
                 minutes=value * 5,
                 raw=data,
             )
 
         case EventKind.MOTOR_STOP:
-            return MotorStopEvent(raw=data)
+            return MotorStopEvent(kind=EventKind.MOTOR_STOP, raw=data)
 
         case _:
-            # Unknown sub-type — return as a generic sensor event
-            return SensorEvent(kind=EventKind(sub_type), raw=data)
+            return DeviceEvent(kind=sub_type, raw=data)
 
 
 def parse_notification(data: bytes) -> list[DeviceEvent]:
@@ -233,6 +217,7 @@ def parse_notification(data: bytes) -> list[DeviceEvent]:
     if len(data) >= 5 and data[0] == 0x1A and data[1] == EventKind.FIRMWARE:
         return [
             FirmwareEvent(
+                kind=EventKind.FIRMWARE,
                 major=data[2],
                 minor=data[3],
                 patch=data[4],

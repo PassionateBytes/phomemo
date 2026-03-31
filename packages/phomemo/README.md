@@ -99,7 +99,7 @@ async with Printer("M08F-A4") as printer:
 ```python
 # Individual queries
 battery = await printer.query_battery()       # int (0–100) or None
-firmware = await printer.query_firmware()      # str like "1.1.3" or None
+firmware = await printer.query_firmware()     # str like "1.1.3" or None
 lid = await printer.query_lid()               # LidState.CLOSED / .OPEN
 paper = await printer.query_paper()           # PaperState.PRESENT / .ABSENT
 
