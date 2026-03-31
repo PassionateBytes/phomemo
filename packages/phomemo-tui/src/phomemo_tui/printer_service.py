@@ -417,9 +417,6 @@ class PrinterService:
     def _set_state(self, state: ServiceState) -> None:
         self._state = state
 
-    def _match_profile(self, name: str | None) -> str | None:
-        return match_profile(name)
-
 
 def match_profile(name: str | None) -> str | None:
     """Return the first profile name whose ble_name_pattern matches name.

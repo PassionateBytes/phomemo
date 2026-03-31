@@ -10,7 +10,7 @@ from phomemo_tui.messages import (
     DeviceConnected,
     DeviceDisconnected,
 )
-from phomemo_tui.printer_service import PrinterService, ServiceState
+from phomemo_tui.printer_service import PrinterService, ServiceState, match_profile
 
 
 def _make_service() -> tuple[PrinterService, list]:
@@ -27,19 +27,15 @@ def test_initial_state() -> None:
 
 
 def test_match_profile_known_name() -> None:
-    svc, _ = _make_service()
-    result = svc._match_profile("M08F-001")
-    assert result == "M08F-A4"
+    assert match_profile("M08F-001") == "M08F-A4"
 
 
 def test_match_profile_unknown_name() -> None:
-    svc, _ = _make_service()
-    assert svc._match_profile("SomeRandomDevice") is None
+    assert match_profile("SomeRandomDevice") is None
 
 
 def test_match_profile_none_name() -> None:
-    svc, _ = _make_service()
-    assert svc._match_profile(None) is None
+    assert match_profile(None) is None
 
 
 @pytest.mark.asyncio
