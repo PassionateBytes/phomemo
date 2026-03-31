@@ -9,6 +9,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
+from phomemo_tui.widgets.preview_panel import PreviewPanel
 from phomemo_tui.widgets.status_panel import StatusPanel
 
 _GRID: dict[str, dict[str, str]] = {
@@ -35,7 +36,7 @@ class MainMenuScreen(Screen):
                 yield StatusPanel(id="panel-status").add_class("panel")
                 yield Panel(id="panel-settings", classes="panel")
             with Vertical(id="right-column"):
-                yield Panel(id="panel-preview", classes="panel")
+                yield PreviewPanel(id="panel-preview").add_class("panel")
                 yield Panel(id="panel-print", classes="panel")
         yield Footer()
 
@@ -69,7 +70,7 @@ class MainMenuScreen(Screen):
             case "panel-settings" if not locked:
                 pass  # wired in Task 10
             case "panel-preview" if not locked:
-                pass  # wired in Task 8
+                self.query_one(PreviewPanel).on_click()
 
     def action_quit(self) -> None:
         self.app.exit()

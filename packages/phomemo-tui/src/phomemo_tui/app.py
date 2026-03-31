@@ -26,6 +26,7 @@ from phomemo_tui.messages import (
 )
 from phomemo_tui.printer_service import PrinterService, ServiceState
 from phomemo_tui.screens.main_menu import MainMenuScreen
+from phomemo_tui.widgets.preview_panel import PreviewPanel
 from phomemo_tui.widgets.status_panel import StatusPanel
 
 
@@ -125,7 +126,8 @@ class PhomemoApp(App):
         self.current_file = msg.path
         self.current_page = 1
         self.config.add_recent_file(str(msg.path))
-        self._update_preview_panel()
+        with contextlib.suppress(Exception):
+            self.query_one(PreviewPanel).set_file(msg.path)
         self._update_print_button()
 
     # ------------------------------------------------------------------
@@ -145,10 +147,21 @@ class PhomemoApp(App):
             panel.handle_device_disconnected()
 
     def _update_preview_panel(self) -> None:
-        pass  # wired in Task 8
+        with contextlib.suppress(Exception):
+            panel = self.query_one(PreviewPanel)
+            if self.current_file:
+                panel.set_file(self.current_file, self.current_page)
+            panel.clear_footer()
 
     def _update_preview_footer(self, msg: object) -> None:
-        pass  # wired in Task 8
+        with contextlib.suppress(Exception):
+            panel = self.query_one(PreviewPanel)
+            if isinstance(msg, PrintProgress):
+                panel.show_progress(msg)
+            elif isinstance(msg, PrintWaitingForReady):
+                panel.show_waiting_ready(msg)
+            elif isinstance(msg, PrintWaitingForPaper):
+                panel.show_waiting_paper(msg)
 
     def _update_print_button(self) -> None:
         pass  # wired in Task 9
