@@ -17,14 +17,22 @@ from phomemo.events import (
     BatteryEvent,
     DeviceEvent,
     EventKind,
+    FirmwareEvent,
     LidState,
     MotorStopEvent,
     PaperState,
     SensorEvent,
+    SerialEvent,
+    TimerEvent,
 )
 from phomemo.imaging import DitherMode, ImageFit, image_to_bitmap, prepare_image
 from phomemo.printer import Printer
-from phomemo.profiles import PrinterProfile, get_profile, list_profiles
+from phomemo.profiles import (
+    PrinterProfile,
+    get_profile,
+    list_profiles,
+    register_profile,
+)
 from phomemo.protocol import Density
 
 __all__ = [
@@ -33,6 +41,7 @@ __all__ = [
     "DeviceEvent",
     "DitherMode",
     "EventKind",
+    "FirmwareEvent",
     "ImageFit",
     "LidState",
     "MotorStopEvent",
@@ -40,9 +49,12 @@ __all__ = [
     "Printer",
     "PrinterProfile",
     "SensorEvent",
+    "SerialEvent",
+    "TimerEvent",
+    "discover",
     "get_profile",
     "image_to_bitmap",
     "list_profiles",
     "prepare_image",
-    "discover",
+    "register_profile",
 ]
