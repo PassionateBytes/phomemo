@@ -14,6 +14,7 @@ Basic usage::
 
 from phomemo.discovery import discover
 from phomemo.events import (
+    BatteryEvent,
     DeviceEvent,
     EventKind,
     LidState,
@@ -27,6 +28,7 @@ from phomemo.profiles import PrinterProfile, get_profile, list_profiles
 from phomemo.protocol import Density
 
 __all__ = [
+    "BatteryEvent",
     "Density",
     "DeviceEvent",
     "DitherMode",

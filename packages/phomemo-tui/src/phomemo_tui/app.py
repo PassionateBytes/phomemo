@@ -94,6 +94,8 @@ class MainScreen(Screen):
     paper management.
     """
 
+    _event_lines: list[str] = []
+
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("d", "disconnect", "Disconnect"),
@@ -185,12 +187,9 @@ class MainScreen(Screen):
             event: The parsed device event.
         """
         log = self.query_one("#event-log", Static)
-        text = _format_event(event)
-        current = str(log.renderable)
-        # Keep last 10 lines
-        lines = current.split("\n") if current else []
-        lines.append(text)
-        log.update("\n".join(lines[-10:]))
+        self._event_lines.append(_format_event(event))
+        self._event_lines = self._event_lines[-10:]
+        log.update("\n".join(self._event_lines))
 
 
 def _format_event(event: DeviceEvent) -> str:

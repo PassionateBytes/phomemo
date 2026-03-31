@@ -11,3 +11,6 @@ wheels/
 
 # Superpowers brainstorming artifacts
 .superpowers/
+
+# Generated review reports
+docs/reports/
