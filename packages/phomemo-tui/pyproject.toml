@@ -8,10 +8,13 @@ license = "GPL-3.0-or-later"
 dependencies = [
     "phomemo",
     "textual>=3.0.0",
+    "textual-fspicker>=0.4.0",
+    "tomli-w>=1.0.0",
+    "pymupdf>=1.24.0",
 ]
 
 [project.scripts]
-phomemo-tui = "phomemo_tui.app:main"
+phomemo-tui = "phomemo_tui.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -25,5 +28,11 @@ phomemo = { workspace = true }
 
 [dependency-groups]
 dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.25.0",
     "ruff>=0.11.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
