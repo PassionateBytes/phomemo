@@ -30,8 +30,6 @@ from pathlib import Path
 
 from PIL import Image
 
-logger = logging.getLogger(__name__)
-
 from phomemo.events import (
     BatteryEvent,
     DeviceEvent,
@@ -64,6 +62,8 @@ from phomemo.protocol import (
     encode_raster_header,
 )
 from phomemo.transport import BleTransport
+
+logger = logging.getLogger(__name__)
 
 EventCallback = Callable[[DeviceEvent], None]
 ProgressCallback = Callable[[int, int], None]
@@ -282,10 +282,11 @@ class Printer:
 
         await self._transport.write(command)
 
+        loop = asyncio.get_running_loop()
         events: list[DeviceEvent] = []
-        deadline = asyncio.get_event_loop().time() + timeout
+        deadline = loop.time() + timeout
         while True:
-            remaining = deadline - asyncio.get_event_loop().time()
+            remaining = deadline - loop.time()
             if remaining <= 0:
                 break
             try:
@@ -539,9 +540,10 @@ class Printer:
         Raises:
             TimeoutError: If the signal is not received in time.
         """
-        deadline = asyncio.get_event_loop().time() + timeout
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
         while True:
-            remaining = deadline - asyncio.get_event_loop().time()
+            remaining = deadline - loop.time()
             if remaining <= 0:
                 raise TimeoutError("Timed out waiting for print completion signal")
             try:

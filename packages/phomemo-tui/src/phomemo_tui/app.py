@@ -94,8 +94,6 @@ class MainScreen(Screen):
     paper management.
     """
 
-    _event_lines: list[str] = []
-
     BINDINGS = [
         Binding("q", "quit", "Quit"),
         Binding("d", "disconnect", "Disconnect"),
@@ -103,6 +101,10 @@ class MainScreen(Screen):
         Binding("f", "feed", "Feed Paper"),
         Binding("e", "eject", "Eject Paper"),
     ]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._event_lines: list[str] = []
 
     def compose(self) -> ComposeResult:
         """Build the main screen layout."""
@@ -211,7 +213,7 @@ def _format_event(event: DeviceEvent) -> str:
         case MotorStopEvent():
             return "Print complete (motor stopped)"
         case _:
-            return f"Event: {event.raw.hex()}" if hasattr(event, "raw") else str(event)
+            return f"Event: {event.raw.hex()}"
 
 
 # ------------------------------------------------------------------
