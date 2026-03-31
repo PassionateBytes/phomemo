@@ -133,7 +133,7 @@ On BLE connect, the following notifications fire automatically:
 | Channel | Data             | Timing    | Notes                                                                                   |
 | ------- | ---------------- | --------- | --------------------------------------------------------------------------------------- |
 | `ff03`  | `01 07`          | Immediate | Connect greeting. Purpose of `07` unknown **[assumed — version or capability flag]**    |
-| `ff03`  | `02 f4 00`       | Immediate | Fixed constant (`f4 00` = 244 LE). Not battery-related — identical plugged/unplugged.   |
+| `ff03`  | `02 f4 00`       | Immediate | Fixed constant (`f4 00` = 244 LE). Possibly the printer advertising its max write payload. **[assumed — 244 matches exactly the observed BLE ATT MTU negotiation of 247 (minus 3 bytes ATT overhead -> 244 byte payload)]**   |
 | `fec8`  | 26-byte protobuf | ~100ms    | Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing. |
 
 ---
