@@ -186,13 +186,3 @@ class PhomemoApp(App):
                     p.add_class("locked")
                 else:
                     p.remove_class("locked")
-
-
-def main() -> None:
-    """Entry point for the phomemo-tui command."""
-    app = PhomemoApp()
-    app.run()
-
-
-if __name__ == "__main__":
-    main()
