@@ -18,6 +18,7 @@ from collections.abc import Callable
 from typing import Self
 
 from bleak import BleakClient
+from bleak.backends.device import BLEDevice
 from bleak.exc import BleakError
 
 from phomemo.registry import PrinterProfile
@@ -50,7 +51,7 @@ class BleTransport:
 
     async def connect(
         self,
-        address: str,
+        address: str | BLEDevice,
         on_event: NotifyCallback | None = None,
         on_status: NotifyCallback | None = None,
     ) -> None:
@@ -66,7 +67,10 @@ class BleTransport:
         appear to carry query responses or actionable device state.
 
         Args:
-            address: BLE MAC address (e.g. ``"60:6E:41:23:0B:D6"``).
+            address: BLE MAC address string or ``BLEDevice`` object. Passing a
+                ``BLEDevice`` is preferred when the caller has a recent scan
+                result — it lets the BlueZ backend reuse cached D-Bus object
+                paths and avoids ``BleakDeviceNotFoundError`` after scan expiry.
             on_event: Callback for all meaningful device notifications on
                 ``ff01``: sensor events, query responses, print completion.
             on_status: Callback for the ``ff03`` echo channel. Returns ``01 01``

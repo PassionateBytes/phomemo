@@ -31,6 +31,8 @@ from typing import Self
 
 from PIL import Image
 
+from bleak.backends.device import BLEDevice
+
 from phomemo.discovery import discover
 from phomemo.events import (
     BatteryEvent,
@@ -112,7 +114,7 @@ class Printer:
     def __init__(
         self,
         profile: str | PrinterProfile = "M08F-A4",
-        address: str | None = None,
+        address: str | BLEDevice | None = None,
     ) -> None:
         if isinstance(profile, str):
             self._profile = get_profile(profile)
