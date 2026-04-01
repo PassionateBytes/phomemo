@@ -27,6 +27,8 @@ from phomemo_tui.messages import (
 from phomemo_tui.printer_service import PrinterService, ServiceState
 from phomemo_tui.screens.main_menu import MainMenuScreen
 from phomemo_tui.widgets.preview_panel import PreviewPanel
+from phomemo_tui.widgets.print_button import PrintButton
+from phomemo_tui.widgets.settings_panel import SettingsPanel
 from phomemo_tui.widgets.status_panel import StatusPanel
 
 
@@ -164,10 +166,26 @@ class PhomemoApp(App):
                 panel.show_waiting_paper(msg)
 
     def _update_print_button(self) -> None:
-        pass  # wired in Task 9
+        with contextlib.suppress(Exception):
+            self.query_one(PrintButton).refresh_state()
+        with contextlib.suppress(Exception):
+            self.query_one(SettingsPanel).refresh_state()
 
     def _set_panels_locked(self, locked: bool) -> None:
-        pass  # wired in Task 9
+        with contextlib.suppress(Exception):
+            self.query_one(PreviewPanel).set_locked(locked)
+        with contextlib.suppress(Exception):
+            btn = self.query_one(PrintButton)
+            btn._locked = locked
+            btn.refresh_state()
+        # Toggle locked CSS class on status/settings panels
+        for panel_id in ("#panel-status", "#panel-settings"):
+            with contextlib.suppress(Exception):
+                p = self.query_one(panel_id)
+                if locked:
+                    p.add_class("locked")
+                else:
+                    p.remove_class("locked")
 
 
 def main() -> None:
