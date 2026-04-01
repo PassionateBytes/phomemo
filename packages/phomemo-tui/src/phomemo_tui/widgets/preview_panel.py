@@ -59,8 +59,8 @@ class PreviewPanel(Static, can_focus=True):
     Clicking or pressing Enter when idle opens the file picker.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
         self._file: Path | None = None
         self._page: int = 1
         self._total_pages: int = 1
