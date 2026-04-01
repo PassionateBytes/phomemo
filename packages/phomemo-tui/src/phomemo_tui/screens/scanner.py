@@ -30,8 +30,8 @@ class ScannerScreen(ModalScreen):
         Binding("r", "refresh", "Rescan"),
     ]
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
         self._devices: list[BLEDevice] = []
 
     def compose(self) -> ComposeResult:
