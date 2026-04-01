@@ -1,6 +1,5 @@
-"""Terminal UI for Phomemo thermal printers.
+"""Phomemo TUI — terminal interface for Phomemo thermal printers."""
 
-A Textual-based TUI that provides interactive device scanning,
-status monitoring, and image printing through the ``phomemo``
-driver library.
-"""
+from phomemo_tui.cli import main
+
+__all__ = ["main"]
