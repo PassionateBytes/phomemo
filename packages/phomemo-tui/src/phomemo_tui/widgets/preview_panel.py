@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
-from PIL import Image
 from phomemo import get_profile, prepare_image
 from phomemo.imaging import DitherMode, ImageFit
-from textual import work
+from PIL import Image
+from textual import events, work
 from textual.app import ComposeResult
 from textual.widgets import Label, Static
 
@@ -58,17 +59,20 @@ class PreviewPanel(Static, can_focus=True):
     Clicking or pressing Enter when idle opens the file picker.
     """
 
-    def compose(self) -> ComposeResult:
-        yield Label("", id="preview-header")
-        yield Static("", id="preview-body")
-        yield Static("", id="preview-footer")
-
-    def on_mount(self) -> None:
+    def __init__(self) -> None:
+        super().__init__()
         self._file: Path | None = None
         self._page: int = 1
         self._total_pages: int = 1
         self._locked: bool = False
+
+    def on_mount(self) -> None:
         self._render_empty()
+
+    def compose(self) -> ComposeResult:
+        yield Label("", id="preview-header")
+        yield Static("", id="preview-body")
+        yield Static("", id="preview-footer")
 
     # ------------------------------------------------------------------
     # Public API called by app.py
@@ -157,7 +161,7 @@ class PreviewPanel(Static, can_focus=True):
         if not self._locked:
             self._open_file_picker()
 
-    def on_key(self, event) -> None:
+    def on_key(self, event: events.Key) -> None:
         if event.key == "enter" and not self._locked:
             self._open_file_picker()
             event.prevent_default()
@@ -201,15 +205,14 @@ class PreviewPanel(Static, can_focus=True):
     def _render_empty(self) -> None:
         self.query_one("#preview-header", Label).update("")
         self.query_one("#preview-body", Static).update(
-            "\n\n  [dim]Select a file to print[/dim]\n\n  Press Enter or click to browse"
+            "\n\n  [dim]Select a file to print[/dim]"
+            "\n\n  Press Enter or click to browse"
         )
         self.query_one("#preview-footer", Static).update("")
 
     @work
     async def _render_file(self) -> None:
         """Render header and block-char preview in a background thread."""
-        import asyncio
-
         if self._file is None:
             self._render_empty()
             return
