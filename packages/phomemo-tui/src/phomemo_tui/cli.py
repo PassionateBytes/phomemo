@@ -21,9 +21,13 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="phomemo-tui",
         description="Phomemo thermal printer terminal UI",
     )
-    parser.add_argument("--file", type=Path, metavar="PATH", help="Image or PDF to load")
+    parser.add_argument(
+        "--file", type=Path, metavar="PATH", help="Image or PDF to load"
+    )
     parser.add_argument("--profile", metavar="NAME", help="Printer profile override")
-    parser.add_argument("--address", metavar="ADDR", help="BLE device address (skips scan)")
+    parser.add_argument(
+        "--address", metavar="ADDR", help="BLE device address (skips scan)"
+    )
     parser.add_argument(
         "--dither",
         choices=["floyd_steinberg", "threshold"],
@@ -34,8 +38,12 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["light", "medium", "dark"],
         help="Print density",
     )
-    parser.add_argument("--page", type=int, metavar="N", help="Starting page for PDFs (default 1)")
-    parser.add_argument("--headless", action="store_true", help="Print and exit, no TUI")
+    parser.add_argument(
+        "--page", type=int, metavar="N", help="Starting page for PDFs (default 1)"
+    )
+    parser.add_argument(
+        "--headless", action="store_true", help="Print and exit, no TUI"
+    )
     return parser
 
 
@@ -97,7 +105,7 @@ async def _headless_print(
     print("Connecting…", file=sys.stderr)
     try:
         await asyncio.wait_for(svc._run_until_connected(), timeout=30.0)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         print("Error: could not connect within 30 s", file=sys.stderr)
         sys.exit(1)
     except Exception as exc:
@@ -108,7 +116,7 @@ async def _headless_print(
 
     try:
         await asyncio.wait_for(svc.print_job(file, page), timeout=300.0)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         print("Error: print job timed out", file=sys.stderr)
         sys.exit(1)
 
@@ -154,15 +162,15 @@ def main() -> None:
 
     app = PhomemoApp()
 
-    # Apply CLI overrides to the loaded config before launch
+    # Apply CLI overrides to the loaded config before launch (do not persist)
     if args.profile:
-        app.config.profile_override = args.profile
+        object.__setattr__(app.config, "profile_override", args.profile)
     if args.address:
-        app.config.last_device_address = args.address
+        object.__setattr__(app.config, "last_device_address", args.address)
     if args.dither:
-        app.config.dither = args.dither  # type: ignore[assignment]
+        object.__setattr__(app.config, "dither", args.dither)
     if args.density:
-        app.config.density = args.density  # type: ignore[assignment]
+        object.__setattr__(app.config, "density", args.density)
     if args.file:
         app.current_file = args.file
         if args.page:
