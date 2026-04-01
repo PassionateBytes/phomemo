@@ -10,6 +10,12 @@ from phomemo_tui.file_utils import get_page_count
 from phomemo_tui.messages import CancelPrintRequested, PrintRequested
 from phomemo_tui.printer_service import ServiceState
 
+_PRINTING_STATES: frozenset[ServiceState] = frozenset({
+    ServiceState.WAITING_FOR_READY,
+    ServiceState.PRINTING,
+    ServiceState.WAITING_FOR_PAPER,
+})
+
 
 class PrintButton(Static, can_focus=True):
     """Full-width tile that acts as Print or Cancel depending on state.
@@ -42,15 +48,10 @@ class PrintButton(Static, can_focus=True):
             ServiceState.CONNECTING,
         )
         file_path = app.current_file
-        printing_states = {
-            ServiceState.WAITING_FOR_READY,
-            ServiceState.PRINTING,
-            ServiceState.WAITING_FOR_PAPER,
-        }
 
         self.remove_class("ready", "cancel", "disabled")
 
-        if service_state in printing_states:
+        if self._locked or service_state in _PRINTING_STATES:
             self.update("[bold]CANCEL[/bold]")
             self.add_class("cancel")
             return
@@ -61,7 +62,9 @@ class PrintButton(Static, can_focus=True):
             return
 
         # Ready — build contextual label
-        label = _build_print_label(file_path, app.current_page, app.config.multi_page_mode)
+        label = _build_print_label(
+            file_path, app.current_page, app.config.multi_page_mode
+        )
         self.update(f"[bold]{label}[/bold]")
         self.add_class("ready")
 
@@ -82,13 +85,8 @@ class PrintButton(Static, can_focus=True):
             return
 
         service_state = app.printer_service.state
-        printing_states = {
-            ServiceState.WAITING_FOR_READY,
-            ServiceState.PRINTING,
-            ServiceState.WAITING_FOR_PAPER,
-        }
 
-        if service_state in printing_states:
+        if self._locked or service_state in _PRINTING_STATES:
             self.post_message(CancelPrintRequested())
             return
 
@@ -100,7 +98,9 @@ class PrintButton(Static, can_focus=True):
         if not connected or app.current_file is None:
             return  # disabled
 
-        self.post_message(PrintRequested(source=app.current_file, start_page=app.current_page))
+        self.post_message(
+            PrintRequested(source=app.current_file, start_page=app.current_page)
+        )
 
 
 def _build_print_label(path: Path, current_page: int, multi_page_mode: str) -> str:

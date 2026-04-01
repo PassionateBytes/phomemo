@@ -72,7 +72,7 @@ class MainMenuScreen(Screen):
             case "panel-settings" if not locked:
                 self.query_one(SettingsPanel)._open_settings()
             case "panel-preview" if not locked:
-                self.query_one(PreviewPanel).on_click()
+                self.query_one(PreviewPanel).open_file_picker()
 
     def action_quit(self) -> None:
         self.app.exit()

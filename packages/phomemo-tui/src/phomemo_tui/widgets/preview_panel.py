@@ -157,9 +157,13 @@ class PreviewPanel(Static, can_focus=True):
     # Key handling
     # ------------------------------------------------------------------
 
-    def on_click(self) -> None:
+    def open_file_picker(self) -> None:
+        """Open the file picker dialog."""
         if not self._locked:
             self._open_file_picker()
+
+    def on_click(self) -> None:
+        self.open_file_picker()
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter" and not self._locked:
