@@ -10,6 +10,8 @@ from textual.screen import Screen
 from textual.widgets import Footer, Header, Static
 
 from phomemo_tui.widgets.preview_panel import PreviewPanel
+from phomemo_tui.widgets.print_button import PrintButton
+from phomemo_tui.widgets.settings_panel import SettingsPanel
 from phomemo_tui.widgets.status_panel import StatusPanel
 
 _GRID: dict[str, dict[str, str]] = {
@@ -34,10 +36,10 @@ class MainMenuScreen(Screen):
         with Horizontal(id="dashboard"):
             with Vertical(id="left-column"):
                 yield StatusPanel(id="panel-status").add_class("panel")
-                yield Panel(id="panel-settings", classes="panel")
+                yield SettingsPanel(id="panel-settings").add_class("panel")
             with Vertical(id="right-column"):
                 yield PreviewPanel(id="panel-preview").add_class("panel")
-                yield Panel(id="panel-print", classes="panel")
+                yield PrintButton(id="panel-print").add_class("panel")
         yield Footer()
 
     def on_mount(self) -> None:
@@ -68,7 +70,7 @@ class MainMenuScreen(Screen):
             case "panel-status" if not locked:
                 self.app.push_screen(ScannerScreen())
             case "panel-settings" if not locked:
-                pass  # wired in Task 10
+                self.query_one(SettingsPanel)._open_settings()
             case "panel-preview" if not locked:
                 self.query_one(PreviewPanel).on_click()
 
