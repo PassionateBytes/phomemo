@@ -10,11 +10,13 @@ from phomemo_tui.file_utils import get_page_count
 from phomemo_tui.messages import CancelPrintRequested, PrintRequested
 from phomemo_tui.printer_service import ServiceState
 
-_PRINTING_STATES: frozenset[ServiceState] = frozenset({
-    ServiceState.WAITING_FOR_READY,
-    ServiceState.PRINTING,
-    ServiceState.WAITING_FOR_PAPER,
-})
+_PRINTING_STATES: frozenset[ServiceState] = frozenset(
+    {
+        ServiceState.WAITING_FOR_READY,
+        ServiceState.PRINTING,
+        ServiceState.WAITING_FOR_PAPER,
+    }
+)
 
 
 class PrintButton(Static, can_focus=True):
@@ -26,8 +28,8 @@ class PrintButton(Static, can_focus=True):
       - cancel (amber): active print job or waiting state
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, **kwargs: object) -> None:
+        super().__init__(**kwargs)
         self._locked = False
 
     def on_mount(self) -> None:
