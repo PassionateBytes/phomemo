@@ -29,6 +29,8 @@
 - Bug found and fixed on hardware: sending each `GS v 0` band as its own write burst produced white stripes at every band boundary (printer advances paper when it runs dry at a band end); fixed by streaming continuously and padding the band with white rows on abort.
 - Bugs found and fixed: `open` with the printer off aborted the job; failed subscription right after connect raised a raw `BleakError`; short sheet left in the rollers after the overrun.
 - Observed, not fixed: vertical scale varied ~5 % between two identical prints before the band fix (stripes added length); re-check after the fix before touching the bottom margin.
+- Review fix pass re-checks: printer switched off while a job waited for a sheet, then on again: `printer-off` → reconnect → printed. Lid lifted mid-page: first run showed the gap (job failed only because the sheet was pulled), fixed by watching the lid event during the transfer; rerun: `lid opened` within seconds, reconnect, next print clean. SIGTERM now drops the BLE link and the socket (a killed daemon used to leave BlueZ holding the link so the printer stopped advertising).
+- Hardware quirk for operators: a daemon killed with SIGKILL leaves the link up; `bluetoothctl disconnect <MAC>` frees it.
 
 ## Immediate next
 
