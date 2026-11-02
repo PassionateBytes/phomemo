@@ -12,7 +12,7 @@ CFLAGS  += -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror -Wno-unused-parameter \
 LDLIBS  += $(shell pkg-config --libs pappl)
 
 APP      = phomemo-printer-app
-SRCS     = main.c bridge.c
+SRCS     = main.c bridge.c device.c
 VENDOR   = third_party/cJSON.c
 VOBJS    = $(VENDOR:.c=.o)
 OBJS     = $(SRCS:.c=.o)

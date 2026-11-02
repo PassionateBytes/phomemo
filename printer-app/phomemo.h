@@ -9,12 +9,20 @@
 #define PHOMEMO_H
 
 #include <pappl/pappl.h>
+#include <stddef.h>
 
 #define PHOMEMO_VERSION "0.1.0"
 #define PHOMEMO_DRIVER_NAME "m08f"
 #define PHOMEMO_MAKE_AND_MODEL "Phomemo M08F"
 #define PHOMEMO_DEVICE_ID "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"
 #define PHOMEMO_URI_SCHEME "phomemo"
+
+// Registers the phomemo:// device scheme with PAPPL.
+void phomemo_device_add_scheme(void);
+
+// Resolves the bridge socket path: $PHOMEMO_BRIDGE_SOCKET, else
+// $XDG_RUNTIME_DIR/phomemo-bridge.sock, else /run/phomemo/bridge.sock.
+const char *phomemo_socket_path(char *buffer, size_t bufsize);
 
 // Driver callback registered with PAPPL for the "m08f" driver.
 bool phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
