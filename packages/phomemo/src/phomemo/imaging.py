@@ -36,6 +36,7 @@ class ImageFit(StrEnum):
 
     FIT_WIDTH = "fit_width"
     FIT_HEIGHT = "fit_height"
+    FIT_PAGE = "fit_page"
     STRETCH = "stretch"
     ORIGINAL = "original"
 
@@ -46,6 +47,7 @@ def prepare_image(
     fit: ImageFit = ImageFit.FIT_WIDTH,
     dither: DitherMode = DitherMode.FLOYD_STEINBERG,
     target_height: int | None = None,
+    max_height: int | None = None,
 ) -> Image.Image:
     """Resize and dither an image for thermal printing.
 
@@ -60,12 +62,15 @@ def prepare_image(
         fit: How to fit the image to the target dimensions.
         dither: Dithering algorithm for 1-bit conversion.
         target_height: Required for ``FIT_HEIGHT`` and ``STRETCH`` modes.
+        max_height: Required for ``FIT_PAGE``: the image is scaled to fit
+            within ``target_width`` x ``max_height`` preserving aspect ratio.
 
     Returns:
         A 1-bit (mode ``"1"``) PIL Image ready for bitmap conversion.
 
     Raises:
-        ValueError: If ``target_height`` is required but not provided.
+        ValueError: If ``target_height`` or ``max_height`` is required by
+            the fit mode but not provided.
     """
     w, h = img.size
     target_width = (target_width // 8) * 8
@@ -79,6 +84,11 @@ def prepare_image(
                 raise ValueError("target_height required for FIT_HEIGHT")
             scale = target_height / h
             new_size = (int(w * scale), target_height)
+        case ImageFit.FIT_PAGE:
+            if max_height is None:
+                raise ValueError("max_height required for FIT_PAGE")
+            scale = min(target_width / w, max_height / h)
+            new_size = (max(8, int(w * scale) // 8 * 8), int(h * scale))
         case ImageFit.STRETCH:
             if target_height is None:
                 raise ValueError("target_height required for STRETCH")

@@ -596,6 +596,14 @@ class Printer:
             len(bitmap),
             density,
         )
+        max_rows = self._profile.max_rows
+        if max_rows is not None and height > max_rows:
+            logger.warning(
+                "Raster is %d rows but the sheet holds %d; the paper will run "
+                "out before the job ends",
+                height,
+                max_rows,
+            )
         payload = self._build_raster_payload(bitmap, height, density, mode, feed_lines)
         logger.debug("print_bitmap: payload %d bytes", len(payload))
         await self._transport.write_chunked(payload, on_chunk=on_progress)
@@ -644,7 +652,8 @@ class Printer:
         Args:
             source: Path to an image file, or a PIL ``Image`` instance.
             density: Print concentration (None to skip).
-            fit: How to fit the image to the print width.
+            fit: How to fit the image to the print area. ``FIT_PAGE`` bounds
+                the result by the profile's ``max_rows`` as well as its width.
             dither: Dithering algorithm for 1-bit conversion.
             feed_lines: Paper feed lines after printing.
             on_progress: Progress callback ``(chunks_sent, total_chunks)``.
@@ -654,6 +663,8 @@ class Printer:
         Raises:
             RuntimeError: If not connected.
             FileNotFoundError: If the source path doesn't exist.
+            ValueError: If ``fit`` is ``FIT_PAGE`` and the profile has no
+                ``max_rows``.
         """
 
         logger.debug("print_image: source=%r fit=%s dither=%s", source, fit, dither)
@@ -666,6 +677,7 @@ class Printer:
                 target_width=self._profile.print_width_px,
                 fit=fit,
                 dither=dither,
+                max_height=self._profile.max_rows,
             )
             return image_to_bitmap(processed), processed.size[1]
 
