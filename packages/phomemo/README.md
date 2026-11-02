@@ -134,7 +134,7 @@ await printer.print_image(
 
 `ImageFit.FIT_WIDTH` scales to the head width only; `FIT_PAGE` also bounds the height by the profile's `max_rows` (the printable rows of its default sheet; `profile.rows_for(length_mm)` gives the same for any sheet length), so a tall image cannot run the sheet out. `print_bitmap()` logs a warning when a raster is taller than `max_rows`.
 
-Raster data is written with ATT write responses, one `GS v 0` band per write call. The ATT round trip caps the stream at roughly 6.5–7.4 KiB/s, which the printer keeps up with on every content tested, so no inter-chunk delay is needed. `print_bitmap(abort=event)` stops at the next band boundary when the event is set and raises `PrintAborted`; a paper-absent event while more than a quarter of the page is unsent, or a printer that stops answering after the motor stop, raises `SheetRanOut`. `Printer.rows_sent` reports transfer progress.
+Raster data is written with ATT write responses as one continuous stream of link-sized chunks (the printer advances blank paper whenever it runs dry at a `GS v 0` band end, so bands are never sent as separate bursts). The ATT round trip caps the stream at roughly 6.5–7.4 KiB/s, which the printer keeps up with on every content tested, so no inter-chunk delay is needed. `print_bitmap(abort=event)` stops when the event is set: the band in progress is completed with white rows so the printer's parser stays in sync, then `PrintAborted("cancelled")` is raised. A paper-absent event while more than a quarter of the page is unsent, or a printer that stops answering after the motor stop, raises `SheetRanOut`; a lid found open at the motor stop raises `PrintAborted("lid opened")`. `Printer.rows_sent` reports transfer progress. BLE failures surface as `ConnectionError`, including a link the printer drops on its own.
 
 For a page raster coming from a print system (8-bit gray or 1-bit), `prepare_page(img, profile, length_mm, tone, rotate)` maps it onto the sheet: optional quarter-turn rotation (A5 fed long edge first), centring on the head width, dropping the rows in the unprintable top lead, clipping to the sheet, and converting gray with a `ToneMode` (`THRESHOLD`, `ORDERED`, `DIFFUSION`).
 
@@ -243,7 +243,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
-| `band_height` | profile (256) | Rows per `GS v 0` band; a band is the cancel granularity. |
+| `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
 | `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
 | `[printer] address` | discover by name | BLE address of the printer. |
 | `[printer] profile` | `M08F-A4` | Profile name. |
@@ -253,14 +253,14 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | Command | Arguments | Reply |
 |---------|-----------|-------|
 | `discover` | `timeout` | `printers: [{name, address}]` |
-| `open` | | connects (or reuses the held link) |
+| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` when the printer is unreachable, `wait_ready` keeps retrying |
 | `status` | | `connected`, and when connected `lid`, `paper`, `battery` |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |
-| `page_end` | | prints and ejects; `impressions: 1`, or `error`: `paper ran out`, `cancelled`, `connection lost: ...` |
+| `page_end` | | prints and ejects; `impressions: 1`, or `error`: `paper ran out`, `cancelled`, `lid opened`, `connection lost: ...` |
 | `eject` | | `ejected` |
-| `abort` | | stops a pending `wait_ready` or transfer (at the band boundary, then drains and ejects); ok even when idle |
+| `abort` | | stops a pending `wait_ready` or transfer (the band in progress is padded white, then drain and eject); ok even when idle |
 | `close` | | starts the hold timer |
 
 ## Supported Printers

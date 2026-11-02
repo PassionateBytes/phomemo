@@ -83,7 +83,10 @@ def main(argv: list[str] | None = None) -> int:
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
     )
     try:
-        config = load_config(paths=[args.config] if args.config else None)
+        config = load_config(
+            paths=[args.config] if args.config else None,
+            require_files=args.config is not None,
+        )
     except ConfigError as exc:
         print(f"configuration error: {exc}", file=sys.stderr)
         return 2
