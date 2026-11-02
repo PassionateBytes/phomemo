@@ -420,6 +420,9 @@ class Session:
                 if exc.reason == "cancelled":
                     await asyncio.sleep(bridge.config.drain_seconds)
                     await printer.eject_paper()
+                else:
+                    logger.warning("Page aborted: %s", exc.reason)
+                    await self._recover_link()
                 raise CommandError(exc.reason) from exc
             except (TimeoutError, ConnectionError, OSError) as exc:
                 raise CommandError(f"connection lost: {exc}") from exc
