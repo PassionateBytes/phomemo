@@ -1,0 +1,17 @@
+# User unit: install to ~/.config/systemd/user/, then
+#   systemctl --user enable --now phomemo-bridge
+# The socket lands in $XDG_RUNTIME_DIR; the printer application reads the
+# same PHOMEMO_BRIDGE_SOCKET value.
+[Unit]
+Description=Phomemo printer bridge (BLE side of the printer application)
+After=bluetooth.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/phomemo-bridge serve
+Environment=PHOMEMO_BRIDGE_SOCKET=%t/phomemo-bridge.sock
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
