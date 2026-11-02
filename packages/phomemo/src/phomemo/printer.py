@@ -282,8 +282,8 @@ class Printer:
 
         Feeds ``ESC d 255`` (about 32mm) at a time and queries the paper
         sensor after each feed. Once the sensor reports absent, one more
-        feed clears the rollers. A query timeout is treated as absent: the
-        printer stops answering queries while it is in the paper-out state.
+        feed clears the rollers. A query timeout is treated as absent: a
+        printer that ran out of paper mid-raster stops answering queries.
 
         Args:
             max_feeds: Maximum number of feeds before giving up.
@@ -296,7 +296,7 @@ class Printer:
         for i in range(1, max_feeds + 1):
             await self.feed(255)
             await asyncio.sleep(settle)
-            paper = await self.query_paper(timeout=1.0)
+            paper = await self.query_paper(timeout=2.0)
             logger.debug("eject_paper: feed %d, paper=%s", i, paper)
             if paper is None or paper == PaperState.ABSENT:
                 await self.feed(255)
@@ -525,7 +525,7 @@ class Printer:
 
         Polls ``check_ready`` so a caller can start a page job and let the
         user insert the sheet afterwards. Query timeouts count as not ready
-        because a printer in the paper-out state does not answer queries.
+        because a printer that ran out of paper mid-raster stops answering.
 
         Args:
             timeout: Maximum seconds to wait.

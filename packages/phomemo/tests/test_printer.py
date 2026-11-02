@@ -222,6 +222,22 @@ async def test_eject_stops_after_sensor_reports_absent(
 
 
 @pytest.mark.asyncio
+async def test_eject_gives_the_sensor_two_seconds_after_a_feed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _eject_printer(monkeypatch, [PaperState.ABSENT])
+    timeouts: list[float] = []
+
+    async def record(timeout: float) -> PaperState:
+        timeouts.append(timeout)
+        return PaperState.ABSENT
+
+    monkeypatch.setattr(printer, "query_paper", record)
+    await printer.eject_paper()
+    assert timeouts == [2.0]
+
+
+@pytest.mark.asyncio
 async def test_eject_treats_query_timeout_as_absent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
