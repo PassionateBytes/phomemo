@@ -55,12 +55,10 @@ async def test_query_does_not_eat_unrelated_events():
         printer._dispatch_event(BatteryEvent(kind=EventKind.BATTERY, percent=75))
 
     asyncio.create_task(inject_events())
-    result = await printer._query(QueryCommand.BATTERY, timeout=0.5)
+    result = await printer._query(QueryCommand.BATTERY, BatteryEvent, timeout=0.5)
 
-    # The battery event should be in the query result
-    battery_events = [e for e in result if isinstance(e, BatteryEvent)]
-    assert len(battery_events) == 1
-    assert battery_events[0].percent == 75
+    assert isinstance(result, BatteryEvent)
+    assert result.percent == 75
 
     # The lid event should have reached the callback
     lid_events = [e for e in received if isinstance(e, LidEvent)]
