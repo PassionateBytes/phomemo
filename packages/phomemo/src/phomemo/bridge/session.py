@@ -399,6 +399,7 @@ class Session:
             except SheetRanOut as exc:
                 logger.warning("Sheet ran out: %s", exc)
                 await self._recover_link()
+                await self._eject_remainder(printer)
                 raise CommandError(exc.reason) from exc
             except PrintAborted as exc:
                 await asyncio.sleep(bridge.config.drain_seconds)
@@ -412,6 +413,13 @@ class Session:
             return {"impressions": 1}
         finally:
             self._page = None
+
+    async def _eject_remainder(self, printer: Any) -> None:
+        """Clear a short sheet still held by the rollers after an overrun."""
+        try:
+            await printer.eject_paper()
+        except (ConnectionError, OSError, TimeoutError) as exc:
+            logger.warning("Eject after sheet overrun failed: %s", exc)
 
     async def _recover_link(self) -> None:
         printer = self._bridge.printer
