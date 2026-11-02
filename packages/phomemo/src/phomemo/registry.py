@@ -32,8 +32,14 @@ class PrinterProfile:
             negotiated BLE MTU at connect time and derive the effective chunk
             size from it (MTU minus 3 bytes ATT overhead). Falls back to
             ``max_chunk_bytes`` if the MTU cannot be determined.
-        chunk_delay_s: Minimum delay between BLE writes in seconds. 0.02s
-            is reliable for full-page jobs on the M08F.
+        write_with_response: Use ATT Write Request (``True``, default) rather
+            than Write Command for every write. The printer delays its
+            response while its receive buffer is full, so the stream is paced
+            by the print head and never overflows. Unacknowledged writes need
+            ``chunk_delay_s`` and still overflow on long jobs.
+        chunk_delay_s: Minimum delay between BLE writes in seconds. ``0.0``
+            (default) with ``write_with_response``; only unacknowledged
+            writes need a delay.
         band_height: Maximum rows per GS v 0 raster command.
         service_uuid: BLE GATT service UUID for the print data service.
         write_uuid: BLE characteristic UUID for writing commands/data.
@@ -55,7 +61,8 @@ class PrinterProfile:
     dpi: int = 203
     max_chunk_bytes: int = 244
     negotiate_mtu: bool = True
-    chunk_delay_s: float = 0.02
+    write_with_response: bool = True
+    chunk_delay_s: float = 0.0
     band_height: int = 256
     service_uuid: str = "0000ff00-0000-1000-8000-00805f9b34fb"
     write_uuid: str = "0000ff02-0000-1000-8000-00805f9b34fb"
