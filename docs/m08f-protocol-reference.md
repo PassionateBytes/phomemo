@@ -115,16 +115,37 @@ host.
 | Negotiated MTU     | 247 bytes                                                       |
 | Usable ATT payload | 244 bytes                                                       |
 | Maximum write size | 244 bytes per `write_gatt_char` call                            |
-| Write method       | Write Without Response (`write_gatt_char(..., response=False)`) |
+| Write method       | Write Request (`write_gatt_char(..., response=True)`), see Chunking |
 
 Writes larger than 244 bytes fail with `org.bluez.Error.Failed`.
 
-### Chunking
+### Chunking and Flow Control
 
-Print data must be split into chunks of at most 244 bytes. There is no per-chunk
-acknowledgement — the protocol is fire-and-forget. A 20ms inter-chunk delay has
-been observed to work reliably for full-page print jobs. 0ms delay works for
-small jobs but has not been stress-tested at scale.
+Print data must be split into chunks of at most 244 bytes. Flow control comes
+from the ATT layer: with **Write Request** (`response=True`) the printer delays
+its response while its receive buffer is full, so the sender is paced by the
+print head and needs no artificial delay. Measured throughput on an A4 page:
+~7.4 KiB/s at medium density on sparse content, ~5.7 KiB/s at high density on
+solid black, both steady from the first second. The motor-stop signal arrives
+within about a second of the last acknowledged write.
+
+**Write Command** (`response=False`) is accepted but unsafe for long jobs. The
+printer does not acknowledge writes on `ff01`; `ff03` echoes `01 01` per write
+(see Service `0000ff00`), but that echo comes from the BLE bridge and lags the
+sender by at most a few chunks even when the printer falls behind, so it is
+not a credit signal. At 244 bytes every 20 ms (~11.3 KiB/s) the printer
+consumes roughly 7.5 KiB/s and its receive buffer (around 128 KB) overflows
+about two thirds into an A4 page. Symptoms of the overflow:
+
+- every row after the loss starts late by the number of bytes dropped, so the
+  image shifts right and the overflow wraps to the left edge (a 25 mm shift
+  equals six lost 244-byte chunks);
+- the next `GS v 0` header is misparsed, the job stops, and the LED blinks;
+- the MCU ignores `1f 11 XX` queries until the printer is power-cycled.
+
+A fixed delay cannot fix this: the safe rate depends on content density and
+the printer starves (visible as stutter) on sparse pages at a delay that is
+still too fast for dense ones.
 
 ### Connect Sequence
 
@@ -134,6 +155,9 @@ On BLE connect, the following notifications fire automatically:
 | ------- | ---------------- | --------- | --------------------------------------------------------------------------------------- |
 | `ff03`  | `01 07`          | Immediate | Connect greeting. Purpose of `07` unknown **[assumed — version or capability flag]**    |
 | `ff03`  | `02 f4 00`       | Immediate | Fixed constant (`f4 00` = 244 LE). Possibly the printer advertising its max write payload. **[assumed — 244 matches exactly the observed BLE ATT MTU negotiation of 247 (minus 3 bytes ATT overhead -> 244 byte payload)]**   |
+
+Both `ff03` greetings also fire when writes use Write Request; the per-write
+`01 01` echo on `ff03` does not (the ATT response takes its place).
 | `fec8`  | 26-byte protobuf | ~100ms    | Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing. |
 
 ---
@@ -253,8 +277,17 @@ print-complete indicator.
 | No paper loaded            | ~1s                            |
 | Lid opened mid-print       | ~2.5s                          |
 | Paper pulled out mid-print | ~5s                            |
+| Paper ran out mid-print    | ~5s after `1a 06 88`           |
 
 The third byte (`0c`) is invariant across all tested conditions.
+
+When the sheet runs out before the raster ends, `1a 06 88` fires as the trailing
+edge passes the rear sensor, the remaining writes are acknowledged immediately
+(discarded), and `1a 0f 0c` follows about 5 s later. The printer then sits in a
+paper-out state in which it **ignores all `1f 11 XX` queries**; the LED is red.
+Loading a new sheet (and in the tested case reconnecting) restores query
+responses. A driver that waits for a sheet must therefore treat query timeouts
+as "not ready" rather than as a transport failure.
 ---
 
 ## Device Information and Status Queries
@@ -400,15 +433,21 @@ Example: `1a 05 98  1a 06 88` = lid closed + paper absent (single notification).
 
 ### Paper Eject
 
-To eject paper fully (e.g., after printing an A4 sheet), chain multiple
-ESC d 255 commands:
+To eject a sheet, feed `ESC d 255` (~32 mm) repeatedly and query the paper
+sensor (`1f 11 11`) after each feed:
 
 ```
-1b 64 ff   # repeat 10–12 times for A4 (~320–384mm total feed)
+loop:
+  1b 64 ff          # feed 32mm
+  wait ~0.4s
+  1f 11 11          # → 1a 06 89 present: feed again
+                    # → 1a 06 88 absent, or no answer: one more feed, done
 ```
 
-12 repetitions ≈ 384mm, sufficient for A4 (297mm) with margin. The motor
-continues running briefly after the paper exits the rollers.
+Half an A4 sheet left the rear sensor after four feeds. A missing query answer
+means the printer has entered the paper-out state (see Print Completion
+Signal) and the sheet is already past the sensor. A blind burst of twelve
+feeds (~384 mm) also works but keeps the motor running after the sheet is out.
 ---
 
 ## Density and Print Quality
@@ -622,6 +661,15 @@ data relay — but this was not consistently reproducible.
 | LED indicator                | Red/green. Not controllable via BLE. Indicates print-ready state: **green** when lid is closed AND paper is present; **red** otherwise. |
 | Charging                     | USB. Charge state not reported over BLE.                                                                                |
 
+### Sheet Geometry (A4)
+
+| Property                 | Value                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| Top margin               | ~11 mm from the leading paper edge to raster row 0 (sensor-to-head distance, hardware) |
+| Printable rows           | ~2285 (286 mm); row 2300 of a full-width raster lands ~1 mm above the bottom edge     |
+| Row pitch                | 100 rows = 12.5 mm at 203 dpi (measured: 12–12.5 mm)                                   |
+| Oversize raster          | Paper runs out mid-job, see Print Completion Signal                                     |
+
 ---
 
 ## Driver Implementation Notes
@@ -639,7 +687,7 @@ header   = b"\x1d\x76\x30\x00" + width_le + height_le  # GS v 0
 data     = bitmap_bytes                               # 1-bit raster
 feed     = b"\x1b\x64\x14"                           # ESC d 20
 payload  = init + density + header + data + feed
-# 3. Chunk into 244-byte segments, write each to ff02
+# 3. Chunk into 244-byte segments, write each to ff02 with response=True
 # 4. Listen for 1a 0f 0c on ff01 = print complete
 ```
 
@@ -648,13 +696,15 @@ payload  = init + density + header + data + feed
 | Parameter             | Tested value                       |
 | --------------------- | ---------------------------------- |
 | Chunk size            | 244 bytes (MTU - 3)                |
-| Inter-chunk delay     | 20ms (reliable for full-page jobs) |
+| Write mode            | Write Request (`response=True`)    |
+| Inter-chunk delay     | none (ATT response paces sender)   |
 | Band height           | 256 rows per GS v 0 command        |
 | Print-complete signal | `1a 0f 0c` on `ff01`               |
 | Density (low)         | `1b 4e 04 01`                      |
 | Density (medium)      | `1b 4e 04 05`                      |
 | Density (high)        | `1b 4e 04 06`                      |
-| Paper eject           | `1b 64 ff` × 12                    |
+| Paper eject           | `1b 64 ff` until `1a 06 88`, +1    |
+| Printable A4 rows     | ~2285 below an 11 mm top margin    |
 
 ### Pre-Print State Check
 

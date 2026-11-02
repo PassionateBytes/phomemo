@@ -12,7 +12,8 @@ Built from a [reverse-engineered protocol specification](../../docs/m08f-protoco
 - Device queries — battery, firmware version, serial number, lid/paper state, auto-off timer
 - Real-time event stream — typed parsing of lid, paper, and print-complete notifications
 - Print density control (ESC N 04 concentration)
-- Paper feed and full-sheet eject
+- Flow control via ATT write responses, so full-page jobs never overflow the printer
+- Paper feed, sensor-driven sheet eject, wait-for-sheet helper
 - Print completion detection via motor-stop signal
 - Extensible profile system for multi-model support
 
@@ -45,7 +46,7 @@ uv add phomemo
 
 ```python
 import asyncio
-from phomemo import Printer, Density, discover
+from phomemo import Printer, Density, ImageFit, discover
 
 async def main():
     # Find nearby printers
@@ -54,19 +55,16 @@ async def main():
         print("No printers found")
         return
 
-    async with Printer("M08F-A4") as printer:
-        await printer.connect(devices[0].address)
+    async with Printer("M08F-A4", devices[0]) as printer:
+        await printer.connect()
 
-        # Check readiness (lid closed, paper loaded)
-        ready, reason = await printer.check_ready()
-        if not ready:
-            print(f"Not ready: {reason}")
-            return
+        # Block until lid closed and a sheet is loaded
+        await printer.wait_for_ready(timeout=60)
 
-        # Print an image file
-        await printer.print_image("photo.png", density=Density.MEDIUM)
+        # Print an image file, scaled to fit the sheet
+        await printer.print_image("photo.png", density=Density.MEDIUM, fit=ImageFit.FIT_PAGE)
 
-        # Eject the page
+        # Feed until the sheet has left the paper sensor
         await printer.eject_paper()
 
 asyncio.run(main())
@@ -90,16 +88,18 @@ devices = await discover(name_pattern=r"^M08F")
 
 ### Connecting
 
-The `Printer` class manages the BLE connection lifecycle. Pass a profile name or a `PrinterProfile` instance:
+The `Printer` class manages the BLE connection lifecycle. Pass a profile name or a `PrinterProfile` instance, and optionally the device: a `BLEDevice` from `discover()`, a MAC address string, or nothing to discover by name on `connect()`:
 
 ```python
 from phomemo import Printer
 
-async with Printer("M08F-A4") as printer:
-    await printer.connect("60:6E:41:23:0B:D6")
+async with Printer("M08F-A4", "60:6E:41:23:0B:D6") as printer:
+    await printer.connect()
     # ... use the printer ...
 # automatically disconnects on exit
 ```
+
+A MAC string is resolved through a short targeted scan first, because BlueZ can only connect to a device it has recently seen advertising. The `discovery_timeout` argument of `connect()` bounds both that scan and name-based discovery.
 
 ### Querying Device State
 
@@ -127,10 +127,14 @@ from phomemo import Density, DitherMode, ImageFit
 await printer.print_image(
     "photo.png",
     density=Density.HIGH,
-    fit=ImageFit.FIT_WIDTH,
+    fit=ImageFit.FIT_PAGE,
     dither=DitherMode.FLOYD_STEINBERG,
 )
 ```
+
+`ImageFit.FIT_WIDTH` scales to the head width only; `FIT_PAGE` also bounds the height by the profile's `max_rows`, so a tall image cannot run the sheet out. `print_bitmap()` logs a warning when a raster is taller than `max_rows`.
+
+Raster data is written with ATT write responses. The printer holds each response while its buffer is full, so transfer speed follows the print head (roughly 7 KiB/s on sparse pages, 6 KiB/s on dense ones) and no inter-chunk delay is needed.
 
 For lower-level control, prepare and send bitmap data directly:
 
@@ -150,8 +154,13 @@ await printer.print_bitmap(bitmap, height=processed.size[1])
 # Feed a small amount (20 dot rows ~ 2.5mm)
 await printer.feed(20)
 
-# Eject the full sheet (chains ESC d 255 x12 for ~384mm)
-await printer.eject_paper()
+# Block until lid closed and a sheet is loaded (TimeoutError otherwise)
+await printer.wait_for_ready(timeout=60)
+
+# Feed 32mm at a time until the paper sensor reports the sheet gone,
+# then one more feed to clear the rollers. Returns False if the sheet
+# is still present after max_feeds.
+ejected = await printer.eject_paper(max_feeds=16)
 ```
 
 ### Event Listening
@@ -185,11 +194,23 @@ register_profile(PrinterProfile(
     ble_name_pattern=r"^M02S",
     print_width_px=576,
     max_chunk_bytes=244,
+    max_rows=None,          # continuous roll
 ))
 
 async with Printer("M02S") as printer:
     ...
 ```
+
+Profile fields beyond the BLE UUIDs:
+
+| Field | Default | Meaning |
+|-------|---------|---------|
+| `write_with_response` | `True` | ATT Write Request; the printer paces the stream. Set `False` only for models that need Write Command, and then set `chunk_delay_s`. |
+| `chunk_delay_s` | `0.0` | Delay between writes; only meaningful without responses. |
+| `max_chunk_bytes` | `244` | Fallback write size when the MTU cannot be read. |
+| `band_height` | `256` | Rows per `GS v 0` command. |
+| `max_rows` | `None` | Rows that fit on one sheet (`None` for roll media). Used by `FIT_PAGE` and the oversize warning. |
+| `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet. |
 
 ## Supported Printers
 
