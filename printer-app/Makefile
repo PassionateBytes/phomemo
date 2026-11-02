@@ -12,17 +12,25 @@ CFLAGS  += -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror -Wno-unused-parameter \
 LDLIBS  += $(shell pkg-config --libs pappl)
 
 APP      = phomemo-printer-app
-SRCS     = main.c
+SRCS     = main.c bridge.c
+VENDOR   = third_party/cJSON.c
+VOBJS    = $(VENDOR:.c=.o)
 OBJS     = $(SRCS:.c=.o)
-TESTS    =
+TESTS    = tests/test_bridge
 
 all: $(APP)
 
-$(APP): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDLIBS)
+$(APP): $(OBJS) $(VOBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(VOBJS) $(LDLIBS)
 
-%.o: %.c phomemo.h
+%.o: %.c phomemo.h bridge.h
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+third_party/%.o: third_party/%.c
+	$(CC) $(CFLAGS) -Wno-error -c -o $@ $<
+
+tests/test_bridge: tests/test_bridge.o bridge.o $(VOBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 test: $(TESTS)
 	@for t in $(TESTS); do echo "== $$t"; ./$$t || exit 1; done
