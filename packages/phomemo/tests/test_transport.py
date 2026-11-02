@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 
-import phomemo.profiles  # noqa: F401 — registers built-in profiles
+import phomemo.profiles  # noqa: F401, registers built-in profiles
 import phomemo.transport as transport_module
 import pytest
 from phomemo.registry import get_profile

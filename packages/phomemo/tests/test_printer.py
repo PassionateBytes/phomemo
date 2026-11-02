@@ -1,7 +1,7 @@
 import asyncio
 
 import phomemo.printer as printer_module
-import phomemo.profiles  # noqa: F401 — registers built-in profiles
+import phomemo.profiles  # noqa: F401, registers built-in profiles
 import pytest
 from bleak.backends.device import BLEDevice
 from phomemo.events import (
@@ -286,3 +286,19 @@ async def test_wait_for_ready_times_out_with_last_reason(
     monkeypatch.setattr(printer, "check_ready", _scripted([(False, "No paper loaded")]))
     with pytest.raises(TimeoutError, match="No paper loaded"):
         await printer.wait_for_ready(timeout=0.05, poll=0.01)
+
+
+@pytest.mark.asyncio
+async def test_print_bitmap_never_warns_without_max_rows(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    from dataclasses import replace
+
+    printer = Printer(replace(printer_module.get_profile("M08F-A4"), max_rows=None))
+    printer._transport = FakeTransport()  # type: ignore[assignment]
+    width_bytes = printer.profile.width_bytes
+    with caplog.at_level("WARNING", logger="phomemo.printer"):
+        await printer.print_bitmap(
+            bytes(width_bytes * 5000), height=5000, wait_for_completion=False
+        )
+    assert not caplog.records

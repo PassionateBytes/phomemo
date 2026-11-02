@@ -25,12 +25,13 @@ M08F_A4 = PrinterProfile(
     status_uuid=_M08F_STATUS,
 )
 
-# Letter: 279mm sheet, same lead as A4; max_rows derived, not measured.
+# Letter: 279.4mm sheet minus the same 11mm lead = 268mm ≈ 2145 rows.
+# Derived from the A4 measurement, not measured on Letter stock.
 M08F_LETTER = PrinterProfile(
     name="M08F-Letter",
     ble_name_pattern=r"^M08F",
     print_width_px=1728,
-    max_rows=2240,
+    max_rows=2145,
     top_margin_mm=11.0,
     write_uuid=_M08F_WRITE,
     notify_uuid=_M08F_NOTIFY,

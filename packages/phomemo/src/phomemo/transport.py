@@ -64,9 +64,9 @@ class BleTransport:
 
         ``ff01`` is the meaningful channel — it carries all device events
         (sensor state changes, print completion) and responses to queries sent
-        via ``ff02``. ``ff03`` is a low-value echo channel that returns ``01 01``
-        for most writes and a fixed connect greeting on startup; it does not
-        appear to carry query responses or actionable device state.
+        via ``ff02``. ``ff03`` is a low-value echo channel: a fixed connect
+        greeting on startup and ``01 01`` per Write Command (nothing for
+        Write Request); it does not carry query responses or device state.
 
         Args:
             address: BLE MAC address string or ``BLEDevice`` object. Passing a
@@ -75,8 +75,8 @@ class BleTransport:
                 paths and avoids ``BleakDeviceNotFoundError`` after scan expiry.
             on_event: Callback for all meaningful device notifications on
                 ``ff01``: sensor events, query responses, print completion.
-            on_status: Callback for the ``ff03`` echo channel. Returns ``01 01``
-                for most writes; useful only for low-level protocol debugging.
+            on_status: Callback for the ``ff03`` echo channel. Fires ``01 01``
+                per Write Command only; useful for low-level protocol debugging.
 
         Raises:
             ConnectionError: If the connection fails.

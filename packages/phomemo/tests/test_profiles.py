@@ -49,7 +49,7 @@ def test_profile_accepts_valid_uuids() -> None:
 
 
 def test_a4_profile_printable_area() -> None:
-    import phomemo.profiles  # noqa: F401 — registers built-in profiles
+    import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
     profile = get_profile("M08F-A4")
@@ -65,3 +65,12 @@ def test_profile_rejects_non_positive_max_rows() -> None:
 def test_profile_allows_none_max_rows() -> None:
     profile = _make_profile(max_rows=None)
     assert profile.max_rows is None
+
+
+def test_letter_profile_subtracts_the_same_top_margin() -> None:
+    import phomemo.profiles  # noqa: F401, registers built-in profiles
+    from phomemo.registry import get_profile
+
+    profile = get_profile("M08F-Letter")
+    assert profile.top_margin_mm == 11.0
+    assert profile.max_rows == 2145

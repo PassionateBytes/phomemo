@@ -155,10 +155,10 @@ On BLE connect, the following notifications fire automatically:
 | ------- | ---------------- | --------- | --------------------------------------------------------------------------------------- |
 | `ff03`  | `01 07`          | Immediate | Connect greeting. Purpose of `07` unknown **[assumed — version or capability flag]**    |
 | `ff03`  | `02 f4 00`       | Immediate | Fixed constant (`f4 00` = 244 LE). Possibly the printer advertising its max write payload. **[assumed — 244 matches exactly the observed BLE ATT MTU negotiation of 247 (minus 3 bytes ATT overhead -> 244 byte payload)]**   |
+| `fec8`  | 26-byte protobuf | ~100ms    | Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing. |
 
 Both `ff03` greetings also fire when writes use Write Request; the per-write
 `01 01` echo on `ff03` does not (the ATT response takes its place).
-| `fec8`  | 26-byte protobuf | ~100ms    | Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing. |
 
 ---
 
@@ -179,7 +179,7 @@ The main communication channel for printing and status.
 | ---------- | ----------------------------- | ------ | -------------------------------------------------------------------------------------- |
 | `ff02`     | write-without-response, write | 41     | **Command/data write channel** — all print data and commands go here                   |
 | `ff01`     | notify                        | 43     | **Device event channel** — sensor events, query responses, print completion            |
-| `ff03`     | notify                        | 46     | **Status echo channel** — returns `01 01` for most writes; connect greeting on startup |
+| `ff03`     | notify                        | 46     | **Status echo channel** — returns `01 01` per unacknowledged (Write Command) write, nothing for Write Request; connect greeting on startup |
 
 ### Service `0000ff80` — AT Command Interface
 
@@ -299,7 +299,8 @@ a transport failure.
 
 The primary information API. These are Phomemo-specific extensions (NOT standard
 ESC/POS). Write to `ff02`; responses arrive on **`ff01`** in `1a <sub-type>
-<data>` format. `ff03` echoes `01 01` for every command (uninformative).
+<data>` format. `ff03` echoes `01 01` for every command sent as Write Command
+(uninformative; silent for Write Request).
 
 | Command    | Label          | Response format             | Example                   | Notes                                                                                                                                                                                                                                 |
 | ---------- | -------------- | --------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -329,8 +330,8 @@ settings or unimplemented. The phomemo-tools init sequence uses `1f 11 02 04`
 
 ### Standard ESC/POS Queries (Non-Functional)
 
-The following standard ESC/POS information commands all return `01 01` on `ff03`
-with no useful data. The MCU does not implement them. The `1f 11 XX` commands
+The following standard ESC/POS information commands produce nothing but the
+`ff03` write echo (`01 01`, Write Command only) and no data on `ff01`. The MCU does not implement them. The `1f 11 XX` commands
 provide this information instead.
 | Command     | Bytes      | Standard purpose      |
 | ----------- | ---------- | --------------------- |
