@@ -1,0 +1,44 @@
+// Entry point: registers the m08f driver and hands control to PAPPL's main
+// loop (server, add, devices, drivers and the other standard subcommands).
+
+#include "phomemo.h"
+
+#include <string.h>
+
+static pappl_pr_driver_t drivers[] = {
+  {PHOMEMO_DRIVER_NAME, PHOMEMO_MAKE_AND_MODEL, PHOMEMO_DEVICE_ID, NULL},
+};
+
+static const char *footer_html =
+  "Phomemo printer application. Printing goes through phomemo-bridge.";
+
+const char *
+phomemo_autoadd_cb(const char *device_info, const char *device_uri,
+                   const char *device_id, void *data)
+{
+  if (device_uri && !strncmp(device_uri, PHOMEMO_URI_SCHEME "://",
+                             sizeof(PHOMEMO_URI_SCHEME) + 2))
+    return PHOMEMO_DRIVER_NAME;
+  return NULL;
+}
+
+bool
+phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
+                  const char *device_uri, const char *device_id,
+                  pappl_pr_driver_data_t *data, ipp_t **attrs, void *cbdata)
+{
+  if (strcmp(driver_name, PHOMEMO_DRIVER_NAME))
+    return false;
+  strncpy(data->make_and_model, PHOMEMO_MAKE_AND_MODEL,
+          sizeof(data->make_and_model) - 1);
+  return true;
+}
+
+int
+main(int argc, char *argv[])
+{
+  return papplMainloop(argc, argv, PHOMEMO_VERSION, footer_html,
+                       (int)(sizeof(drivers) / sizeof(drivers[0])), drivers,
+                       phomemo_autoadd_cb, phomemo_driver_cb, NULL, NULL,
+                       NULL, NULL, NULL);
+}
