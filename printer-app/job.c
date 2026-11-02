@@ -300,9 +300,3 @@ phomemo_rendjob_cb(pappl_job_t *job, pappl_pr_options_t *options,
   }
   return true;
 }
-
-bool
-phomemo_status_cb(pappl_printer_t *printer)
-{
-  return true;
-}

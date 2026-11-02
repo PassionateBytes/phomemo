@@ -190,39 +190,74 @@ phomemo_write_cb(pappl_device_t *device, const void *buffer, size_t bytes)
   return bridge ? write(bridge->fd, buffer, bytes) : -1;
 }
 
+// Sends status on a bridge connection and maps the reply onto printer
+// state reasons. Returns false when the bridge did not answer.
+static bool
+query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, char *err,
+             size_t errsize)
+{
+  cJSON *request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "status");
+  cJSON *reply = phomemo_bridge_call(bridge, request, NULL, 0, NULL, NULL, err,
+                                     errsize);
+  cJSON_Delete(request);
+  if (!reply)
+    return false;
+
+  cJSON *lid = cJSON_GetObjectItem(reply, "lid");
+  cJSON *paper = cJSON_GetObjectItem(reply, "paper");
+
+  *reasons = PAPPL_PREASON_NONE;
+  if (!cJSON_IsTrue(cJSON_GetObjectItem(reply, "connected")))
+    *reasons = PAPPL_PREASON_OTHER;
+  else if (cJSON_IsString(lid) && !strcmp(lid->valuestring, "open"))
+    *reasons = PAPPL_PREASON_COVER_OPEN;
+  else if (cJSON_IsString(paper) && !strcmp(paper->valuestring, "absent"))
+    *reasons = PAPPL_PREASON_MEDIA_EMPTY;
+
+  cJSON_Delete(reply);
+  return true;
+}
+
 static pappl_preason_t
 phomemo_devstatus_cb(pappl_device_t *device)
 {
   phomemo_bridge_t *bridge = papplDeviceGetData(device);
+  pappl_preason_t reasons;
   char err[256];
 
   if (!bridge)
     return PAPPL_PREASON_OTHER;
 
-  cJSON *request = cJSON_CreateObject();
-  cJSON_AddStringToObject(request, "cmd", "status");
-  cJSON *reply = phomemo_bridge_call(bridge, request, NULL, 0, NULL, NULL, err,
-                                     sizeof(err));
-  cJSON_Delete(request);
-  if (!reply)
+  if (!query_status(bridge, &reasons, err, sizeof(err)))
   {
     papplDeviceError(device, "phomemo-bridge status failed: %s", err);
     return PAPPL_PREASON_OTHER;
   }
-
-  pappl_preason_t reasons = PAPPL_PREASON_NONE;
-  cJSON *lid = cJSON_GetObjectItem(reply, "lid");
-  cJSON *paper = cJSON_GetObjectItem(reply, "paper");
-
-  if (!cJSON_IsTrue(cJSON_GetObjectItem(reply, "connected")))
-    reasons = PAPPL_PREASON_OTHER;
-  else if (cJSON_IsString(lid) && !strcmp(lid->valuestring, "open"))
-    reasons = PAPPL_PREASON_COVER_OPEN;
-  else if (cJSON_IsString(paper) && !strcmp(paper->valuestring, "absent"))
-    reasons = PAPPL_PREASON_MEDIA_EMPTY;
-
-  cJSON_Delete(reply);
   return reasons;
+}
+
+// Idle poll, called by PAPPL while no job holds the device. Uses a
+// connection of its own; a missing or busy bridge leaves the reasons
+// untouched, and a released printer link clears them.
+bool
+phomemo_status_cb(pappl_printer_t *printer)
+{
+  phomemo_bridge_t bridge;
+  pappl_preason_t reasons;
+  char err[256];
+
+  if (!bridge_connect(&bridge, err, sizeof(err)))
+    return true;
+
+  bool answered = query_status(&bridge, &reasons, err, sizeof(err));
+  phomemo_bridge_close(&bridge);
+  if (!answered)
+    return true;
+
+  pappl_preason_t sensed = PAPPL_PREASON_COVER_OPEN | PAPPL_PREASON_MEDIA_EMPTY;
+  papplPrinterSetReasons(printer, reasons & sensed, sensed & ~reasons);
+  return true;
 }
 
 static char *
