@@ -39,7 +39,7 @@ uv run phomemo-tui
 | M08F (A4) | `M08F-A4` | 1680 px | Tested |
 | M08F (Letter) | `M08F-Letter` | 1728 px | Untested |
 
-The profile system is extensible — see the [driver README](packages/phomemo/README.md#custom-profiles) for adding support for other models.
+The profile system is extensible; see the [driver README](packages/phomemo/README.md#custom-profiles) for adding support for other models.
 
 ## Requirements
 
@@ -49,6 +49,6 @@ The profile system is extensible — see the [driver README](packages/phomemo/RE
 
 ## License
 
-- **phomemo** (driver library) — [LGPL-3.0-or-later](packages/phomemo/LICENSE)
-- **phomemo-tui** (terminal UI) — [GPL-3.0-or-later](packages/phomemo-tui/LICENSE)
-- **Protocol reference** — [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+- **phomemo** (driver library): [LGPL-3.0-or-later](packages/phomemo/LICENSE)
+- **phomemo-tui** (terminal UI): [GPL-3.0-or-later](packages/phomemo-tui/LICENSE)
+- **Protocol reference**: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
