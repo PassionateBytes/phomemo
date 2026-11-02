@@ -281,13 +281,16 @@ print-complete indicator.
 
 The third byte (`0c`) is invariant across all tested conditions.
 
-When the sheet runs out before the raster ends, `1a 06 88` fires as the trailing
-edge passes the rear sensor, the remaining writes are acknowledged immediately
-(discarded), and `1a 0f 0c` follows about 5 s later. The printer then sits in a
-paper-out state in which it **ignores all `1f 11 XX` queries**; the LED is red.
-Loading a new sheet (and in the tested case reconnecting) restores query
-responses. A driver that waits for a sheet must therefore treat query timeouts
-as "not ready" rather than as a transport failure.
+`1a 06 88` fires when the trailing edge passes the rear sensor, which sits
+about 11 mm (~88 rows) before the print head; a raster that fits the sheet
+sees this event shortly before its own motor stop and the printer keeps
+answering queries. When the raster is taller than the sheet, the remaining
+writes are acknowledged immediately (discarded), `1a 0f 0c` follows about 5 s
+after the paper event, and the printer sits in an error state in which it
+**ignores all `1f 11 XX` queries**; the LED is red. Loading a new sheet (and
+in the tested case reconnecting) restores query responses. A driver that waits
+for a sheet must therefore treat query timeouts as "not ready" rather than as
+a transport failure.
 ---
 
 ## Device Information and Status Queries
@@ -444,9 +447,11 @@ loop:
                     # → 1a 06 88 absent, or no answer: one more feed, done
 ```
 
-Half an A4 sheet left the rear sensor after four feeds. A missing query answer
-means the printer has entered the paper-out state (see Print Completion
-Signal) and the sheet is already past the sensor. A blind burst of twelve
+Half an A4 sheet left the rear sensor after four feeds. Allow the sensor query
+about 2 s right after a feed; a 1 s timeout expired once while the motor was
+still moving. A missing answer after that means the printer has entered the
+overrun error state (see Print Completion Signal) and the sheet is already
+past the sensor. A blind burst of twelve
 feeds (~384 mm) also works but keeps the motor running after the sheet is out.
 ---
 
@@ -667,6 +672,7 @@ data relay — but this was not consistently reproducible.
 | ------------------------ | --------------------------------------------------------------------------------------- |
 | Top margin               | ~11 mm from the leading paper edge to raster row 0 (sensor-to-head distance, hardware) |
 | Printable rows           | ~2285 (286 mm); row 2300 of a full-width raster lands ~1 mm above the bottom edge     |
+| Verified photo job       | 1680x2178 raster at high density: 457 KB in 79.6 s (5.6 KiB/s), clean, 10 mm margins  |
 | Row pitch                | 100 rows = 12.5 mm at 203 dpi (measured: 12–12.5 mm)                                   |
 | Oversize raster          | Paper runs out mid-job, see Print Completion Signal                                     |
 
