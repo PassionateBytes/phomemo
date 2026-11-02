@@ -521,16 +521,46 @@ class Printer:
         logger.debug("check_ready: ready")
         return True, "ready"
 
-    async def wait_for_ready(self, timeout: float = 60.0, poll: float = 0.5) -> None:
-        """Block until the printer reports lid closed and paper loaded.
+    async def reconnect(self, discovery_timeout: float = 5.0) -> None:
+        """Drop and re-establish the BLE connection to the same device.
 
-        Polls ``check_ready`` so a caller can start a page job and let the
-        user insert the sheet afterwards. Query timeouts count as not ready
-        because a printer that ran out of paper mid-raster stops answering.
+        A printer that ran a raster past the end of the sheet stops
+        answering queries and discards further print data until the link
+        is re-established.
 
         Args:
-            timeout: Maximum seconds to wait.
+            discovery_timeout: Scan budget if the device has to be found again.
+        """
+        logger.info("Reconnecting to printer")
+        await self.disconnect()
+        await self.connect(discovery_timeout)
+
+    async def wait_for_ready(
+        self,
+        timeout: float = 60.0,
+        poll: float = 0.5,
+        settle: float = 3.0,
+        mute_threshold: int = 3,
+    ) -> None:
+        """Block until a sheet is loaded and seated at the print head.
+
+        Polls ``check_ready`` so a caller can start a page job and let the
+        user insert the sheet afterwards. The paper sensor reports the sheet
+        as soon as its edge arrives; the feed motor keeps pulling for about
+        two more seconds and then the printer repeats the paper-present
+        event. ``settle`` waits for that repeat (capped) so raster data is
+        not sent while the sheet is still moving.
+
+        ``mute_threshold`` consecutive query timeouts mean the printer is in
+        the error state left by a sheet overrun; the connection is dropped
+        and re-established once, which clears it.
+
+        Args:
+            timeout: Maximum seconds to wait for a sheet.
             poll: Seconds between readiness checks.
+            settle: Maximum seconds to wait for the feed to complete after
+                the sheet is detected; ``0`` sends as soon as it is detected.
+            mute_threshold: Consecutive query timeouts before a reconnect.
 
         Raises:
             TimeoutError: With the last readiness reason as message.
@@ -538,13 +568,25 @@ class Printer:
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
         reason = "not ready"
+        timeouts = 0
+        reconnected = False
         while True:
             ready, reason = await self.check_ready()
             if ready:
-                return
+                break
+            timeouts = timeouts + 1 if reason.startswith("Could not query") else 0
+            if timeouts >= mute_threshold and not reconnected:
+                reconnected = True
+                timeouts = 0
+                await self.reconnect()
+                continue
             if loop.time() >= deadline:
                 raise TimeoutError(reason)
             await asyncio.sleep(poll)
+        if settle > 0:
+            logger.debug("wait_for_ready: sheet detected, settling up to %.1fs", settle)
+            event = await self._wait_for(PaperEvent, settle)
+            logger.debug("wait_for_ready: settle ended with %s", event)
 
     # ------------------------------------------------------------------
     # Raster printing
@@ -645,12 +687,27 @@ class Printer:
             )
         payload = self._build_raster_payload(bitmap, height, density, mode, feed_lines)
         logger.debug("print_bitmap: payload %d bytes", len(payload))
-        await self._transport.write_chunked(payload, on_chunk=on_progress)
+        if not wait_for_completion:
+            await self._transport.write_chunked(payload, on_chunk=on_progress)
+            return
 
-        if wait_for_completion:
+        # Armed before the transfer: a printer that abandons the job (sheet
+        # ran out, lid opened) stops the motor while data is still in flight.
+        loop = asyncio.get_running_loop()
+        future: asyncio.Future[DeviceEvent] = loop.create_future()
+        entry = (MotorStopEvent, future)
+        self._waiters.append(entry)
+        try:
+            await self._transport.write_chunked(payload, on_chunk=on_progress)
             logger.debug("print_bitmap: waiting for motor stop")
-            await self._wait_for_motor_stop(completion_timeout)
-            logger.debug("print_bitmap: complete")
+            await asyncio.wait_for(future, timeout=completion_timeout)
+        except TimeoutError:
+            raise TimeoutError(
+                "Timed out waiting for print completion signal"
+            ) from None
+        finally:
+            self._waiters.remove(entry)
+        logger.debug("print_bitmap: complete")
 
     async def _wait_for_motor_stop(self, timeout: float) -> None:
         """Wait for the print-complete (motor stop) signal.

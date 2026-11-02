@@ -154,8 +154,11 @@ await printer.print_bitmap(bitmap, height=processed.size[1])
 # Feed a small amount (20 dot rows ~ 2.5mm)
 await printer.feed(20)
 
-# Block until lid closed and a sheet is loaded (TimeoutError otherwise)
-await printer.wait_for_ready(timeout=60)
+# Block until lid closed and a sheet is loaded and seated (TimeoutError otherwise).
+# After the sensor sees the sheet the feed motor runs ~2 s more; `settle` waits
+# for that (3 s cap). Three consecutive query timeouts mean the printer is in
+# the overrun error state; the link is reconnected once to clear it.
+await printer.wait_for_ready(timeout=300, settle=3.0)
 
 # Feed 32mm at a time until the paper sensor reports the sheet gone,
 # then one more feed to clear the rollers. Returns False if the sheet
@@ -194,7 +197,7 @@ register_profile(PrinterProfile(
     ble_name_pattern=r"^M02S",
     print_width_px=576,
     max_chunk_bytes=244,
-    max_rows=None,          # continuous roll
+    sheet_length_mm=None,   # continuous roll
 ))
 
 async with Printer("M02S") as printer:
@@ -209,8 +212,10 @@ Profile fields beyond the BLE UUIDs:
 | `chunk_delay_s` | `0.0` | Delay between writes; only meaningful without responses. |
 | `max_chunk_bytes` | `244` | Fallback write size when the MTU cannot be read. |
 | `band_height` | `256` | Rows per `GS v 0` command. |
-| `max_rows` | `None` | Rows that fit on one sheet (`None` for roll media). Used by `FIT_PAGE` and the oversize warning. |
-| `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet. |
+| `sheet_length_mm` | `None` | Sheet length in the feed direction (`None` for roll media). |
+| `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet (sensor-to-head distance). |
+| `bottom_margin_mm` | `0.0` | Kept free at the sheet end so raster plus trailing feed never overrun the sheet. |
+| `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2245. |
 
 ## Supported Printers
 

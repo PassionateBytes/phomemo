@@ -11,6 +11,7 @@ from phomemo.events import (
     LidEvent,
     LidState,
     MotorStopEvent,
+    PaperEvent,
     PaperState,
 )
 from phomemo.printer import Printer
@@ -32,6 +33,7 @@ class FakeTransport:
 
     async def connect(self, address: object, **kwargs: object) -> None:
         self.connect_address = address
+        self.connects = getattr(self, "connects", 0) + 1
 
     async def disconnect(self) -> None:
         pass
@@ -172,15 +174,15 @@ async def test_print_bitmap_warns_above_max_rows(
     width_bytes = printer.profile.width_bytes
     with caplog.at_level("WARNING", logger="phomemo.printer"):
         await printer.print_bitmap(
-            bytes(width_bytes * 2290), height=2290, wait_for_completion=False
+            bytes(width_bytes * 2245), height=2245, wait_for_completion=False
         )
         assert not caplog.records
         await printer.print_bitmap(
-            bytes(width_bytes * 2291), height=2291, wait_for_completion=False
+            bytes(width_bytes * 2246), height=2246, wait_for_completion=False
         )
     assert len(caplog.records) == 1
-    assert "2291" in caplog.records[0].getMessage()
-    assert "2290" in caplog.records[0].getMessage()
+    assert "2246" in caplog.records[0].getMessage()
+    assert "2245" in caplog.records[0].getMessage()
 
 
 _FEED_255 = b"\x1b\x64\xff"
@@ -294,7 +296,9 @@ async def test_print_bitmap_never_warns_without_max_rows(
 ) -> None:
     from dataclasses import replace
 
-    printer = Printer(replace(printer_module.get_profile("M08F-A4"), max_rows=None))
+    printer = Printer(
+        replace(printer_module.get_profile("M08F-A4"), sheet_length_mm=None)
+    )
     printer._transport = FakeTransport()  # type: ignore[assignment]
     width_bytes = printer.profile.width_bytes
     with caplog.at_level("WARNING", logger="phomemo.printer"):
@@ -302,3 +306,62 @@ async def test_print_bitmap_never_warns_without_max_rows(
             bytes(width_bytes * 5000), height=5000, wait_for_completion=False
         )
     assert not caplog.records
+
+
+@pytest.mark.asyncio
+async def test_wait_for_ready_settles_on_feed_complete_event(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _make_printer()
+    monkeypatch.setattr(printer, "check_ready", _scripted([(True, "ready")]))
+
+    async def feed_done() -> None:
+        await asyncio.sleep(0.02)
+        printer._dispatch_event(
+            PaperEvent(kind=EventKind.PAPER, paper=PaperState.PRESENT)
+        )
+
+    asyncio.create_task(feed_done())
+    t0 = asyncio.get_running_loop().time()
+    await printer.wait_for_ready(timeout=1.0, poll=0.01, settle=2.0)
+    assert asyncio.get_running_loop().time() - t0 < 0.5
+
+
+@pytest.mark.asyncio
+async def test_wait_for_ready_settle_is_capped(monkeypatch: pytest.MonkeyPatch) -> None:
+    printer = _make_printer()
+    monkeypatch.setattr(printer, "check_ready", _scripted([(True, "ready")]))
+    t0 = asyncio.get_running_loop().time()
+    await printer.wait_for_ready(timeout=1.0, poll=0.01, settle=0.05)
+    assert asyncio.get_running_loop().time() - t0 >= 0.05
+
+
+@pytest.mark.asyncio
+async def test_wait_for_ready_reconnects_when_queries_go_mute(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = Printer("M08F-A4", _fake_device())
+    printer._transport = FakeTransport()  # type: ignore[assignment]
+    await printer.connect()
+    mute = (False, "Could not query lid state")
+    monkeypatch.setattr(
+        printer, "check_ready", _scripted([mute, mute, mute, (True, "ready")])
+    )
+
+    async def no_sleep(_delay: float) -> None:
+        pass
+
+    monkeypatch.setattr(printer_module.asyncio, "sleep", no_sleep)
+    await printer.wait_for_ready(timeout=1.0, poll=0.01, settle=0.0)
+    assert printer._transport.connects == 2  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_print_bitmap_catches_motor_stop_sent_during_transfer() -> None:
+    printer = _make_printer()
+
+    async def write_and_stop(data: bytes, on_chunk: object = None) -> None:
+        printer._dispatch_event(MotorStopEvent(kind=EventKind.MOTOR_STOP))
+
+    printer._transport.write_chunked = write_and_stop  # type: ignore[attr-defined]
+    await printer.print_bitmap(bytes(210 * 8), height=8, completion_timeout=0.2)
