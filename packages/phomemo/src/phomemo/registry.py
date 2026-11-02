@@ -41,6 +41,12 @@ class PrinterProfile:
             (default) with ``write_with_response``; only unacknowledged
             writes need a delay.
         band_height: Maximum rows per GS v 0 raster command.
+        max_rows: Dot rows that fit on one sheet below the hardware top
+            margin, or ``None`` for continuous roll media. Rasters taller
+            than this run the paper out mid-job.
+        top_margin_mm: Unprintable lead from the paper edge to the first
+            printed row, set by the distance between the paper sensor and
+            the print head.
         service_uuid: BLE GATT service UUID for the print data service.
         write_uuid: BLE characteristic UUID for writing commands/data.
         notify_uuid: BLE characteristic UUID for device events (``ff01``).
@@ -64,6 +70,8 @@ class PrinterProfile:
     write_with_response: bool = True
     chunk_delay_s: float = 0.0
     band_height: int = 256
+    max_rows: int | None = None
+    top_margin_mm: float = 0.0
     service_uuid: str = "0000ff00-0000-1000-8000-00805f9b34fb"
     write_uuid: str = "0000ff02-0000-1000-8000-00805f9b34fb"
     notify_uuid: str = "0000ff01-0000-1000-8000-00805f9b34fb"
@@ -75,13 +83,16 @@ class PrinterProfile:
         """Validate profile fields on construction.
 
         Raises:
-            ValueError: If ``print_width_px`` is not a multiple of 8, or if
-                any UUID field does not match the standard UUID format.
+            ValueError: If ``print_width_px`` is not a multiple of 8, if
+                ``max_rows`` is not positive, or if any UUID field does not
+                match the standard UUID format.
         """
         if self.print_width_px % 8 != 0:
             raise ValueError(
                 f"print_width_px must be a multiple of 8, got {self.print_width_px}"
             )
+        if self.max_rows is not None and self.max_rows <= 0:
+            raise ValueError(f"max_rows must be positive or None, got {self.max_rows}")
         for field_name in ("service_uuid", "write_uuid", "notify_uuid", "status_uuid"):
             value = getattr(self, field_name)
             if not _UUID_RE.match(value):
