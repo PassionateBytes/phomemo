@@ -17,6 +17,7 @@
 #define PHOMEMO_DEVICE_ID "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"
 #define PHOMEMO_URI_SCHEME "phomemo"
 #define PHOMEMO_DPI 203
+#define PHOMEMO_HEAD_WIDTH 21000  // print head width in hundredths of a millimetre
 // Top and bottom margin in hundredths of a millimetre. PAPPL only models
 // symmetric margins, so the 10 mm the printer cannot reach at the top of
 // a sheet applies to both ends; the bridge clips the last 6 mm regardless.
@@ -47,7 +48,8 @@ const char *phomemo_content_name(pappl_content_t content);
 // True when the page must be rotated to feed A5 long edge first.
 bool phomemo_should_rotate(const pappl_pr_options_t *options);
 
-// Media length in millimetres.
+// Media length along the feed direction in millimetres (A5 feeds its
+// 210 mm edge across the head, so its feed length is 148 mm).
 double phomemo_media_length_mm(const pappl_pr_options_t *options);
 
 // Raster job callbacks registered in the driver data.

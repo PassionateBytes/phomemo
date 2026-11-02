@@ -3,6 +3,7 @@
 #include "bridge.h"
 
 #include <errno.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -116,6 +117,10 @@ phomemo_bridge_send(phomemo_bridge_t *b, cJSON *request, const void *payload,
     set_error(err, errsize, "out of memory%s", "");
     return false;
   }
+
+  cJSON *cmd = cJSON_GetObjectItem(request, "cmd");
+  if (cJSON_IsString(cmd) && strcmp(cmd->valuestring, "abort"))
+    snprintf(b->pending, sizeof(b->pending), "%s", cmd->valuestring);
 
   size_t text_len = strlen(text);
   text[text_len++] = '\n';  // cJSON allocates room for the terminator
@@ -249,6 +254,22 @@ read_message(phomemo_bridge_t *b, char *err, size_t errsize)
   return obj;
 }
 
+// Waits up to one second for data. Returns 1 when readable, 0 on timeout,
+// -1 on error.
+static int
+wait_readable(phomemo_bridge_t *b, char *err, size_t errsize)
+{
+  struct pollfd pfd = {b->fd, POLLIN, 0};
+  int n = poll(&pfd, 1, 1000);
+  if (n < 0)
+  {
+    if (errno == EINTR)
+      return 0;
+    set_error(err, errsize, "poll: %s", strerror(errno));
+  }
+  return n;
+}
+
 cJSON *
 phomemo_bridge_reply(phomemo_bridge_t *b, phomemo_event_cb_t on_event,
                      void *data, char *err, size_t errsize)
@@ -261,6 +282,19 @@ phomemo_bridge_reply(phomemo_bridge_t *b, phomemo_event_cb_t on_event,
 
   for (;;)
   {
+    if (!memchr(b->line, '\n', b->line_len))
+    {
+      int ready = wait_readable(b, err, errsize);
+      if (ready < 0)
+        return NULL;
+      if (ready == 0)
+      {
+        if (on_event)
+          on_event(NULL, data);
+        continue;
+      }
+    }
+
     cJSON *obj = read_message(b, err, errsize);
     if (!obj)
       return NULL;
@@ -269,6 +303,14 @@ phomemo_bridge_reply(phomemo_bridge_t *b, phomemo_event_cb_t on_event,
     {
       if (on_event)
         on_event(obj, data);
+      cJSON_Delete(obj);
+      continue;
+    }
+
+    cJSON *cmd = cJSON_GetObjectItem(obj, "cmd");
+    if (cJSON_IsString(cmd) && !strcmp(cmd->valuestring, "abort") &&
+        strcmp(b->pending, "abort"))
+    {
       cJSON_Delete(obj);
       continue;
     }
