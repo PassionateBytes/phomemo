@@ -22,18 +22,6 @@ phomemo_autoadd_cb(const char *device_info, const char *device_uri,
   return NULL;
 }
 
-bool
-phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
-                  const char *device_uri, const char *device_id,
-                  pappl_pr_driver_data_t *data, ipp_t **attrs, void *cbdata)
-{
-  if (strcmp(driver_name, PHOMEMO_DRIVER_NAME))
-    return false;
-  strncpy(data->make_and_model, PHOMEMO_MAKE_AND_MODEL,
-          sizeof(data->make_and_model) - 1);
-  return true;
-}
-
 int
 main(int argc, char *argv[])
 {

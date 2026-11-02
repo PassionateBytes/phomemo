@@ -8,6 +8,8 @@ They are skipped when the binary has not been built (``make -C printer-app``).
 
 import asyncio
 import os
+import re
+import socket
 import subprocess
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -22,6 +24,8 @@ from tests.test_bridge_server import FakePrinter
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BINARY = REPO_ROOT / "printer-app" / "phomemo-printer-app"
 ADDRESS = "AA:BB:CC:DD:EE:FF"
+DEVICE_URI = "phomemo://" + ADDRESS.replace(":", "-")
+PRINTER = "phomemo"
 
 if not BINARY.exists():
     pytest.skip(f"{BINARY} not built", allow_module_level=True)
@@ -50,15 +54,39 @@ async def fake_bridge(
         server.close_clients()
 
 
+class AppServer:
+    """A running printer application server.
+
+    Attributes:
+        env: Environment for client subcommands (points at the server's
+            control socket and the fake bridge).
+        url: Base IPP URL of the server.
+    """
+
+    def __init__(self, env: dict[str, str], port: int) -> None:
+        self.env = env
+        self.url = f"ipp://localhost:{port}"
+
+    def printer_url(self, name: str = PRINTER) -> str:
+        return f"{self.url}/ipp/print/{name}"
+
+
+def free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("localhost", 0))
+        return sock.getsockname()[1]
+
+
 @pytest.fixture
 async def app_server(
     fake_bridge: dict[str, str], tmp_path: Path
-) -> AsyncIterator[dict[str, str]]:
-    """Run the printer application server and return the environment for its clients.
+) -> AsyncIterator[AppServer]:
+    """Run the printer application server for the duration of a test.
 
     PAPPL derives its control socket from ``TMPDIR`` and its state and
     configuration files from ``HOME`` and ``XDG_CONFIG_HOME``, so all three
-    point into the temporary directory.
+    point into the temporary directory. The IPP listener is bound to
+    localhost on a free port for ipptool.
     """
     env = {
         **fake_bridge,
@@ -68,12 +96,15 @@ async def app_server(
     }
     (tmp_path / "config").mkdir()
     log_file = tmp_path / "app.log"
+    port = free_port()
     proc = subprocess.Popen(
         [
             str(BINARY),
             "server",
             "-o",
-            "private-server=true",
+            "listen-hostname=localhost",
+            "-o",
+            f"server-port={port}",
             "-o",
             f"spool-directory={tmp_path / 'spool'}",
             "-o",
@@ -94,7 +125,7 @@ async def app_server(
     assert proc.poll() is None, f"server exited early, see {log_file}"
     assert socket.exists(), f"server socket never appeared, see {log_file}"
     try:
-        yield env
+        yield AppServer(env, port)
     finally:
         proc.terminate()
         await asyncio.to_thread(proc.wait, 10)
@@ -113,7 +144,71 @@ async def run_app(env: dict[str, str], *args: str) -> tuple[int, str, str]:
     return proc.returncode, proc.stdout, proc.stderr
 
 
-async def test_devices_lists_fake_printer(app_server: dict[str, str]) -> None:
-    code, out, err = await run_app(app_server, "devices")
+async def add_printer(server: AppServer, name: str = PRINTER) -> None:
+    """Add a printer for the fake device to the running server."""
+    code, _, err = await run_app(
+        server.env, "add", "-d", name, "-m", "m08f", "-v", DEVICE_URI
+    )
     assert code == 0, err
-    assert f"phomemo://{ADDRESS}" in out
+
+
+GET_ATTRIBUTES_TEST = """{
+  NAME "Get all printer attributes"
+  OPERATION Get-Printer-Attributes
+  GROUP operation-attributes-tag
+  ATTR charset attributes-charset utf-8
+  ATTR language attributes-natural-language en
+  ATTR uri printer-uri $uri
+  ATTR keyword requested-attributes all
+  STATUS successful-ok
+}
+"""
+
+
+async def printer_attributes(
+    server: AppServer, tmp_path: Path, name: str = PRINTER
+) -> dict[str, str]:
+    """Fetch the printer's attributes through ipptool, as name to value text.
+
+    The request asks for ``all`` alone: CUPS expands a list such as
+    ``all,media-col-database`` into its table of standard attribute names,
+    which drops vendor attributes from the response.
+    """
+    test_file = tmp_path / "get-attributes.test"
+    test_file.write_text(GET_ATTRIBUTES_TEST)
+    proc = await asyncio.to_thread(
+        subprocess.run,
+        ["ipptool", "-tv", server.printer_url(name), str(test_file)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    attrs: dict[str, str] = {}
+    for match in re.finditer(r"^\s+([\w-]+) \([^)]*\) = (.*)$", proc.stdout, re.M):
+        attrs[match.group(1)] = match.group(2)
+    return attrs
+
+
+async def test_devices_lists_fake_printer(app_server: AppServer) -> None:
+    code, out, err = await run_app(app_server.env, "devices")
+    assert code == 0, err
+    assert DEVICE_URI in out
+
+
+async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None:
+    await add_printer(app_server)
+    attrs = await printer_attributes(app_server, tmp_path)
+    assert attrs["printer-make-and-model"] == "Phomemo M08F"
+    assert set(attrs["media-supported"].split(",")) == {
+        "iso_a4_210x297mm",
+        "iso_a5_148x210mm",
+    }
+    assert attrs["media-default"] == "iso_a4_210x297mm"
+    assert attrs["pwg-raster-document-resolution-supported"] == "203dpi"
+    assert set(attrs["pwg-raster-document-type-supported"].split(",")) >= {
+        "sgray_8",
+        "black_1",
+    }
+    assert attrs["phomemo-tone-supported"] == "auto,threshold,ordered,diffusion"
+    assert attrs["phomemo-tone-default"] == "auto"
