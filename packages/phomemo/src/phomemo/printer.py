@@ -614,20 +614,18 @@ class Printer:
     # Raster printing
     # ------------------------------------------------------------------
 
-    def _build_raster_bands(
+    def _build_raster_stream(
         self,
         bitmap: bytes,
         height: int,
         density: Density | None = None,
         mode: ScaleMode = ScaleMode.NORMAL,
         feed_lines: int = 20,
-    ) -> list[tuple[int, bytes]]:
-        """Assemble the print job as one byte string per ``GS v 0`` band.
+    ) -> tuple[bytes, list[tuple[int, int, int]]]:
+        """Assemble the print job and a map of its raster bands.
 
-        The first band is prefixed with ``ESC @`` and the optional density
-        command, the last one carries the trailing paper feed. A band is
-        atomic on the wire: once its header is sent the printer expects
-        every byte of it, so transfers may only stop between bands.
+        The stream is ``ESC @``, the optional density command, one
+        ``GS v 0`` band per ``band_height`` rows, and the trailing feed.
 
         Args:
             bitmap: Packed 1-bit bitmap bytes (row-major).
@@ -637,30 +635,97 @@ class Printer:
             feed_lines: Paper feed lines after the raster data.
 
         Returns:
-            ``(rows, payload)`` pairs in transfer order.
+            The byte stream and, per band, ``(data_start, data_end, rows)``:
+            the offsets of its bitmap bytes within the stream.
         """
         width_bytes = self._profile.width_bytes
         band_height = self._profile.band_height
-        bands: list[tuple[int, bytes]] = []
+        parts: list[bytes] = [encode_init()]
+        if density is not None and self._profile.supports_density:
+            parts.append(encode_density(density))
+        offset = sum(len(part) for part in parts)
+        bands: list[tuple[int, int, int]] = []
         row = 0
         while row < height:
             band_rows = min(band_height, height - row)
-            band_start = row * width_bytes
-            band_end = band_start + band_rows * width_bytes
-            payload = encode_raster_header(width_bytes, band_rows, mode)
-            payload += bitmap[band_start:band_end]
-            bands.append((band_rows, payload))
+            header = encode_raster_header(width_bytes, band_rows, mode)
+            data = bitmap[row * width_bytes : (row + band_rows) * width_bytes]
+            parts.append(header)
+            parts.append(data)
+            data_start = offset + len(header)
+            bands.append((data_start, data_start + len(data), band_rows))
+            offset = data_start + len(data)
             row += band_rows
+        if feed_lines > 0:
+            parts.append(encode_feed_lines(min(feed_lines, 255)))
+        return b"".join(parts), bands
 
-        prefix = encode_init()
-        if density is not None and self._profile.supports_density:
-            prefix += encode_density(density)
-        suffix = encode_feed_lines(min(feed_lines, 255)) if feed_lines > 0 else b""
-        if not bands:
-            return [(0, prefix + suffix)]
-        bands[0] = (bands[0][0], prefix + bands[0][1])
-        bands[-1] = (bands[-1][0], bands[-1][1] + suffix)
-        return bands
+    @staticmethod
+    def _rows_before(
+        offset: int, bands: list[tuple[int, int, int]], width_bytes: int
+    ) -> int:
+        """Rows whose bytes lie entirely before ``offset`` in the stream."""
+        rows = 0
+        for data_start, data_end, band_rows in bands:
+            if offset >= data_end:
+                rows += band_rows
+            elif offset > data_start:
+                rows += (offset - data_start) // width_bytes
+        return rows
+
+    async def _pad_band(
+        self, stream: bytes, offset: int, bands: list[tuple[int, int, int]]
+    ) -> None:
+        """Complete the band in progress at ``offset`` with white rows.
+
+        A band is atomic for the printer's parser: once its header is out,
+        every byte of it must follow or later commands are read as pixels.
+        """
+        for data_start, data_end, _rows in bands:
+            if offset < data_end:
+                filler = stream[offset:data_start] + bytes(
+                    data_end - max(offset, data_start)
+                )
+                chunk = self._transport.chunk_bytes
+                for start in range(0, len(filler), chunk):
+                    await self._transport.write(filler[start : start + chunk])
+                return
+
+    async def _transfer(
+        self,
+        stream: bytes,
+        bands: list[tuple[int, int, int]],
+        height: int,
+        abort: asyncio.Event | None,
+        absent: asyncio.Event,
+        short_sheet_fraction: float,
+        on_progress: ProgressCallback | None,
+    ) -> None:
+        """Send the stream in link-sized chunks without pausing at band ends."""
+        chunk = self._transport.chunk_bytes
+        width_bytes = self._profile.width_bytes
+        total = -(-len(stream) // chunk)
+        offset = 0
+        sent = 0
+        while offset < len(stream):
+            if abort is not None and abort.is_set():
+                await self._pad_band(stream, offset, bands)
+                raise PrintAborted("cancelled")
+            unsent = height - self._rows_sent
+            if absent.is_set() and height and unsent / height > short_sheet_fraction:
+                raise SheetRanOut("paper ran out")
+            piece = stream[offset : offset + chunk]
+            await self._transport.write(piece)
+            offset += len(piece)
+            sent += 1
+            self._rows_sent = self._rows_before(offset, bands, width_bytes)
+            if on_progress is not None:
+                try:
+                    on_progress(sent, total)
+                except Exception:
+                    logger.exception(
+                        "Progress callback failed on chunk %d/%d", sent, total
+                    )
 
     async def print_bitmap(
         self,
@@ -675,7 +740,7 @@ class Printer:
         abort: asyncio.Event | None = None,
         short_sheet_fraction: float = 0.25,
     ) -> None:
-        """Send pre-rendered bitmap data to the printer, band by band.
+        """Send pre-rendered bitmap data to the printer as one continuous stream.
 
         Args:
             bitmap: Packed 1-bit bitmap (``width_bytes * height`` bytes).
@@ -688,7 +753,8 @@ class Printer:
             wait_for_completion: If True, block until the motor-stop signal
                 is received and confirm the printer still answers.
             completion_timeout: Maximum seconds to wait for completion.
-            abort: Set it to stop the transfer at the next band boundary.
+            abort: Set it to stop the transfer; the band in progress is
+                completed with white rows so the printer stays in sync.
             short_sheet_fraction: A paper-absent event while more than this
                 fraction of rows is still unsent means the sheet is shorter
                 than the page.
@@ -718,7 +784,9 @@ class Printer:
                 height,
                 max_rows,
             )
-        bands = self._build_raster_bands(bitmap, height, density, mode, feed_lines)
+        stream, bands = self._build_raster_stream(
+            bitmap, height, density, mode, feed_lines
+        )
         absent = asyncio.Event()
 
         def watch_paper(event: DeviceEvent) -> None:
@@ -734,18 +802,9 @@ class Printer:
         self._event_callbacks.append(watch_paper)
         self._rows_sent = 0
         try:
-            for rows, payload in bands:
-                if abort is not None and abort.is_set():
-                    raise PrintAborted("cancelled")
-                unsent = height - self._rows_sent
-                if (
-                    absent.is_set()
-                    and height
-                    and unsent / height > short_sheet_fraction
-                ):
-                    raise SheetRanOut("paper ran out")
-                await self._transport.write_chunked(payload, on_chunk=on_progress)
-                self._rows_sent += rows
+            await self._transfer(
+                stream, bands, height, abort, absent, short_sheet_fraction, on_progress
+            )
             if not wait_for_completion:
                 return
             logger.debug("print_bitmap: waiting for motor stop")
