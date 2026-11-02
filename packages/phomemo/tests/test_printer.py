@@ -11,6 +11,7 @@ from phomemo.events import (
     LidEvent,
     LidState,
     MotorStopEvent,
+    PaperState,
 )
 from phomemo.printer import Printer
 from phomemo.protocol import QueryCommand
@@ -180,3 +181,92 @@ async def test_print_bitmap_warns_above_max_rows(
     assert len(caplog.records) == 1
     assert "2286" in caplog.records[0].getMessage()
     assert "2285" in caplog.records[0].getMessage()
+
+
+_FEED_255 = b"\x1b\x64\xff"
+
+
+def _scripted(values: list[object]) -> object:
+    """Async stub returning scripted values in order, repeating the last one."""
+
+    async def stub(*_args: object, **_kwargs: object) -> object:
+        return values.pop(0) if len(values) > 1 else values[0]
+
+    return stub
+
+
+def _eject_printer(monkeypatch: pytest.MonkeyPatch, paper: list[object]) -> Printer:
+    printer = _make_printer()
+    monkeypatch.setattr(printer, "query_paper", _scripted(paper))
+
+    async def no_sleep(_delay: float) -> None:
+        pass
+
+    monkeypatch.setattr(printer_module.asyncio, "sleep", no_sleep)
+    return printer
+
+
+def _feeds(printer: Printer) -> int:
+    return printer._transport.written.count(_FEED_255)  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_eject_stops_after_sensor_reports_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _eject_printer(
+        monkeypatch, [PaperState.PRESENT, PaperState.PRESENT, PaperState.ABSENT]
+    )
+    assert await printer.eject_paper() is True
+    assert _feeds(printer) == 4
+
+
+@pytest.mark.asyncio
+async def test_eject_treats_query_timeout_as_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _eject_printer(monkeypatch, [None])
+    assert await printer.eject_paper() is True
+    assert _feeds(printer) == 2
+
+
+@pytest.mark.asyncio
+async def test_eject_gives_up_at_max_feeds(monkeypatch: pytest.MonkeyPatch) -> None:
+    printer = _eject_printer(monkeypatch, [PaperState.PRESENT])
+    assert await printer.eject_paper(max_feeds=3) is False
+    assert _feeds(printer) == 3
+
+
+@pytest.mark.asyncio
+async def test_eject_already_absent_returns_after_one_clearing_feed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _eject_printer(monkeypatch, [PaperState.ABSENT])
+    assert await printer.eject_paper() is True
+    assert _feeds(printer) == 2
+
+
+@pytest.mark.asyncio
+async def test_wait_for_ready_returns_when_ready(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _make_printer()
+    monkeypatch.setattr(
+        printer, "check_ready", _scripted([(False, "Lid is open"), (True, "ready")])
+    )
+
+    async def no_sleep(_delay: float) -> None:
+        pass
+
+    monkeypatch.setattr(printer_module.asyncio, "sleep", no_sleep)
+    assert await printer.wait_for_ready(timeout=1.0, poll=0.01) is None
+
+
+@pytest.mark.asyncio
+async def test_wait_for_ready_times_out_with_last_reason(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _make_printer()
+    monkeypatch.setattr(printer, "check_ready", _scripted([(False, "No paper loaded")]))
+    with pytest.raises(TimeoutError, match="No paper loaded"):
+        await printer.wait_for_ready(timeout=0.05, poll=0.01)
