@@ -375,6 +375,7 @@ async def test_sheet_ran_out_maps_to_error_reply(bridge: BridgeConfig) -> None:
     reply = await _send_page(client, 400)
     assert reply == {"ok": False, "cmd": "page_end", "error": "paper ran out"}
     assert printer.connects == 2
+    assert printer.ejects == 1
     await client.close()
 
 
