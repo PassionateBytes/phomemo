@@ -282,7 +282,7 @@ print-complete indicator.
 The third byte (`0c`) is invariant across all tested conditions.
 
 `1a 06 88` fires when the trailing edge passes the rear sensor, which sits
-about 11 mm (~88 rows) before the print head; a raster that fits the sheet
+about 10 mm (~80 rows) before the print head; a raster that fits the sheet
 sees this event shortly before its own motor stop and the printer keeps
 answering queries. When the raster is taller than the sheet, the remaining
 writes are acknowledged immediately (discarded), `1a 0f 0c` follows about 5 s
@@ -671,8 +671,8 @@ data relay — but this was not consistently reproducible.
 
 | Property                 | Value                                                                                   |
 | ------------------------ | --------------------------------------------------------------------------------------- |
-| Top margin               | ~11 mm from the leading paper edge to raster row 0 (sensor-to-head distance, hardware) |
-| Printable rows           | ~2285 (286 mm); row 2300 of a full-width raster lands ~1 mm above the bottom edge     |
+| Top margin               | ~10 mm from the leading paper edge to raster row 0 (sensor-to-head distance, hardware) |
+| Printable rows           | ~2290 (287 mm); row 2300 of a full-width raster lands ~1 mm above the bottom edge     |
 | Verified photo job       | 1680x2178 raster at high density: 457 KB in 79.6 s (5.6 KiB/s), clean, 10 mm margins  |
 | Row pitch                | 100 rows = 12.5 mm at 203 dpi (measured: 12–12.5 mm)                                   |
 | Oversize raster          | Paper runs out mid-job, see Print Completion Signal                                     |
@@ -711,7 +711,7 @@ payload  = init + density + header + data + feed
 | Density (medium)      | `1b 4e 04 05`                      |
 | Density (high)        | `1b 4e 04 06`                      |
 | Paper eject           | `1b 64 ff` until `1a 06 88`, +1    |
-| Printable A4 rows     | ~2285 below an 11 mm top margin    |
+| Printable A4 rows     | ~2290 below a 10 mm top margin     |
 
 ### Pre-Print State Check
 

@@ -53,8 +53,8 @@ def test_a4_profile_printable_area() -> None:
     from phomemo.registry import get_profile
 
     profile = get_profile("M08F-A4")
-    assert profile.max_rows == 2285
-    assert profile.top_margin_mm == 11.0
+    assert profile.max_rows == 2290
+    assert profile.top_margin_mm == 10.0
 
 
 def test_profile_rejects_non_positive_max_rows() -> None:
@@ -72,5 +72,5 @@ def test_letter_profile_subtracts_the_same_top_margin() -> None:
     from phomemo.registry import get_profile
 
     profile = get_profile("M08F-Letter")
-    assert profile.top_margin_mm == 11.0
-    assert profile.max_rows == 2145
+    assert profile.top_margin_mm == 10.0
+    assert profile.max_rows == 2150
