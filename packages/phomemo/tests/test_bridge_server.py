@@ -562,3 +562,24 @@ async def test_lid_open_page_reconnects_without_eject(bridge: BridgeConfig) -> N
     assert printer.ejects == 0
     assert printer.connects == 2
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_serve_disconnects_the_printer_when_cancelled(tmp_path: Path) -> None:
+    from phomemo.bridge.server import serve
+
+    FakePrinter.instances.clear()
+    config = BridgeConfig(socket_path=tmp_path / "serve.sock", hold_seconds=60.0)
+    task = asyncio.create_task(serve(config, printer_factory=FakePrinter))
+    for _ in range(50):
+        if config.socket_path.exists():
+            break
+        await asyncio.sleep(0.02)
+    client = await _connect(config)
+    await client.call({"cmd": "open"})
+    await client.close()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert FakePrinter.instances[-1].connected is False
+    assert not config.socket_path.exists()
