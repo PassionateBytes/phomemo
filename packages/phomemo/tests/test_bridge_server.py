@@ -190,9 +190,9 @@ async def test_discover_lists_printers(
 @pytest.mark.asyncio
 async def test_open_connects_once_within_hold_window(bridge: BridgeConfig) -> None:
     client = await _connect(bridge)
-    assert (await client.call({"cmd": "open"}))["ok"]
+    assert (await client.call({"cmd": "open"}))["connected"] is True
     assert (await client.call({"cmd": "close"}))["ok"]
-    assert (await client.call({"cmd": "open"}))["ok"]
+    assert (await client.call({"cmd": "open"}))["connected"] is True
     assert _printer().connects == 1
     await client.close()
 
@@ -417,3 +417,25 @@ async def test_client_eof_mid_page_aborts_and_recovers(bridge: BridgeConfig) -> 
     again = await _connect(bridge)
     assert (await again.call({"cmd": "status"}))["ok"]
     await again.close()
+
+
+@pytest.mark.asyncio
+async def test_open_with_printer_off_is_ok_and_not_connected(tmp_path: Path) -> None:
+    def unreachable(profile: PrinterProfile, address: object = None) -> FakePrinter:
+        printer = FakePrinter(profile, address)
+        printer.reachable = False
+        return printer
+
+    config = BridgeConfig(socket_path=tmp_path / "off.sock", hold_seconds=0.2)
+    server = await start_server(config, printer_factory=unreachable)
+    try:
+        client = await _connect(config)
+        assert await client.call({"cmd": "open"}) == {
+            "ok": True,
+            "cmd": "open",
+            "connected": False,
+        }
+        await client.close()
+    finally:
+        server.close()
+        server.close_clients()
