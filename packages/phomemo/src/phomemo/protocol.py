@@ -150,9 +150,10 @@ def encode_feed_lines(lines: int) -> bytes:
 def encode_paper_eject(repetitions: int = 12) -> bytes:
     """Encode a paper eject sequence (repeated ``ESC d 255``).
 
-    Ejects the current sheet by chaining multiple maximum-length feed
-    commands. 12 repetitions produce ~384mm of feed, sufficient for A4
-    paper (297mm) with margin.
+    Chains maximum-length feed commands for a blind eject without sensor
+    feedback. 12 repetitions produce ~384mm of feed, enough for A4 paper
+    (297mm) with margin; ``Printer.eject_paper`` stops on the paper sensor
+    instead.
 
     Args:
         repetitions: Number of ``ESC d 255`` commands to chain.
