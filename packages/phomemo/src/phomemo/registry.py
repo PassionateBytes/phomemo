@@ -108,13 +108,37 @@ class PrinterProfile:
             if not _UUID_RE.match(value):
                 raise ValueError(f"{field_name} is not a valid UUID: {value!r}")
 
+    def rows_for(self, length_mm: float | None) -> int | None:
+        """Dot rows that fit between the margins of a sheet of the given length.
+
+        Args:
+            length_mm: Sheet length in the feed direction, or ``None`` for
+                roll media.
+
+        Returns:
+            Printable rows, or ``None`` for roll media.
+
+        Raises:
+            ValueError: If the margins leave no printable length.
+        """
+        if length_mm is None:
+            return None
+        printable_mm = length_mm - self.top_margin_mm - self.bottom_margin_mm
+        if printable_mm <= 0:
+            raise ValueError(
+                f"sheet of {length_mm}mm leaves nothing printable after the margins"
+            )
+        return int(printable_mm / 25.4 * self.dpi)
+
     @property
     def max_rows(self) -> int | None:
-        """Dot rows between the margins of one sheet, ``None`` for roll media."""
-        if self.sheet_length_mm is None:
-            return None
-        printable_mm = self.sheet_length_mm - self.top_margin_mm - self.bottom_margin_mm
-        return int(printable_mm / 25.4 * self.dpi)
+        """Printable rows of the default sheet, ``None`` for roll media."""
+        return self.rows_for(self.sheet_length_mm)
+
+    @property
+    def lead_rows(self) -> int:
+        """Rows covered by the top margin: the sheet lead the head cannot reach."""
+        return round(self.top_margin_mm / 25.4 * self.dpi)
 
     @property
     def width_bytes(self) -> int:
