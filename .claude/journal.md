@@ -4,7 +4,9 @@
 
 `phomemo` library = fully functional M08F driver. Next stage: a CUPS/system printer driver (or printer application) on top, so the printer works like any other printer. `packages/phomemo-tui` is a test harness only, no feature work.
 
-## Current state (as of 2026-11-02)
+## Current state (as of 2026-11-03)
+
+- Printer application (`printer-app/`, PAPPL 1.4, C): branch `feature/printer-app`, Plan B tasks 1–7 done, hardware runbook (task 8) and final review pending. `phomemo://<MAC with dashes>` device scheme, m08f driver (A4/A5, 203 dpi, sgray_8 only, `phomemo-tone`), job pipeline over the bridge, idle status poll, user unit. Tests: `make -C printer-app test` plus `packages/phomemo/tests/test_printer_app.py` (needs the built binary, `ipptool`, `gs`).
 
 - Transport: BLE via bleak. `connect` resolves MAC to `BLEDevice` through `BleakScanner` (BlueZ needs the scan cache).
 - Flow control: raster stream sent with ATT write-with-response as one continuous chunk stream (never band-per-burst: the printer feeds blank paper when it runs dry at a band end); the ATT round trip caps it at ~6.5–7.4 KiB/s and the printer keeps up on all content tested. Unacknowledged writes at 20 ms overflow a ~100 KB buffer (bridge chip) on A4.
@@ -14,6 +16,8 @@
 - Protocol reference and README cover ATT flow control, paper-out behaviour, sheet geometry.
 
 ## Recently completed
+
+- 2026-11-03: Plan B implementation (printer application). PAPPL facts that shaped it: subcommands talk to a running server over IPP (`devices` auto-starts a private one); device URIs go through CUPS' URI parser (no colons in the host); driver data needs raster callbacks and symmetric margins; `all,media-col-database` in ipptool drops vendor attributes; `pwg-raster` Print-Jobs stream through the driver and answer when the job ends; a black_1 document is handed to the driver unconverted under an 8-bit header unless every job is forced to 1-bit; status_cb runs on attribute queries at most once a second while idle; device open failure pauses the queue with 5 s retries.
 
 - 2026-11-02: Plan A, branch `feature/bridge`: `rows_for`/`lead_rows`, `prepare_page` with `ToneMode` and A5 rotation, continuous `print_bitmap` with `abort` (white-padded band), `SheetRanOut` and lid-open detection, bridge daemon (`phomemo.bridge`: protocol, server/session, config, client, CLI `phomemo-bridge`), systemd user unit. Spike with `ippeveprinter -c` proved CUPS → raster → printer end to end (PWG and Apple raster). Buffer probe: ATT round trip caps throughput (~6.5–7.4 KiB/s), no MCU-side stall observed; data sent with the lid open is discarded.
 
@@ -34,7 +38,8 @@
 
 ## Immediate next
 
-- Plan B: PAPPL printer application in C driving `phomemo-bridge` (design: docs/superpowers/specs/2026-11-02-printer-app-design.md, gitignored), systemd units, hardware runbook [user]
+- Plan B task 8: hardware runbook through CUPS with Paul (A4, A5, multi-page, printer off, cancel, short sheet, bridge restart), then the final whole-branch review, fix pass, merge to main [user]
+- Then the queued stages below in order (cleanup, hygiene, packaging, docs, CI).
 
 ## Short-term
 
@@ -57,7 +62,8 @@
 
 ## Workflow notes
 
-- Tests: `uv run pytest` at the root (both packages; root pyproject sets `--import-mode=importlib` because both packages use the `tests.*` module names) or per package: `uv run pytest packages/phomemo -q`, `uv run pytest packages/phomemo-tui -q`. Lint: `uv run ruff check packages/phomemo`.
+- Tests: `uv run pytest` at the root (both packages; root pyproject sets `--import-mode=importlib` because both packages use the `tests.*` module names) or per package: `uv run pytest packages/phomemo -q`, `uv run pytest packages/phomemo-tui -q`. Lint: `uv run ruff check packages/phomemo`. C: `make -C printer-app test`; the printer-app pytest module skips without the built binary.
+- The printer-app harness runs PAPPL servers with `TMPDIR`, `HOME`, `XDG_CONFIG_HOME` under the test's tmp dir. A `phomemo-printer-app devices` run outside the harness auto-starts a private server that keeps running (`pgrep -af 'phomemo-printer-app server'`) and writes `~/.config/phomemo-printer-app.*`.
 - Pre-commit hook (`.claude/settings.json`) runs `uv run pytest` before every `git commit`; a red root suite blocks commits.
 - BLE tests need the printer on, within ~2 m (advertised at -95 dBm from its usual spot, barely usable), and not connected elsewhere. `bluetoothctl info 60:6E:41:23:0B:D6` sometimes shows a stale `Connected: yes`; `bluetoothctl disconnect` fixes it. Printer MAC `60:6E:41:23:0B:D6`.
 - `scripts/testladder.py`, `scripts/poc_connect.py`: untracked throwaway test scripts, keep untracked.
