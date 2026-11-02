@@ -46,3 +46,22 @@ def test_profile_accepts_valid_uuids() -> None:
     """PrinterProfile should accept correctly formatted UUID strings."""
     profile = _make_profile()
     assert profile.service_uuid == _VALID_UUID
+
+
+def test_a4_profile_printable_area() -> None:
+    import phomemo.profiles  # noqa: F401 — registers built-in profiles
+    from phomemo.registry import get_profile
+
+    profile = get_profile("M08F-A4")
+    assert profile.max_rows == 2285
+    assert profile.top_margin_mm == 11.0
+
+
+def test_profile_rejects_non_positive_max_rows() -> None:
+    with pytest.raises(ValueError, match="max_rows"):
+        _make_profile(max_rows=0)
+
+
+def test_profile_allows_none_max_rows() -> None:
+    profile = _make_profile(max_rows=None)
+    assert profile.max_rows is None
