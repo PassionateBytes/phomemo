@@ -741,6 +741,24 @@ write(ff02, b"\x1f\x11\x08")   # → 1a 04 <percent>
 
 Paper state is **unreliable when lid is open** — always check lid first.
 
+### Short Sheet Detection
+
+Two signals tell a driver that the inserted sheet is shorter than the page:
+
+- `1a 06 88` arriving while a large part of the raster is still unsent. The
+  event normally fires ~80 rows before the end of a page that fits (the
+  sensor sits ahead of the head), so only an early event means a short
+  sheet; the `phomemo` library uses "more than 25 % of rows unsent".
+- No answer to a `1f 11 XX` query after the motor stop. The overrun error
+  state mutes queries; a reconnect clears it.
+
+### A5 on the M08F
+
+A5 is fed long edge first (210 mm wide, 148 mm long). A client renders A5
+portrait (148 x 210); the driver rotates the raster a quarter turn
+counter-clockwise, so the document's top edge ends up at the sheet's left
+edge. 1054 rows are printable after the 10 mm lead and 6 mm bottom margin.
+
 ### Error Detection During Print
 
 DLE EOT queries always return `01 01` regardless of state. Monitor `ff01` for
