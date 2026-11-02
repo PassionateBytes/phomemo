@@ -71,6 +71,22 @@ EventCallback = Callable[[DeviceEvent], None]
 ProgressCallback = Callable[[int, int], None]
 
 
+class PrintAborted(RuntimeError):
+    """A raster transfer stopped before the page was complete.
+
+    Attributes:
+        reason: Short human-readable cause, e.g. ``"cancelled"``.
+    """
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+class SheetRanOut(PrintAborted):
+    """The sheet left the paper sensor before the raster was printed."""
+
+
 @dataclass(frozen=True, slots=True)
 class DeviceInfo:
     """Snapshot of device state collected from query responses.
@@ -124,6 +140,7 @@ class Printer:
         self._transport = BleTransport(self._profile)
         self._event_callbacks: list[EventCallback] = []
         self._waiters: list[tuple[type[DeviceEvent], asyncio.Future[DeviceEvent]]] = []
+        self._rows_sent = 0
 
     # ------------------------------------------------------------------
     # Properties
@@ -138,6 +155,11 @@ class Printer:
     def is_connected(self) -> bool:
         """Whether the BLE connection is active."""
         return self._transport.is_connected
+
+    @property
+    def rows_sent(self) -> int:
+        """Raster rows handed to the transport in the current transfer, else 0."""
+        return self._rows_sent
 
     # ------------------------------------------------------------------
     # Event handling
@@ -592,18 +614,20 @@ class Printer:
     # Raster printing
     # ------------------------------------------------------------------
 
-    def _build_raster_payload(
+    def _build_raster_bands(
         self,
         bitmap: bytes,
         height: int,
         density: Density | None = None,
         mode: ScaleMode = ScaleMode.NORMAL,
         feed_lines: int = 20,
-    ) -> bytes:
-        """Assemble the complete print job payload.
+    ) -> list[tuple[int, bytes]]:
+        """Assemble the print job as one byte string per ``GS v 0`` band.
 
-        Constructs the full byte stream: ``ESC @`` init, optional density,
-        banded ``GS v 0`` raster data, and trailing paper feed.
+        The first band is prefixed with ``ESC @`` and the optional density
+        command, the last one carries the trailing paper feed. A band is
+        atomic on the wire: once its header is sent the printer expects
+        every byte of it, so transfers may only stop between bands.
 
         Args:
             bitmap: Packed 1-bit bitmap bytes (row-major).
@@ -613,32 +637,30 @@ class Printer:
             feed_lines: Paper feed lines after the raster data.
 
         Returns:
-            The complete payload bytes ready for chunked transmission.
+            ``(rows, payload)`` pairs in transfer order.
         """
         width_bytes = self._profile.width_bytes
         band_height = self._profile.band_height
-        parts: list[bytes] = []
-
-        # Initialise and optionally set density
-        parts.append(encode_init())
-        if density is not None and self._profile.supports_density:
-            parts.append(encode_density(density))
-
-        # Split into bands — each needs its own GS v 0 header
+        bands: list[tuple[int, bytes]] = []
         row = 0
         while row < height:
             band_rows = min(band_height, height - row)
             band_start = row * width_bytes
             band_end = band_start + band_rows * width_bytes
-            parts.append(encode_raster_header(width_bytes, band_rows, mode))
-            parts.append(bitmap[band_start:band_end])
+            payload = encode_raster_header(width_bytes, band_rows, mode)
+            payload += bitmap[band_start:band_end]
+            bands.append((band_rows, payload))
             row += band_rows
 
-        # Trailing feed
-        if feed_lines > 0:
-            parts.append(encode_feed_lines(min(feed_lines, 255)))
-
-        return b"".join(parts)
+        prefix = encode_init()
+        if density is not None and self._profile.supports_density:
+            prefix += encode_density(density)
+        suffix = encode_feed_lines(min(feed_lines, 255)) if feed_lines > 0 else b""
+        if not bands:
+            return [(0, prefix + suffix)]
+        bands[0] = (bands[0][0], prefix + bands[0][1])
+        bands[-1] = (bands[-1][0], bands[-1][1] + suffix)
+        return bands
 
     async def print_bitmap(
         self,
@@ -650,8 +672,10 @@ class Printer:
         on_progress: ProgressCallback | None = None,
         wait_for_completion: bool = True,
         completion_timeout: float = 30.0,
+        abort: asyncio.Event | None = None,
+        short_sheet_fraction: float = 0.25,
     ) -> None:
-        """Send pre-rendered bitmap data to the printer.
+        """Send pre-rendered bitmap data to the printer, band by band.
 
         Args:
             bitmap: Packed 1-bit bitmap (``width_bytes * height`` bytes).
@@ -659,14 +683,23 @@ class Printer:
             density: Print concentration (None to skip).
             mode: GS v 0 scaling mode.
             feed_lines: Paper feed lines after printing.
-            on_progress: Progress callback ``(chunks_sent, total_chunks)``.
-            wait_for_completion: If True, block until the ``1a 0f 0c``
-                motor-stop signal is received.
+            on_progress: Progress callback ``(chunks_sent, total_chunks)``
+                per band.
+            wait_for_completion: If True, block until the motor-stop signal
+                is received and confirm the printer still answers.
             completion_timeout: Maximum seconds to wait for completion.
+            abort: Set it to stop the transfer at the next band boundary.
+            short_sheet_fraction: A paper-absent event while more than this
+                fraction of rows is still unsent means the sheet is shorter
+                than the page.
 
         Raises:
             RuntimeError: If not connected.
             TimeoutError: If completion signal not received within timeout.
+            PrintAborted: If ``abort`` was set; ``reason`` is ``"cancelled"``.
+            SheetRanOut: If the sheet ran out early (paper-absent while most
+                of the page is unsent, or the printer muted after the motor
+                stop).
         """
         if not self.is_connected:
             raise RuntimeError("Not connected")
@@ -685,35 +718,53 @@ class Printer:
                 height,
                 max_rows,
             )
-        payload = self._build_raster_payload(bitmap, height, density, mode, feed_lines)
-        logger.debug("print_bitmap: payload %d bytes", len(payload))
-        if not wait_for_completion:
-            await self._transport.write_chunked(payload, on_chunk=on_progress)
-            return
+        bands = self._build_raster_bands(bitmap, height, density, mode, feed_lines)
+        absent = asyncio.Event()
+
+        def watch_paper(event: DeviceEvent) -> None:
+            if isinstance(event, PaperEvent) and event.paper == PaperState.ABSENT:
+                absent.set()
 
         # Armed before the transfer: a printer that abandons the job (sheet
         # ran out, lid opened) stops the motor while data is still in flight.
         loop = asyncio.get_running_loop()
-        future: asyncio.Future[DeviceEvent] = loop.create_future()
-        entry = (MotorStopEvent, future)
+        stopped: asyncio.Future[DeviceEvent] = loop.create_future()
+        entry = (MotorStopEvent, stopped)
         self._waiters.append(entry)
+        self._event_callbacks.append(watch_paper)
+        self._rows_sent = 0
         try:
-            await self._transport.write_chunked(payload, on_chunk=on_progress)
+            for rows, payload in bands:
+                if abort is not None and abort.is_set():
+                    raise PrintAborted("cancelled")
+                unsent = height - self._rows_sent
+                if (
+                    absent.is_set()
+                    and height
+                    and unsent / height > short_sheet_fraction
+                ):
+                    raise SheetRanOut("paper ran out")
+                await self._transport.write_chunked(payload, on_chunk=on_progress)
+                self._rows_sent += rows
+            if not wait_for_completion:
+                return
             logger.debug("print_bitmap: waiting for motor stop")
-            await asyncio.wait_for(future, timeout=completion_timeout)
-        except TimeoutError:
-            raise TimeoutError(
-                "Timed out waiting for print completion signal"
-            ) from None
+            try:
+                await asyncio.wait_for(stopped, timeout=completion_timeout)
+            except TimeoutError:
+                raise TimeoutError(
+                    "Timed out waiting for print completion signal"
+                ) from None
+            if await self.query_lid(timeout=1.0) is None:
+                raise SheetRanOut("paper ran out before the page ended")
         finally:
             self._waiters.remove(entry)
+            self._event_callbacks.remove(watch_paper)
+            self._rows_sent = 0
         logger.debug("print_bitmap: complete")
 
     async def _wait_for_motor_stop(self, timeout: float) -> None:
         """Wait for the print-complete (motor stop) signal.
-
-        The printer fires ``1a 0f 0c`` on ``ff01`` when the motor stops.
-        Uses a typed waiter so spontaneous sensor events don't interfere.
 
         Args:
             timeout: Maximum seconds to wait.
@@ -721,8 +772,7 @@ class Printer:
         Raises:
             TimeoutError: If the signal is not received in time.
         """
-        event = await self._wait_for(MotorStopEvent, timeout)
-        if event is None:
+        if await self._wait_for(MotorStopEvent, timeout) is None:
             raise TimeoutError("Timed out waiting for print completion signal")
 
     # ------------------------------------------------------------------
