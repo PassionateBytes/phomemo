@@ -19,6 +19,17 @@
 
 - 2026-11-02: flow-control work merged to main (ed69d75..365a865). Hardware test-ladder spike found the buffer overflow; fix is ATT write-with-response. Plus: MAC-to-BLEDevice resolution, profile sheet geometry, `FIT_PAGE`, `wait_for_ready`, `eject_paper`, docs.
 
+## Hardware verification 2026-11-02 (bridge, `phomemo-bridge print`)
+
+- A4 sparse page, twice: clean, markers aligned page to page; second print within the 120 s hold reused the link.
+- A5 (`--media a5`): rotated correctly, the page's right edge leads out of the printer; "L"/"R" both visible.
+- Job started with the printer off: `waiting printer-off`, connected ~10 s after power-on, printed.
+- A5 inserted for an A4 job: `paper ran out` via the early paper-absent path, reconnect, sheet ejected.
+- Cancel 15 s into a dense page: stopped, ejected, `cancelled`, 9 s from abort to done.
+- Bug found and fixed on hardware: sending each `GS v 0` band as its own write burst produced white stripes at every band boundary (printer advances paper when it runs dry at a band end); fixed by streaming continuously and padding the band with white rows on abort.
+- Bugs found and fixed: `open` with the printer off aborted the job; failed subscription right after connect raised a raw `BleakError`; short sheet left in the rollers after the overrun.
+- Observed, not fixed: vertical scale varied ~5 % between two identical prints before the band fix (stripes added length); re-check after the fix before touching the bottom margin.
+
 ## Immediate next
 
 - Plan B: PAPPL printer application in C driving `phomemo-bridge` (design: docs/superpowers/specs/2026-11-02-printer-app-design.md, gitignored), systemd units, hardware runbook [user]
