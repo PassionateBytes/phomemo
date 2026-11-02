@@ -192,11 +192,13 @@ class Session:
         return {"printers": [{"name": d.name, "address": d.address} for d in devices]}
 
     async def _cmd_open(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
+        """Bring the link up if reachable; ``wait_ready`` keeps retrying otherwise."""
         try:
             await self._bridge.connect(discovery_timeout=5.0)
         except ConnectionError as exc:
-            raise CommandError(str(exc)) from exc
-        return {}
+            logger.info("Printer not reachable at open: %s", exc)
+            return {"connected": False}
+        return {"connected": True}
 
     async def _cmd_close(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         self._bridge.start_hold()
