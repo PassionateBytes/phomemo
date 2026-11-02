@@ -8,17 +8,16 @@ Typical usage::
 
     from phomemo import Printer, Density
 
-    async with Printer("M08F-A4") as printer:
-        await printer.connect("60:6E:41:23:0B:D6")
+    async with Printer("M08F-A4", "60:6E:41:23:0B:D6") as printer:
+        await printer.connect()
 
         # Check device state before printing
         info = await printer.query_device_info()
         print(f"Battery: {info.battery}%, Lid: {info.lid}, Paper: {info.paper}")
 
-        # Print an image
+        # Wait for a sheet, print, feed it out
+        await printer.wait_for_ready()
         await printer.print_image("photo.png", density=Density.MEDIUM)
-
-        # Eject the page
         await printer.eject_paper()
 """
 
@@ -104,9 +103,11 @@ class Printer:
     Args:
         profile: Either a profile name string (e.g. ``"M08F-A4"``) or
             a ``PrinterProfile`` instance.
-        address: BLE MAC address (e.g. ``"60:6E:41:23:0B:D6"``). If
-            omitted, ``connect()`` will auto-discover a nearby device
-            matching the profile's ``ble_name_pattern``.
+        address: BLE MAC address (e.g. ``"60:6E:41:23:0B:D6"``), resolved
+            by a targeted scan at ``connect()`` time, or a ``BLEDevice``
+            from ``discover()``, used as is. If omitted, ``connect()``
+            auto-discovers a nearby device matching the profile's
+            ``ble_name_pattern``.
     """
 
     def __init__(

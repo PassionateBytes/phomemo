@@ -7,10 +7,12 @@ Basic usage::
 
     from phomemo import Printer
 
-    async with Printer("M08F-A4") as printer:
+    async with Printer("M08F-A4", "60:6E:41:23:0B:D6") as printer:
         # connect() must be called after entering the context
-        await printer.connect("60:6E:41:23:0B:D6")
+        await printer.connect()
+        await printer.wait_for_ready()
         await printer.print_image("photo.png")
+        await printer.eject_paper()
 """
 
 from phomemo import profiles  # noqa F401  # auto-load profiles at import time
