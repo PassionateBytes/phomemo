@@ -7,7 +7,7 @@
 ## Current state (as of 2026-11-02)
 
 - Transport: BLE via bleak. `connect` resolves MAC to `BLEDevice` through `BleakScanner` (BlueZ needs the scan cache).
-- Flow control: raster stream sent with ATT write-with-response, one `GS v 0` band per write call; the ATT round trip caps it at ~6.5–7.4 KiB/s and the printer keeps up on all content tested. Unacknowledged writes at 20 ms overflow a ~100 KB buffer (bridge chip) on A4.
+- Flow control: raster stream sent with ATT write-with-response as one continuous chunk stream (never band-per-burst: the printer feeds blank paper when it runs dry at a band end); the ATT round trip caps it at ~6.5–7.4 KiB/s and the printer keeps up on all content tested. Unacknowledged writes at 20 ms overflow a ~100 KB buffer (bridge chip) on A4.
 - Profiles carry `sheet_length_mm` / `top_margin_mm` / `bottom_margin_mm`, `max_rows` derived: A4 2245 rows (10 mm top measured, 6 mm bottom chosen); Letter 2105 (margins copied, not measured).
 - `ImageFit.FIT_PAGE`, `Printer.wait_for_ready` (settles on the feed-complete paper event, reconnects once when queries go mute), `Printer.reconnect`, sensor-driven `Printer.eject_paper`; motor-stop waiter armed before the raster transfer.
 - Verified on hardware incl. a 457 KB photo at high density with 10 mm margins.
@@ -15,7 +15,7 @@
 
 ## Recently completed
 
-- 2026-11-02: Plan A, branch `feature/bridge`: `rows_for`/`lead_rows`, `prepare_page` with `ToneMode` and A5 rotation, band-wise `print_bitmap` with `abort` and `SheetRanOut`, bridge daemon (`phomemo.bridge`: protocol, server/session, config, client, CLI `phomemo-bridge`), systemd user unit. Spike with `ippeveprinter -c` proved CUPS → raster → printer end to end (PWG and Apple raster). Buffer probe: ATT round trip caps throughput (~6.5–7.4 KiB/s), no MCU-side stall observed; data sent with the lid open is discarded.
+- 2026-11-02: Plan A, branch `feature/bridge`: `rows_for`/`lead_rows`, `prepare_page` with `ToneMode` and A5 rotation, continuous `print_bitmap` with `abort` (white-padded band), `SheetRanOut` and lid-open detection, bridge daemon (`phomemo.bridge`: protocol, server/session, config, client, CLI `phomemo-bridge`), systemd user unit. Spike with `ippeveprinter -c` proved CUPS → raster → printer end to end (PWG and Apple raster). Buffer probe: ATT round trip caps throughput (~6.5–7.4 KiB/s), no MCU-side stall observed; data sent with the lid open is discarded.
 
 - 2026-11-02: flow-control work merged to main (ed69d75..365a865). Hardware test-ladder spike found the buffer overflow; fix is ATT write-with-response. Plus: MAC-to-BLEDevice resolution, profile sheet geometry, `FIT_PAGE`, `wait_for_ready`, `eject_paper`, docs.
 
@@ -43,9 +43,9 @@
 
 ## Future work (after Plan B, in this order) [user, 2026-11-02]
 
-- Repo hygiene pass: remove identifiable device information (printer MAC, serial pattern in docs, journal, docstrings, tests), personal paths, anything secret-like; gitleaks clean; placeholders instead.
+- Repo hygiene pass: remove identifiable device information (printer MAC, serial pattern in docs, journal, docstrings, tests), personal paths, anything secret-like; gitleaks clean; placeholders instead. Move the journal and all Claude-facing docs out of the repo into the KB (`passionate-bytes/projects/phomemo.md`, `.claude` via the dot-claude symlink pattern); only a neutral `AGENTS.md` stays.
 - Packaging plan: PyPI (`phomemo` wheel via `uv build`/`uv publish`, trusted publishing), COPR (`python3-phomemo` with the bridge unit, `phomemo-printer-app`; builds from git tags; needs Paul's Fedora account + COPR project), snap for the printer app (OpenPrinting style), GitHub Releases (tagged tarballs, changelog, RPM/snap artefacts).
-- Build scripts and docs, then GitHub Actions CI: tests + lint on PRs; release workflow on tags (build, PyPI publish, COPR trigger, release assets); docs site build and publish.
+- Build scripts and docs (Sphinx, published to GitHub Pages), then GitHub Actions CI: tests + lint on PRs; release workflow on tags (build, PyPI publish, COPR trigger, release assets); docs build and publish.
 
 ## Deliberate non-goals
 

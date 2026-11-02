@@ -61,3 +61,29 @@ def test_config_rejects_non_numeric_timeout(tmp_path: Path) -> None:
 def test_config_missing_file_is_skipped(tmp_path: Path) -> None:
     config = load_config(paths=[tmp_path / "absent.toml"], env={})
     assert config.hold_seconds == 120.0
+
+
+def test_config_rejects_non_positive_band_height(tmp_path: Path) -> None:
+    user = tmp_path / "user.toml"
+    user.write_text("band_height = 0\n")
+    with pytest.raises(ConfigError, match="band_height"):
+        load_config(paths=[user], env={})
+
+
+def test_config_rejects_negative_timeout(tmp_path: Path) -> None:
+    user = tmp_path / "user.toml"
+    user.write_text("hold_seconds = -1\n")
+    with pytest.raises(ConfigError, match="hold_seconds"):
+        load_config(paths=[user], env={})
+
+
+def test_config_rejects_unknown_profile(tmp_path: Path) -> None:
+    user = tmp_path / "user.toml"
+    user.write_text('[printer]\nprofile = "nope"\n')
+    with pytest.raises(ConfigError, match="profile"):
+        load_config(paths=[user], env={})
+
+
+def test_config_explicit_missing_file_is_an_error(tmp_path: Path) -> None:
+    with pytest.raises(ConfigError, match="absent.toml"):
+        load_config(paths=[tmp_path / "absent.toml"], env={}, require_files=True)

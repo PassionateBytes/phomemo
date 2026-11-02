@@ -440,3 +440,112 @@ async def test_open_with_printer_off_is_ok_and_not_connected(tmp_path: Path) -> 
     finally:
         server.close()
         server.close_clients()
+
+
+@pytest.mark.asyncio
+async def test_wait_ready_survives_a_dropped_link(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    original = printer.check_ready
+    dropped = False
+
+    async def check_ready(timeout: float = 1.0) -> tuple[bool, str]:
+        nonlocal dropped
+        if not dropped:
+            dropped = True
+            printer.connected = False
+            raise ConnectionError("Printer connection lost")
+        return await original(timeout)
+
+    printer.check_ready = check_ready  # type: ignore[method-assign]
+    reply = await client.call({"cmd": "wait_ready", "settle": 0})
+    assert reply["ok"]
+    assert [e["reason"] for e in client.events if e["event"] == "waiting"] == [
+        "printer-off"
+    ]
+    assert printer.connects == 2
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_wait_ready_and_abort_in_one_write_reply_both(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    _printer().paper = PaperState.ABSENT
+    client.writer.write(
+        encode_message({"cmd": "wait_ready"}) + encode_message({"cmd": "abort"})
+    )
+    await client.writer.drain()
+    replies = [await client.reply(), await client.reply()]
+    by_cmd = {r["cmd"]: r for r in replies}
+    assert by_cmd["abort"]["ok"] is True
+    assert by_cmd["wait_ready"] == {
+        "ok": False,
+        "cmd": "wait_ready",
+        "error": "cancelled",
+    }
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_wait_ready_settle_timeout_keeps_waiting(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    calls = 0
+
+    async def flaky_settle(**kwargs: Any) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise TimeoutError("No paper loaded")
+
+    printer.wait_for_ready = flaky_settle  # type: ignore[method-assign]
+    reply = await client.call({"cmd": "wait_ready", "settle": 1.0})
+    assert reply["ok"]
+    assert calls == 2
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_oversized_line_ends_the_session_and_frees_the_bridge(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    client.writer.write(b"x" * (70 * 1024) + b"\n")
+    await client.writer.drain()
+    reply = await client.reply()
+    assert reply["ok"] is False
+    assert client.reader.at_eof() or (await client.reader.read(1)) == b""
+    again = await _connect(bridge)
+    assert (await again.call({"cmd": "status"}))["ok"]
+    await again.close()
+
+
+@pytest.mark.asyncio
+async def test_open_with_address_targets_that_printer(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    assert reply["connected"] is True
+    assert _printer().address == "AA:BB:CC:DD:EE:FF"
+    reply = await client.call({"cmd": "open", "address": "11:22:33:44:55:66"})
+    assert reply["connected"] is True
+    assert _printer().address == "11:22:33:44:55:66"
+    assert len(FakePrinter.instances) == 2
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_lid_open_page_ends_aborted(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    printer.print_error = PrintAborted("lid opened")
+    reply = await _send_page(client, 400)
+    assert reply == {"ok": False, "cmd": "page_end", "error": "lid opened"}
+    assert printer.ejects == 0
+    await client.close()

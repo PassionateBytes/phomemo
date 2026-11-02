@@ -7,7 +7,9 @@ from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
+import phomemo.profiles  # noqa: F401, registers the built-in profiles
 from phomemo.bridge.server import BridgeConfig
+from phomemo.registry import list_profiles
 
 SYSTEM_CONFIG = Path("/etc/phomemo/bridge.toml")
 SYSTEM_SOCKET = Path("/run/phomemo/bridge.sock")
@@ -54,14 +56,23 @@ def _check(path: Path, key: str, value: Any) -> Any:
     if key in _NUMERIC:
         if isinstance(value, bool) or not isinstance(value, int | float):
             raise ConfigError(f"{path}: {key}: expected a number, got {value!r}")
+        if value < 0:
+            raise ConfigError(f"{path}: {key}: must not be negative, got {value!r}")
         return float(value)
     if key in _INTEGER:
         if isinstance(value, bool) or not isinstance(value, int):
             raise ConfigError(f"{path}: {key}: expected an integer, got {value!r}")
+        if value <= 0:
+            raise ConfigError(f"{path}: {key}: must be positive, got {value!r}")
         return value
     if key in _STRING:
         if not isinstance(value, str):
             raise ConfigError(f"{path}: {key}: expected a string, got {value!r}")
+        if key == "profile" and value not in list_profiles():
+            raise ConfigError(
+                f"{path}: {key}: unknown profile {value!r}, "
+                f"known: {', '.join(list_profiles())}"
+            )
         return value
     raise ConfigError(f"{path}: {key}: unknown key")
 
@@ -88,6 +99,7 @@ def _read(path: Path) -> dict[str, Any]:
 def load_config(
     paths: list[Path] | None = None,
     env: Mapping[str, str] = os.environ,
+    require_files: bool = False,
 ) -> BridgeConfig:
     """Build the bridge configuration.
 
@@ -98,17 +110,22 @@ def load_config(
         paths: Files to read in override order; ``None`` means the system
             file then the user's XDG file.
         env: Environment for the socket override and default locations.
+        require_files: Treat a missing file in ``paths`` as an error (for
+            a path the user named explicitly).
 
     Returns:
         The merged configuration.
 
     Raises:
-        ConfigError: On an unreadable file, an unknown key, or a wrong type.
+        ConfigError: On a missing explicit file, an unreadable file, an
+            unknown key, a wrong type, or an out-of-range value.
     """
     merged: dict[str, Any] = {}
     for path in default_paths(env) if paths is None else paths:
         if path.is_file():
             merged.update(_read(path))
+        elif require_files:
+            raise ConfigError(f"{path}: no such file")
     if SOCKET_ENV in env:
         merged["socket_path"] = env[SOCKET_ENV]
     socket_path = Path(merged.pop("socket_path", default_socket(env)))

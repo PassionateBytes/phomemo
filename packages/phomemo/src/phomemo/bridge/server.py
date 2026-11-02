@@ -77,6 +77,7 @@ class Bridge:
         self.config = config
         self.profile = config.resolved_profile()
         self._factory = printer_factory
+        self._address: str | None = config.address
         self.printer: Printer | None = None
         self.session_active = False
         self._hold_handle: asyncio.TimerHandle | None = None
@@ -99,20 +100,28 @@ class Bridge:
             name_pattern=self.profile.ble_name_pattern, timeout=timeout
         )
 
-    async def connect(self, discovery_timeout: float = 5.0) -> None:
+    async def connect(
+        self, discovery_timeout: float = 5.0, address: str | None = None
+    ) -> None:
         """Establish the BLE link, reusing a held one.
 
         Args:
             discovery_timeout: Scan budget when the printer must be found.
+            address: Printer to use instead of the configured one; a change
+                of address drops the current link and targets the new one.
 
         Raises:
             ConnectionError: If the printer is not found or refuses.
         """
         self.cancel_hold()
+        if address is not None and address != self._address:
+            await self.disconnect()
+            self.printer = None
+            self._address = address
         if self.connected:
             return
         if self.printer is None:
-            self.printer = self._factory(self.profile, self.config.address)
+            self.printer = self._factory(self.profile, self._address)
         await self.printer.connect(discovery_timeout=discovery_timeout)
         logger.info("Printer link up")
 

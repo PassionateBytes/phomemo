@@ -99,7 +99,7 @@ class Session:
                 obj, payload = await read_message(self._reader)
             except ProtocolError as exc:
                 await self._send({"ok": False, "error": str(exc)})
-                continue
+                return
             except (asyncio.IncompleteReadError, ConnectionError, OSError):
                 return
             cmd = obj.get("cmd")
@@ -117,6 +117,7 @@ class Session:
                 )
                 continue
             self._pending_cmd = cmd
+            self._abort = asyncio.Event()
             self._pending = asyncio.create_task(
                 self._run_command(cmd, handler, obj, payload)
             )
@@ -149,8 +150,11 @@ class Session:
 
     async def _request_abort(self) -> None:
         self._abort.set()
-        if self._pending is not None and self._pending_cmd == "wait_ready":
-            self._pending.cancel()
+
+    async def _pause(self, seconds: float) -> None:
+        """Sleep, waking early when an abort arrives."""
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(self._abort.wait(), seconds)
 
     async def _send(self, obj: dict[str, Any]) -> None:
         with contextlib.suppress(ConnectionError, OSError):
@@ -191,10 +195,13 @@ class Session:
         devices = await self._bridge.discover(timeout)
         return {"printers": [{"name": d.name, "address": d.address} for d in devices]}
 
-    async def _cmd_open(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
+    async def _cmd_open(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         """Bring the link up if reachable; ``wait_ready`` keeps retrying otherwise."""
+        address = obj.get("address")
         try:
-            await self._bridge.connect(discovery_timeout=5.0)
+            await self._bridge.connect(
+                discovery_timeout=5.0, address=str(address) if address else None
+            )
         except ConnectionError as exc:
             logger.info("Printer not reachable at open: %s", exc)
             return {"connected": False}
@@ -240,7 +247,7 @@ class Session:
     ) -> dict[str, Any]:
         bridge = self._bridge
         settle = float(obj.get("settle", bridge.config.settle_seconds))
-        self._abort = asyncio.Event()
+        abort = self._abort
         state: str | None = None
         timeouts = 0
 
@@ -251,18 +258,35 @@ class Session:
                 await self._event("waiting", reason=reason)
 
         while True:
+            if abort.is_set():
+                raise CommandError("cancelled")
             if not bridge.connected:
                 await report("printer-off")
                 try:
                     await bridge.connect(discovery_timeout=5.0)
                 except ConnectionError:
-                    await asyncio.sleep(_RETRY_SECONDS)
+                    await self._pause(_RETRY_SECONDS)
                 continue
             printer = bridge.printer
             assert printer is not None
-            ready, reason = await printer.check_ready(timeout=2.0)
+            try:
+                ready, reason = await printer.check_ready(timeout=2.0)
+            except ConnectionError as exc:
+                logger.info("Link lost while waiting: %s", exc)
+                continue
             if ready:
-                break
+                if settle <= 0:
+                    return {}
+                try:
+                    await printer.wait_for_ready(
+                        timeout=10.0, poll=_POLL_SECONDS, settle=settle
+                    )
+                except TimeoutError:
+                    continue
+                except ConnectionError as exc:
+                    logger.info("Link lost while settling: %s", exc)
+                    continue
+                return {}
             if reason.startswith("Could not query"):
                 timeouts += 1
                 if timeouts >= _MUTE_THRESHOLD:
@@ -271,20 +295,12 @@ class Session:
                     try:
                         await printer.reconnect()
                     except ConnectionError:
-                        await asyncio.sleep(_RETRY_SECONDS)
+                        await self._pause(_RETRY_SECONDS)
                     continue
             else:
                 timeouts = 0
                 await report("lid-open" if reason.startswith("Lid") else "no-sheet")
-            await asyncio.sleep(_POLL_SECONDS)
-
-        if settle > 0:
-            printer = bridge.printer
-            assert printer is not None
-            await printer.wait_for_ready(
-                timeout=10.0, poll=_POLL_SECONDS, settle=settle
-            )
-        return {}
+            await self._pause(_POLL_SECONDS)
 
     # ------------------------------------------------------------------
     # Page pipeline
@@ -374,8 +390,7 @@ class Session:
             )
             bitmap = image_to_bitmap(prepared)
             height = prepared.height
-            abort = asyncio.Event()
-            self._abort = abort
+            abort = self._abort
             last = -1
 
             def on_progress(_sent: int, _total: int) -> None:
@@ -402,8 +417,9 @@ class Session:
                 await self._eject_remainder(printer)
                 raise CommandError(exc.reason) from exc
             except PrintAborted as exc:
-                await asyncio.sleep(bridge.config.drain_seconds)
-                await printer.eject_paper()
+                if exc.reason == "cancelled":
+                    await asyncio.sleep(bridge.config.drain_seconds)
+                    await printer.eject_paper()
                 raise CommandError(exc.reason) from exc
             except (TimeoutError, ConnectionError, OSError) as exc:
                 raise CommandError(f"connection lost: {exc}") from exc
