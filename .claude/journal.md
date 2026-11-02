@@ -41,9 +41,11 @@
 - Dead `reason = "not ready"` branch in `wait_for_ready` [inferred]
 - Letter profile untested on hardware [inferred]
 
-## Future work
+## Future work (after Plan B, in this order) [user, 2026-11-02]
 
-- (none queued)
+- Repo hygiene pass: remove identifiable device information (printer MAC, serial pattern in docs, journal, docstrings, tests), personal paths, anything secret-like; gitleaks clean; placeholders instead.
+- Packaging plan: PyPI (`phomemo` wheel via `uv build`/`uv publish`, trusted publishing), COPR (`python3-phomemo` with the bridge unit, `phomemo-printer-app`; builds from git tags; needs Paul's Fedora account + COPR project), snap for the printer app (OpenPrinting style), GitHub Releases (tagged tarballs, changelog, RPM/snap artefacts).
+- Build scripts and docs, then GitHub Actions CI: tests + lint on PRs; release workflow on tags (build, PyPI publish, COPR trigger, release assets); docs site build and publish.
 
 ## Deliberate non-goals
 
