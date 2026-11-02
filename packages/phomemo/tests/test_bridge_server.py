@@ -549,3 +549,16 @@ async def test_lid_open_page_ends_aborted(bridge: BridgeConfig) -> None:
     assert reply == {"ok": False, "cmd": "page_end", "error": "lid opened"}
     assert printer.ejects == 0
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_lid_open_page_reconnects_without_eject(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    printer.print_error = PrintAborted("lid opened")
+    reply = await _send_page(client, 400)
+    assert reply == {"ok": False, "cmd": "page_end", "error": "lid opened"}
+    assert printer.ejects == 0
+    assert printer.connects == 2
+    await client.close()

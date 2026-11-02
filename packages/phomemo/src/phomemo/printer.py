@@ -703,10 +703,16 @@ class Printer:
         height: int,
         abort: asyncio.Event | None,
         absent: asyncio.Event,
+        lid_open: asyncio.Event,
         short_sheet_fraction: float,
         on_progress: ProgressCallback | None,
     ) -> None:
-        """Send the stream in link-sized chunks without pausing at band ends."""
+        """Send the stream in link-sized chunks without pausing at band ends.
+
+        An open lid ends the transfer at once: the printer discards data in
+        that state. The band in progress is still completed with white rows
+        so the parser is in sync when the lid closes.
+        """
         chunk = self._transport.chunk_bytes
         width_bytes = self._profile.width_bytes
         total = -(-len(stream) // chunk)
@@ -716,6 +722,9 @@ class Printer:
             if abort is not None and abort.is_set():
                 await self._pad_band(stream, offset, bands)
                 raise PrintAborted("cancelled")
+            if lid_open.is_set():
+                await self._pad_band(stream, offset, bands)
+                raise PrintAborted("lid opened")
             unsent = height - self._rows_sent
             if absent.is_set() and height and unsent / height > short_sheet_fraction:
                 raise SheetRanOut("paper ran out")
@@ -795,10 +804,13 @@ class Printer:
             bitmap, height, density, mode, feed_lines
         )
         absent = asyncio.Event()
+        lid_open = asyncio.Event()
 
         def watch_paper(event: DeviceEvent) -> None:
             if isinstance(event, PaperEvent) and event.paper == PaperState.ABSENT:
                 absent.set()
+            if isinstance(event, LidEvent) and event.lid == LidState.OPEN:
+                lid_open.set()
 
         # Armed before the transfer: a printer that abandons the job (sheet
         # ran out, lid opened) stops the motor while data is still in flight.
@@ -810,7 +822,14 @@ class Printer:
         self._rows_sent = 0
         try:
             await self._transfer(
-                stream, bands, height, abort, absent, short_sheet_fraction, on_progress
+                stream,
+                bands,
+                height,
+                abort,
+                absent,
+                lid_open,
+                short_sheet_fraction,
+                on_progress,
             )
             if not wait_for_completion:
                 return

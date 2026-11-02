@@ -574,3 +574,18 @@ async def test_abort_exactly_at_a_band_end_sends_nothing_more() -> None:
             bytes(_ROW * 600), height=600, abort=abort, completion_timeout=5.0
         )
     assert len(rec.stream) == band1_end
+
+
+@pytest.mark.asyncio
+async def test_lid_opened_during_transfer_aborts_and_pads() -> None:
+    printer, rec = _chunked_printer(
+        hook=lambda n: (
+            n == 3
+            and printer._dispatch_event(LidEvent(kind=EventKind.LID, lid=LidState.OPEN))
+        )
+    )
+    with pytest.raises(PrintAborted, match="lid opened"):
+        await printer.print_bitmap(
+            bytes(_ROW * 600), height=600, completion_timeout=5.0
+        )
+    assert len(rec.stream) == _PREFIX + _HEADER + 256 * _ROW
