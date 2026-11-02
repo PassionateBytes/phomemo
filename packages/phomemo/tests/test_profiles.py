@@ -53,24 +53,31 @@ def test_a4_profile_printable_area() -> None:
     from phomemo.registry import get_profile
 
     profile = get_profile("M08F-A4")
-    assert profile.max_rows == 2290
+    assert profile.sheet_length_mm == 297.0
     assert profile.top_margin_mm == 10.0
+    assert profile.bottom_margin_mm == 6.0
+    assert profile.max_rows == 2245
 
 
-def test_profile_rejects_non_positive_max_rows() -> None:
-    with pytest.raises(ValueError, match="max_rows"):
-        _make_profile(max_rows=0)
-
-
-def test_profile_allows_none_max_rows() -> None:
-    profile = _make_profile(max_rows=None)
-    assert profile.max_rows is None
-
-
-def test_letter_profile_subtracts_the_same_top_margin() -> None:
+def test_letter_profile_uses_the_same_margins() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
     profile = get_profile("M08F-Letter")
-    assert profile.top_margin_mm == 10.0
-    assert profile.max_rows == 2150
+    assert profile.sheet_length_mm == 279.4
+    assert profile.max_rows == 2105
+
+
+def test_profile_rejects_margins_that_consume_the_sheet() -> None:
+    with pytest.raises(ValueError, match="margin"):
+        _make_profile(sheet_length_mm=20.0, top_margin_mm=10.0, bottom_margin_mm=10.0)
+
+
+def test_profile_rejects_non_positive_sheet_length() -> None:
+    with pytest.raises(ValueError, match="sheet_length_mm"):
+        _make_profile(sheet_length_mm=0.0)
+
+
+def test_roll_profile_has_no_max_rows() -> None:
+    profile = _make_profile(sheet_length_mm=None)
+    assert profile.max_rows is None

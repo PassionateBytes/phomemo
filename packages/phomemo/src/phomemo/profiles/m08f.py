@@ -13,26 +13,31 @@ _M08F_WRITE = "00000000-0000-0000-0000-00000000ff02"
 _M08F_NOTIFY = "00000000-0000-0000-0000-00000000ff01"
 _M08F_STATUS = "00000000-0000-0000-0000-00000000ff03"
 
-# A4: 297mm sheet, 10mm sensor-to-head lead, ~287mm printable at 203 dpi.
+# The sensor sits 10mm ahead of the head, so the first 10mm of a sheet cannot be
+# printed. The bottom margin keeps the raster and its trailing feed on the sheet.
+_TOP_MARGIN_MM = 10.0
+_BOTTOM_MARGIN_MM = 6.0
+
 M08F_A4 = PrinterProfile(
     name="M08F-A4",
     ble_name_pattern=r"^M08F",
     print_width_px=1680,
-    max_rows=2290,
-    top_margin_mm=10.0,
+    sheet_length_mm=297.0,
+    top_margin_mm=_TOP_MARGIN_MM,
+    bottom_margin_mm=_BOTTOM_MARGIN_MM,
     write_uuid=_M08F_WRITE,
     notify_uuid=_M08F_NOTIFY,
     status_uuid=_M08F_STATUS,
 )
 
-# Letter: 279.4mm sheet minus the same 10mm lead = 269mm ≈ 2150 rows.
-# Derived from the A4 measurement, not measured on Letter stock.
+# Letter margins copied from A4, not measured on Letter stock.
 M08F_LETTER = PrinterProfile(
     name="M08F-Letter",
     ble_name_pattern=r"^M08F",
     print_width_px=1728,
-    max_rows=2150,
-    top_margin_mm=10.0,
+    sheet_length_mm=279.4,
+    top_margin_mm=_TOP_MARGIN_MM,
+    bottom_margin_mm=_BOTTOM_MARGIN_MM,
     write_uuid=_M08F_WRITE,
     notify_uuid=_M08F_NOTIFY,
     status_uuid=_M08F_STATUS,

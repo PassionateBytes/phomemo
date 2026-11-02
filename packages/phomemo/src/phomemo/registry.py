@@ -41,12 +41,14 @@ class PrinterProfile:
             (default) with ``write_with_response``; only unacknowledged
             writes need a delay.
         band_height: Maximum rows per GS v 0 raster command.
-        max_rows: Dot rows that fit on one sheet below the hardware top
-            margin, or ``None`` for continuous roll media. Rasters taller
-            than this run the paper out mid-job.
+        sheet_length_mm: Length of one sheet in the feed direction, or
+            ``None`` for continuous roll media.
         top_margin_mm: Unprintable lead from the paper edge to the first
             printed row, set by the distance between the paper sensor and
             the print head.
+        bottom_margin_mm: Rows kept free at the sheet end so the raster plus
+            trailing feed never runs the sheet out of the sensor mid-job; an
+            overrun leaves the printer in an error state.
         service_uuid: BLE GATT service UUID for the print data service.
         write_uuid: BLE characteristic UUID for writing commands/data.
         notify_uuid: BLE characteristic UUID for device events (``ff01``).
@@ -70,8 +72,9 @@ class PrinterProfile:
     write_with_response: bool = True
     chunk_delay_s: float = 0.0
     band_height: int = 256
-    max_rows: int | None = None
+    sheet_length_mm: float | None = None
     top_margin_mm: float = 0.0
+    bottom_margin_mm: float = 0.0
     service_uuid: str = "0000ff00-0000-1000-8000-00805f9b34fb"
     write_uuid: str = "0000ff02-0000-1000-8000-00805f9b34fb"
     notify_uuid: str = "0000ff01-0000-1000-8000-00805f9b34fb"
@@ -84,19 +87,34 @@ class PrinterProfile:
 
         Raises:
             ValueError: If ``print_width_px`` is not a multiple of 8, if
-                ``max_rows`` is not positive, or if any UUID field does not
-                match the standard UUID format.
+                ``sheet_length_mm`` is not positive, if the margins leave no
+                printable length, or if any UUID field does not match the
+                standard UUID format.
         """
         if self.print_width_px % 8 != 0:
             raise ValueError(
                 f"print_width_px must be a multiple of 8, got {self.print_width_px}"
             )
-        if self.max_rows is not None and self.max_rows <= 0:
-            raise ValueError(f"max_rows must be positive or None, got {self.max_rows}")
+        if self.sheet_length_mm is not None:
+            if self.sheet_length_mm <= 0:
+                raise ValueError(
+                    "sheet_length_mm must be positive or None, "
+                    f"got {self.sheet_length_mm}"
+                )
+            if self.top_margin_mm + self.bottom_margin_mm >= self.sheet_length_mm:
+                raise ValueError("top and bottom margin leave no printable length")
         for field_name in ("service_uuid", "write_uuid", "notify_uuid", "status_uuid"):
             value = getattr(self, field_name)
             if not _UUID_RE.match(value):
                 raise ValueError(f"{field_name} is not a valid UUID: {value!r}")
+
+    @property
+    def max_rows(self) -> int | None:
+        """Dot rows between the margins of one sheet, ``None`` for roll media."""
+        if self.sheet_length_mm is None:
+            return None
+        printable_mm = self.sheet_length_mm - self.top_margin_mm - self.bottom_margin_mm
+        return int(printable_mm / 25.4 * self.dpi)
 
     @property
     def width_bytes(self) -> int:
