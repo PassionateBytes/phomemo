@@ -7,7 +7,7 @@
 ## Current state (as of 2026-11-02)
 
 - Transport: BLE via bleak. `connect` resolves MAC to `BLEDevice` through `BleakScanner` (BlueZ needs the scan cache).
-- Flow control: raster stream paced by ATT write-with-response; printer paces the sender (~7.4 KiB/s sparse, ~5.7 KiB/s dense). Unacknowledged writes at 20 ms overflow the printer buffer on A4.
+- Flow control: raster stream sent with ATT write-with-response, one `GS v 0` band per write call; the ATT round trip caps it at ~6.5–7.4 KiB/s and the printer keeps up on all content tested. Unacknowledged writes at 20 ms overflow a ~100 KB buffer (bridge chip) on A4.
 - Profiles carry `sheet_length_mm` / `top_margin_mm` / `bottom_margin_mm`, `max_rows` derived: A4 2245 rows (10 mm top measured, 6 mm bottom chosen); Letter 2105 (margins copied, not measured).
 - `ImageFit.FIT_PAGE`, `Printer.wait_for_ready` (settles on the feed-complete paper event, reconnects once when queries go mute), `Printer.reconnect`, sensor-driven `Printer.eject_paper`; motor-stop waiter armed before the raster transfer.
 - Verified on hardware incl. a 457 KB photo at high density with 10 mm margins.
@@ -15,11 +15,13 @@
 
 ## Recently completed
 
+- 2026-11-02: Plan A, branch `feature/bridge`: `rows_for`/`lead_rows`, `prepare_page` with `ToneMode` and A5 rotation, band-wise `print_bitmap` with `abort` and `SheetRanOut`, bridge daemon (`phomemo.bridge`: protocol, server/session, config, client, CLI `phomemo-bridge`), systemd user unit. Spike with `ippeveprinter -c` proved CUPS → raster → printer end to end (PWG and Apple raster). Buffer probe: ATT round trip caps throughput (~6.5–7.4 KiB/s), no MCU-side stall observed; data sent with the lid open is discarded.
+
 - 2026-11-02: flow-control work merged to main (ed69d75..365a865). Hardware test-ladder spike found the buffer overflow; fix is ATT write-with-response. Plus: MAC-to-BLEDevice resolution, profile sheet geometry, `FIT_PAGE`, `wait_for_ready`, `eject_paper`, docs.
 
 ## Immediate next
 
-- Explore a CUPS printer driver / printer application on top of the library [user]
+- Plan B: PAPPL printer application in C driving `phomemo-bridge` (design: docs/superpowers/specs/2026-11-02-printer-app-design.md, gitignored), systemd units, hardware runbook [user]
 
 ## Short-term
 
