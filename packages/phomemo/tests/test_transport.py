@@ -101,7 +101,52 @@ async def test_subscribe_failure_is_a_connection_error_even_without_services(
             raise BleakError("Service Discovery has not been performed yet")
 
     transport = BleTransport(replace(get_profile("M08F-A4"), negotiate_mtu=False))
-    monkeypatch.setattr(transport_module, "BleakClient", lambda address: FlakyClient())
+    monkeypatch.setattr(
+        transport_module, "BleakClient", lambda address, **kw: FlakyClient()
+    )
     with pytest.raises(ConnectionError, match="failed to subscribe"):
         await transport.connect("60:6E:41:23:0B:D6", on_event=lambda data: None)
     assert transport.is_connected is False
+
+
+@pytest.mark.asyncio
+async def test_unsolicited_disconnect_clears_connected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class Client:
+        is_connected = True
+
+        def __init__(self, address: str, disconnected_callback: object = None) -> None:
+            captured["cb"] = disconnected_callback
+
+        async def connect(self) -> None:
+            pass
+
+        async def disconnect(self) -> None:
+            pass
+
+        async def start_notify(self, uuid: str, cb: object) -> None:
+            pass
+
+    transport = BleTransport(replace(get_profile("M08F-A4"), negotiate_mtu=False))
+    monkeypatch.setattr(transport_module, "BleakClient", Client)
+    await transport.connect("60:6E:41:23:0B:D6", on_event=lambda data: None)
+    assert transport.is_connected is True
+    captured["cb"](None)  # type: ignore[operator]
+    assert transport.is_connected is False
+
+
+@pytest.mark.asyncio
+async def test_write_maps_bleak_error_to_connection_error() -> None:
+    from bleak.exc import BleakError
+
+    transport, client = _make_transport()
+
+    async def failing(uuid: str, data: bytes, response: bool) -> None:
+        raise BleakError("Not connected")
+
+    client.write_gatt_char = failing  # type: ignore[method-assign]
+    with pytest.raises(ConnectionError, match="Not connected"):
+        await transport.write(b"\x1b\x40")

@@ -442,19 +442,18 @@ async def test_abort_pads_the_current_band_with_white_and_stops() -> None:
 
 
 @pytest.mark.asyncio
-async def test_abort_exactly_at_a_band_start_sends_nothing_more() -> None:
+async def test_abort_mid_band_pads_that_band_only() -> None:
     abort = asyncio.Event()
     band1_end = _PREFIX + _HEADER + 256 * _ROW
     chunks_in_band1 = -(-band1_end // 244)
-    # The chunk that completes band 1 also carries the start of band 2, so the
-    # abort lands mid band 2 and pads it; use a chunk size that divides evenly.
+    # The chunk that completes band 1 also starts band 2, so the abort lands
+    # inside band 2's header or data and band 2 is padded to its end.
     printer, rec = _chunked_printer(hook=lambda n: n == chunks_in_band1 and abort.set())
     with pytest.raises(PrintAborted):
         await printer.print_bitmap(
             bytes(_ROW * 600), height=600, abort=abort, completion_timeout=5.0
         )
-    band2_end = band1_end + _HEADER + 256 * _ROW
-    assert len(rec.stream) == band2_end
+    assert len(rec.stream) == band1_end + _HEADER + 256 * _ROW
 
 
 @pytest.mark.asyncio
@@ -525,3 +524,53 @@ async def test_rows_sent_progress_is_monotonic_and_resets() -> None:
     assert seen[0] == 0
     assert 256 in seen and 512 in seen
     assert printer.rows_sent == 0
+
+
+@pytest.mark.asyncio
+async def test_connect_wraps_scanner_bleak_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bleak.exc import BleakError
+
+    async def failing(address: str, timeout: float) -> BLEDevice | None:
+        raise BleakError("org.bluez.Error.InProgress")
+
+    monkeypatch.setattr(printer_module.BleakScanner, "find_device_by_address", failing)
+    printer = Printer("M08F-A4", _MAC)
+    printer._transport = FakeTransport()  # type: ignore[assignment]
+    with pytest.raises(ConnectionError, match="InProgress"):
+        await printer.connect()
+
+
+@pytest.mark.asyncio
+async def test_lid_open_after_motor_stop_aborts_the_page(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer, rec = _chunked_printer()
+
+    async def lid_open(timeout: float = 1.0) -> LidState:
+        return LidState.OPEN
+
+    monkeypatch.setattr(printer, "query_lid", lid_open)
+    total = _PREFIX + 3 * _HEADER + 600 * _ROW + _FEED
+    rec.hook = lambda n: (
+        n == -(-total // 244)
+        and printer._dispatch_event(MotorStopEvent(kind=EventKind.MOTOR_STOP))
+    )
+    with pytest.raises(PrintAborted, match="lid opened"):
+        await printer.print_bitmap(
+            bytes(_ROW * 600), height=600, completion_timeout=5.0
+        )
+
+
+@pytest.mark.asyncio
+async def test_abort_exactly_at_a_band_end_sends_nothing_more() -> None:
+    abort = asyncio.Event()
+    band1_end = _PREFIX + _HEADER + 256 * _ROW  # 53774 = 167 * 322
+    printer, rec = _chunked_printer(hook=lambda n: n == 167 and abort.set())
+    printer._transport.chunk_bytes = 322  # type: ignore[attr-defined]
+    with pytest.raises(PrintAborted):
+        await printer.print_bitmap(
+            bytes(_ROW * 600), height=600, abort=abort, completion_timeout=5.0
+        )
+    assert len(rec.stream) == band1_end
