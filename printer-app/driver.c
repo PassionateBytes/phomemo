@@ -3,6 +3,7 @@
 
 #include "phomemo.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 static const char *const tone_keywords[] = {"auto", "threshold", "ordered",
@@ -52,7 +53,13 @@ phomemo_should_rotate(const pappl_pr_options_t *options)
 double
 phomemo_media_length_mm(const pappl_pr_options_t *options)
 {
-  return options->media.size_length / 100.0;
+  int width = options->media.size_width;
+  int length = options->media.size_length;
+  // The dimension closest to the head width lies across the head; the
+  // other one runs along the feed.
+  bool width_across =
+    abs(width - PHOMEMO_HEAD_WIDTH) <= abs(length - PHOMEMO_HEAD_WIDTH);
+  return (width_across ? length : width) / 100.0;
 }
 
 // Fills a media-col for a supported size with the printer's margins.
@@ -91,8 +98,10 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
            PHOMEMO_MAKE_AND_MODEL);
   data->kind = PAPPL_KIND_DOCUMENT;
   data->ppm = 1;
-  data->raster_types =
-    PAPPL_PWG_RASTER_TYPE_SGRAY_8 | PAPPL_PWG_RASTER_TYPE_BLACK_1;
+  // sgray_8 only: PAPPL hands a black_1 document to the driver as packed
+  // bits under an 8-bit page header, so offering black_1 would print
+  // garbage for clients that choose it. The bridge dithers 8-bit pages.
+  data->raster_types = PAPPL_PWG_RASTER_TYPE_SGRAY_8;
   data->num_resolution = 1;
   data->x_resolution[0] = PHOMEMO_DPI;
   data->y_resolution[0] = PHOMEMO_DPI;

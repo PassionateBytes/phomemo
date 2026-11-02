@@ -23,10 +23,13 @@ typedef struct
   char *line;        // receive buffer
   size_t line_size;  // allocated size of line
   size_t line_len;   // bytes buffered but not yet consumed
+  char pending[32];  // cmd of the request awaiting its reply
 } phomemo_bridge_t;
 
-// Called for each pushed event received while waiting for a reply. The
-// event object is freed after the callback returns.
+// Called for each pushed event received while waiting for a reply, and
+// with a NULL event about once a second while nothing arrives so the
+// caller can notice a cancelled job. An event object is freed after the
+// callback returns.
 typedef void (*phomemo_event_cb_t)(cJSON *event, void *data);
 
 // Connects to the bridge socket. On failure writes a message to err and
@@ -47,6 +50,8 @@ bool phomemo_bridge_send(phomemo_bridge_t *b, cJSON *request,
 // Reads events (passing each to on_event) until the reply arrives. Returns
 // the reply object when "ok" is true; the caller frees it. Returns NULL
 // with the bridge's error text (or a transport error) in err otherwise.
+// The bridge answers an "abort" sent while another command is pending
+// with its own reply first; that reply is skipped here.
 cJSON *phomemo_bridge_reply(phomemo_bridge_t *b, phomemo_event_cb_t on_event,
                             void *data, char *err, size_t errsize);
 

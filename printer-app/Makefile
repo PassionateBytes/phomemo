@@ -32,7 +32,7 @@ third_party/%.o: third_party/%.c
 tests/test_bridge: tests/test_bridge.o bridge.o $(VOBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-tests/test_driver: tests/test_driver.o driver.o job.o
+tests/test_driver: tests/test_driver.o driver.o job.o bridge.o $(VOBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 test: $(TESTS)

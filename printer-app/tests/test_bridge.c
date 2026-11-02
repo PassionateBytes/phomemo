@@ -31,7 +31,7 @@ start_server(server_fn fn)
     _exit(0);
   }
   close(sv[1]);
-  phomemo_bridge_t b = {sv[0], NULL, 0, 0};
+  phomemo_bridge_t b = {sv[0], NULL, 0, 0, ""};
   return b;
 }
 
@@ -235,6 +235,75 @@ test_eof_is_an_error(void)
 }
 
 static void
+server_abort_reply_first(int fd)
+{
+  char line[256];
+  read_line(fd, line, sizeof(line));
+  assert(strstr(line, "\"cmd\":\"wait_ready\""));
+  read_line(fd, line, sizeof(line));
+  assert(strstr(line, "\"cmd\":\"abort\""));
+  write_all(fd, "{\"ok\":true,\"cmd\":\"abort\"}\n"
+                "{\"ok\":false,\"cmd\":\"wait_ready\",\"error\":\"cancelled\"}\n");
+}
+
+// The abort reply arrives before the pending command's reply and must not
+// be mistaken for it.
+static void
+test_abort_reply_is_skipped(void)
+{
+  phomemo_bridge_t b = start_server(server_abort_reply_first);
+  cJSON *req = cJSON_CreateObject();
+  cJSON_AddStringToObject(req, "cmd", "wait_ready");
+  cJSON *abort = cJSON_CreateObject();
+  cJSON_AddStringToObject(abort, "cmd", "abort");
+  char err[128] = "";
+  assert(phomemo_bridge_send(&b, req, NULL, 0, err, sizeof(err)));
+  assert(phomemo_bridge_send(&b, abort, NULL, 0, err, sizeof(err)));
+  cJSON *reply = phomemo_bridge_reply(&b, NULL, NULL, err, sizeof(err));
+  assert(reply == NULL);
+  assert(strcmp(err, "cancelled") == 0);
+  cJSON_Delete(req);
+  cJSON_Delete(abort);
+  stop_server(&b);
+}
+
+static void
+server_slow_reply(int fd)
+{
+  char line[256];
+  read_line(fd, line, sizeof(line));
+  usleep(1500000);
+  write_all(fd, "{\"ok\":true,\"cmd\":\"wait_ready\"}\n");
+}
+
+static void
+count_ticks(cJSON *event, void *data)
+{
+  int *ticks = data;
+  if (event == NULL)
+    (*ticks)++;
+}
+
+// While a reply is outstanding the callback is invoked with NULL about
+// once a second so the caller can notice a cancelled job.
+static void
+test_reply_ticks_while_waiting(void)
+{
+  phomemo_bridge_t b = start_server(server_slow_reply);
+  cJSON *req = cJSON_CreateObject();
+  cJSON_AddStringToObject(req, "cmd", "wait_ready");
+  char err[128] = "";
+  int ticks = 0;
+  cJSON *reply = phomemo_bridge_call(&b, req, NULL, 0, count_ticks, &ticks, err,
+                                     sizeof(err));
+  assert(reply != NULL);
+  assert(ticks >= 1);
+  cJSON_Delete(reply);
+  cJSON_Delete(req);
+  stop_server(&b);
+}
+
+static void
 test_connect_missing_socket(void)
 {
   phomemo_bridge_t b;
@@ -254,6 +323,8 @@ main(void)
   test_payload();
   test_reply_arrives_in_pieces();
   test_eof_is_an_error();
+  test_abort_reply_is_skipped();
+  test_reply_ticks_while_waiting();
   test_connect_missing_socket();
   puts("test_bridge: ok");
   return 0;
