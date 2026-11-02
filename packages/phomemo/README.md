@@ -228,7 +228,7 @@ phomemo-bridge serve                      # daemon; socket in $XDG_RUNTIME_DIR/p
 phomemo-bridge discover                   # list printers in range
 phomemo-bridge status                     # link and sensor state
 phomemo-bridge print page.png --media a4 --quality high --tone diffusion
-phomemo-bridge print page.png --media a5  # sheet fed long edge first, page rotated
+phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page's right edge leads
 phomemo-bridge eject
 ```
 
