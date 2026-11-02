@@ -23,7 +23,7 @@ import pytest
 from bleak.backends.device import BLEDevice
 from phomemo.bridge.server import BridgeConfig, start_server
 from phomemo.bridge.session import Session
-from phomemo.events import PaperState
+from phomemo.events import LidState, PaperState
 from phomemo.printer import SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
@@ -74,9 +74,13 @@ class FakeBridge:
 
 @pytest.fixture
 async def fake_bridge(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
 ) -> AsyncIterator[FakeBridge]:
-    """Serve a fake bridge whose printer is a ScriptedPrinter."""
+    """Serve a fake bridge whose printer is a ScriptedPrinter.
+
+    An indirect parameter ``{"hold_seconds": s}`` keeps the printer link
+    open that long after a job.
+    """
 
     async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
         return [BLEDevice(address=ADDRESS, name="M08F", details=None)]
@@ -95,8 +99,9 @@ async def fake_bridge(
     FakePrinter.instances.clear()
     ScriptedPrinter.paper_default = PaperState.PRESENT
     ScriptedPrinter.print_error_default = None
+    hold = getattr(request, "param", {}).get("hold_seconds", 0.2)
     config = BridgeConfig(
-        socket_path=tmp_path / "bridge.sock", hold_seconds=0.2, drain_seconds=0.0
+        socket_path=tmp_path / "bridge.sock", hold_seconds=hold, drain_seconds=0.0
     )
     server = await start_server(config, printer_factory=ScriptedPrinter)
     env = {**os.environ, "PHOMEMO_BRIDGE_SOCKET": str(config.socket_path)}
@@ -133,7 +138,7 @@ def free_port() -> int:
 
 @pytest.fixture
 async def app_server(
-    fake_bridge: FakeBridge, tmp_path: Path
+    fake_bridge: FakeBridge, tmp_path: Path, request: pytest.FixtureRequest
 ) -> AsyncIterator[AppServer]:
     """Run the printer application server for the duration of a test.
 
@@ -148,6 +153,9 @@ async def app_server(
         "HOME": str(tmp_path),
         "XDG_CONFIG_HOME": str(tmp_path / "config"),
     }
+    param = getattr(request, "param", {})
+    if "bridge_socket" in param:
+        env["PHOMEMO_BRIDGE_SOCKET"] = str(tmp_path / param["bridge_socket"])
     (tmp_path / "config").mkdir()
     (tmp_path / "spool").mkdir()
     log_file = tmp_path / "app.log"
@@ -492,3 +500,63 @@ async def test_sheet_ran_out_aborts_job(printer: AppServer, tmp_path: Path) -> N
     attrs = await finish_job(start_job(printer, tmp_path, raster))
     assert attrs["job-state"] == "aborted", attrs
     assert "paper ran out" in attrs["job-state-message"]
+
+
+async def printer_state(server: AppServer, tmp_path: Path) -> tuple[str, str]:
+    attrs = await printer_attributes(server, tmp_path)
+    return attrs["printer-state"], attrs.get("printer-state-reasons", "")
+
+
+@pytest.mark.parametrize("app_server", [{"bridge_socket": "late.sock"}], indirect=True)
+async def test_bridge_down_pauses_queue_until_bridge_returns(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    task = start_job(printer, tmp_path, raster)
+    job_id = await active_job_id(printer)
+    for _ in range(40):
+        state, reasons = await printer_state(printer, tmp_path)
+        if state == "stopped":
+            break
+        await asyncio.sleep(0.25)
+    assert state == "stopped", (state, reasons)
+    assert not task.done()
+
+    config = BridgeConfig(
+        socket_path=tmp_path / "late.sock", hold_seconds=0.2, drain_seconds=0.0
+    )
+    late = await start_server(config, printer_factory=ScriptedPrinter)
+    try:
+        attrs = await finish_job(task)
+    finally:
+        late.close()
+        late.close_clients()
+    assert attrs["job-state"] == "completed", attrs
+    assert attrs["job-id"] == job_id
+    assert printer.bridge.printer.printed == [(210 * A4_ROWS, A4_ROWS, "MEDIUM")]
+    assert (await printer_state(printer, tmp_path))[0] != "stopped"
+
+
+@pytest.mark.parametrize("fake_bridge", [{"hold_seconds": 30}], indirect=True)
+async def test_idle_status_reports_lid_and_paper(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    fake = printer.bridge.printer
+
+    fake.lid = LidState.OPEN
+    await asyncio.sleep(2.1)
+    assert "cover-open" in (await printer_state(printer, tmp_path))[1]
+
+    fake.lid = LidState.CLOSED
+    fake.paper = PaperState.ABSENT
+    await asyncio.sleep(2.1)
+    state, reasons = await printer_state(printer, tmp_path)
+    assert "media-empty" in reasons
+    assert "cover-open" not in reasons
+
+    fake.paper = PaperState.PRESENT
+    await asyncio.sleep(2.1)
+    assert (await printer_state(printer, tmp_path))[1] in {"", "none"}
