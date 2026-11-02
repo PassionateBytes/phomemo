@@ -1,8 +1,8 @@
 """Tests for the image preparation pipeline."""
 
 import pytest
-from PIL import Image
 from phomemo.imaging import ImageFit, prepare_image
+from PIL import Image
 
 
 def test_fit_page_bounds_tall_image() -> None:

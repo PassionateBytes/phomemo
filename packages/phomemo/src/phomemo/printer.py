@@ -29,10 +29,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Self
 
-from PIL import Image
-
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
+from PIL import Image
 
 from phomemo.discovery import discover
 from phomemo.events import (
@@ -62,7 +61,6 @@ from phomemo.protocol import (
     encode_density,
     encode_feed_lines,
     encode_init,
-    encode_paper_eject,
     encode_raster_header,
 )
 from phomemo.registry import PrinterProfile, get_profile
@@ -279,18 +277,33 @@ class Printer:
         logger.debug("Feeding %d lines", lines)
         await self._transport.write(encode_feed_lines(lines))
 
-    async def eject_paper(self, repetitions: int = 12) -> None:
-        """Eject the current sheet with repeated maximum-length feeds.
+    async def eject_paper(self, max_feeds: int = 16, settle: float = 0.4) -> bool:
+        """Feed the sheet out until the paper sensor reports it gone.
 
-        Chains ``ESC d 255`` commands. 12 repetitions produce ~384mm,
-        sufficient for A4 paper with margin.
+        Feeds ``ESC d 255`` (about 32mm) at a time and queries the paper
+        sensor after each feed. Once the sensor reports absent, one more
+        feed clears the rollers. A query timeout is treated as absent: the
+        printer stops answering queries while it is in the paper-out state.
 
         Args:
-            repetitions: Number of ``ESC d 255`` commands.
+            max_feeds: Maximum number of feeds before giving up.
+            settle: Seconds to wait after each feed before querying.
+
+        Returns:
+            ``True`` once the sheet has left the sensor, ``False`` if it is
+            still present after ``max_feeds`` feeds.
         """
-        logger.debug("Ejecting paper (%d repetitions)", repetitions)
-        payload = encode_paper_eject(repetitions)
-        await self._transport.write_chunked(payload)
+        for i in range(1, max_feeds + 1):
+            await self.feed(255)
+            await asyncio.sleep(settle)
+            paper = await self.query_paper(timeout=1.0)
+            logger.debug("eject_paper: feed %d, paper=%s", i, paper)
+            if paper is None or paper == PaperState.ABSENT:
+                await self.feed(255)
+                logger.debug("eject_paper: sheet clear after %d feeds", i + 1)
+                return True
+        logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
+        return False
 
     async def set_auto_off_timer(self, minutes: int) -> None:
         """Set the auto-off timer.
@@ -506,6 +519,31 @@ class Printer:
 
         logger.debug("check_ready: ready")
         return True, "ready"
+
+    async def wait_for_ready(self, timeout: float = 60.0, poll: float = 0.5) -> None:
+        """Block until the printer reports lid closed and paper loaded.
+
+        Polls ``check_ready`` so a caller can start a page job and let the
+        user insert the sheet afterwards. Query timeouts count as not ready
+        because a printer in the paper-out state does not answer queries.
+
+        Args:
+            timeout: Maximum seconds to wait.
+            poll: Seconds between readiness checks.
+
+        Raises:
+            TimeoutError: With the last readiness reason as message.
+        """
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + timeout
+        reason = "not ready"
+        while True:
+            ready, reason = await self.check_ready()
+            if ready:
+                return
+            if loop.time() >= deadline:
+                raise TimeoutError(reason)
+            await asyncio.sleep(poll)
 
     # ------------------------------------------------------------------
     # Raster printing
