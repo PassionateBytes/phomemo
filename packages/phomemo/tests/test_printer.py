@@ -161,3 +161,22 @@ async def test_connect_bledevice_instance_passes_through(
     printer._transport = FakeTransport()  # type: ignore[assignment]
     await printer.connect()
     assert printer._transport.connect_address is device  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_print_bitmap_warns_above_max_rows(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    printer = _make_printer()
+    width_bytes = printer.profile.width_bytes
+    with caplog.at_level("WARNING", logger="phomemo.printer"):
+        await printer.print_bitmap(
+            bytes(width_bytes * 2285), height=2285, wait_for_completion=False
+        )
+        assert not caplog.records
+        await printer.print_bitmap(
+            bytes(width_bytes * 2286), height=2286, wait_for_completion=False
+        )
+    assert len(caplog.records) == 1
+    assert "2286" in caplog.records[0].getMessage()
+    assert "2285" in caplog.records[0].getMessage()
