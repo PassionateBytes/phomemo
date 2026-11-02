@@ -129,13 +129,24 @@ print head and needs no artificial delay. Measured throughput on an A4 page:
 solid black, both steady from the first second. The motor-stop signal arrives
 within about a second of the last acknowledged write.
 
+Buffer probes (2026-11-02, Write Request, 244-byte writes): white rows with a
+sheet loaded, solid black at high density, and rows sent with the lid open all
+ran at a flat 6.5–7.4 KiB/s with ~30 ms median ACK latency and no slowdown
+up to 430–525 KB. The ACK rate is the ATT round trip on this link, and the
+printer consumed (or, with the lid open or no paper, silently discarded)
+everything at that rate, so the MCU-side buffer never filled and its size
+could not be measured. A real back-pressure from the MCU below that rate
+remains plausible but is unproven; the earlier 5.7 KiB/s on a dense page was
+most likely the weak radio link at the time. Data accepted with the lid open
+is gone: closing the lid afterwards prints nothing.
+
 **Write Command** (`response=False`) is accepted but unsafe for long jobs. The
 printer does not acknowledge writes on `ff01`; `ff03` echoes `01 01` per write
 (see Service `0000ff00`), but that echo comes from the BLE bridge and lags the
 sender by at most a few chunks even when the printer falls behind, so it is
 not a credit signal. At 244 bytes every 20 ms (~11.3 KiB/s) the printer
-consumes roughly 7.5 KiB/s and its receive buffer (around 128 KB) overflows
-about two thirds into an A4 page. Symptoms of the overflow:
+consumes roughly 7.5 KiB/s and a buffer of around 100 KB, most likely in the
+BLE bridge chip, overflows about two thirds into an A4 page. Symptoms of the overflow:
 
 - every row after the loss starts late by the number of bytes dropped, so the
   image shifts right and the overflow wraps to the left edge (a 25 mm shift
