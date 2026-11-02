@@ -26,8 +26,9 @@ phomemo_socket_path(char *buffer, size_t bufsize)
   return buffer;
 }
 
-// Copies the host part of a phomemo:// URI into address. Returns false
-// when the URI has another scheme or no host.
+// Copies the host part of a phomemo:// URI into address as a BLE address
+// (dashes become colons). Returns false when the URI has another scheme
+// or no host.
 static bool
 parse_address(const char *device_uri, char *address, size_t size)
 {
@@ -39,9 +40,21 @@ parse_address(const char *device_uri, char *address, size_t size)
   if (len == 0 || len >= size)
     return false;
 
-  memcpy(address, host, len);
+  for (size_t i = 0; i < len; i++)
+    address[i] = host[i] == '-' ? ':' : host[i];
   address[len] = '\0';
   return true;
+}
+
+// Builds the device URI for a BLE address (colons become dashes).
+static void
+format_uri(const char *address, char *uri, size_t size)
+{
+  size_t prefix = strlen(URI_PREFIX);
+  snprintf(uri, size, "%s%s", URI_PREFIX, address);
+  for (char *p = uri + prefix; *p; p++)
+    if (*p == ':')
+      *p = '-';
 }
 
 // Connects a fresh bridge handle to the daemon's socket.
@@ -90,12 +103,9 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
     if (!cJSON_IsString(address))
       continue;
 
-    char info[128];
     char uri[128];
-    snprintf(info, sizeof(info), "%s (%s)", PHOMEMO_MAKE_AND_MODEL,
-             address->valuestring);
-    snprintf(uri, sizeof(uri), URI_PREFIX "%s", address->valuestring);
-    if (cb(info, uri, PHOMEMO_DEVICE_ID, data))
+    format_uri(address->valuestring, uri, sizeof(uri));
+    if (cb(PHOMEMO_MAKE_AND_MODEL, uri, PHOMEMO_DEVICE_ID, data))
     {
       stopped = true;
       break;
@@ -181,7 +191,7 @@ phomemo_write_cb(pappl_device_t *device, const void *buffer, size_t bytes)
 }
 
 static pappl_preason_t
-phomemo_status_cb(pappl_device_t *device)
+phomemo_devstatus_cb(pappl_device_t *device)
 {
   phomemo_bridge_t *bridge = papplDeviceGetData(device);
   char err[256];
@@ -227,6 +237,6 @@ phomemo_device_add_scheme(void)
 {
   papplDeviceAddScheme(PHOMEMO_URI_SCHEME, PAPPL_DEVTYPE_CUSTOM_LOCAL,
                        phomemo_list_cb, phomemo_open_cb, phomemo_close_cb,
-                       phomemo_read_cb, phomemo_write_cb, phomemo_status_cb,
+                       phomemo_read_cb, phomemo_write_cb, phomemo_devstatus_cb,
                        phomemo_id_cb);
 }
