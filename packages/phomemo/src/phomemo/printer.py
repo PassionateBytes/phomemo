@@ -30,6 +30,7 @@ from typing import Self
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
+from bleak.exc import BleakError
 from PIL import Image
 
 from phomemo.discovery import discover
@@ -244,9 +245,12 @@ class Printer:
             device = devices[0]
             logger.info("Discovered %s at %s", device.name, device.address)
         elif isinstance(device, str):
-            found = await BleakScanner.find_device_by_address(
-                device, timeout=discovery_timeout
-            )
+            try:
+                found = await BleakScanner.find_device_by_address(
+                    device, timeout=discovery_timeout
+                )
+            except BleakError as exc:
+                raise ConnectionError(f"Scan for {device} failed: {exc}") from exc
             if found is None:
                 raise ConnectionError(
                     f"Device {device} not found within {discovery_timeout}s"
@@ -621,7 +625,7 @@ class Printer:
         density: Density | None = None,
         mode: ScaleMode = ScaleMode.NORMAL,
         feed_lines: int = 20,
-    ) -> tuple[bytes, list[tuple[int, int, int]]]:
+    ) -> tuple[bytes, list[tuple[int, int, int, int]]]:
         """Assemble the print job and a map of its raster bands.
 
         The stream is ``ESC @``, the optional density command, one
@@ -635,8 +639,8 @@ class Printer:
             feed_lines: Paper feed lines after the raster data.
 
         Returns:
-            The byte stream and, per band, ``(data_start, data_end, rows)``:
-            the offsets of its bitmap bytes within the stream.
+            The byte stream and, per band, ``(header_start, data_start,
+            data_end, rows)``: the band's offsets within the stream.
         """
         width_bytes = self._profile.width_bytes
         band_height = self._profile.band_height
@@ -644,7 +648,7 @@ class Printer:
         if density is not None and self._profile.supports_density:
             parts.append(encode_density(density))
         offset = sum(len(part) for part in parts)
-        bands: list[tuple[int, int, int]] = []
+        bands: list[tuple[int, int, int, int]] = []
         row = 0
         while row < height:
             band_rows = min(band_height, height - row)
@@ -653,7 +657,7 @@ class Printer:
             parts.append(header)
             parts.append(data)
             data_start = offset + len(header)
-            bands.append((data_start, data_start + len(data), band_rows))
+            bands.append((offset, data_start, data_start + len(data), band_rows))
             offset = data_start + len(data)
             row += band_rows
         if feed_lines > 0:
@@ -662,11 +666,11 @@ class Printer:
 
     @staticmethod
     def _rows_before(
-        offset: int, bands: list[tuple[int, int, int]], width_bytes: int
+        offset: int, bands: list[tuple[int, int, int, int]], width_bytes: int
     ) -> int:
         """Rows whose bytes lie entirely before ``offset`` in the stream."""
         rows = 0
-        for data_start, data_end, band_rows in bands:
+        for _header_start, data_start, data_end, band_rows in bands:
             if offset >= data_end:
                 rows += band_rows
             elif offset > data_start:
@@ -674,15 +678,16 @@ class Printer:
         return rows
 
     async def _pad_band(
-        self, stream: bytes, offset: int, bands: list[tuple[int, int, int]]
+        self, stream: bytes, offset: int, bands: list[tuple[int, int, int, int]]
     ) -> None:
         """Complete the band in progress at ``offset`` with white rows.
 
-        A band is atomic for the printer's parser: once its header is out,
-        every byte of it must follow or later commands are read as pixels.
+        A band is atomic for the printer's parser: once any of its header is
+        out, every byte of it must follow or later commands are read as
+        pixels. At a band boundary nothing is owed.
         """
-        for data_start, data_end, _rows in bands:
-            if offset < data_end:
+        for header_start, data_start, data_end, _rows in bands:
+            if header_start < offset < data_end:
                 filler = stream[offset:data_start] + bytes(
                     data_end - max(offset, data_start)
                 )
@@ -694,7 +699,7 @@ class Printer:
     async def _transfer(
         self,
         stream: bytes,
-        bands: list[tuple[int, int, int]],
+        bands: list[tuple[int, int, int, int]],
         height: int,
         abort: asyncio.Event | None,
         absent: asyncio.Event,
@@ -749,7 +754,7 @@ class Printer:
             mode: GS v 0 scaling mode.
             feed_lines: Paper feed lines after printing.
             on_progress: Progress callback ``(chunks_sent, total_chunks)``
-                per band.
+                per link-sized chunk.
             wait_for_completion: If True, block until the motor-stop signal
                 is received and confirm the printer still answers.
             completion_timeout: Maximum seconds to wait for completion.
@@ -765,7 +770,9 @@ class Printer:
             PrintAborted: If ``abort`` was set; ``reason`` is ``"cancelled"``.
             SheetRanOut: If the sheet ran out early (paper-absent while most
                 of the page is unsent, or the printer muted after the motor
-                stop).
+                stop). ``PrintAborted("lid opened")`` if the lid was open
+                when the motor stopped: the printer discards data in that
+                state.
         """
         if not self.is_connected:
             raise RuntimeError("Not connected")
@@ -814,8 +821,11 @@ class Printer:
                 raise TimeoutError(
                     "Timed out waiting for print completion signal"
                 ) from None
-            if await self.query_lid(timeout=1.0) is None:
+            lid = await self.query_lid(timeout=1.0)
+            if lid is None:
                 raise SheetRanOut("paper ran out before the page ended")
+            if lid == LidState.OPEN:
+                raise PrintAborted("lid opened")
         finally:
             self._waiters.remove(entry)
             self._event_callbacks.remove(watch_paper)

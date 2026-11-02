@@ -91,7 +91,9 @@ class BleTransport:
             raise RuntimeError("Already connected")
 
         try:
-            self._client = BleakClient(address)
+            self._client = BleakClient(
+                address, disconnected_callback=self._on_disconnected
+            )
             await self._client.connect()
             self._connected = True
             logger.info("Connected to %s", address)
@@ -130,6 +132,12 @@ class BleTransport:
                 f"to notifications: {exc}"
             ) from exc
 
+    def _on_disconnected(self, _client: object) -> None:
+        """Mark the link down when the peer drops it (power off, out of range)."""
+        if self._connected:
+            logger.info("Printer dropped the connection")
+        self._connected = False
+
     async def disconnect(self) -> None:
         """Disconnect from the printer.
 
@@ -153,19 +161,27 @@ class BleTransport:
             data: Bytes to send. Must be ≤ ``max_chunk_bytes``.
 
         Raises:
-            RuntimeError: If not connected.
+            RuntimeError: If never connected.
             ValueError: If data exceeds the maximum chunk size.
+            ConnectionError: If the link is down or the write fails on the
+                BLE layer.
         """
         if self._client is None:
             raise RuntimeError("Not connected")
+        if not self._connected:
+            raise ConnectionError("Printer connection lost")
         max_size = self._effective_chunk_bytes
         if len(data) > max_size:
             raise ValueError(f"Write size {len(data)} exceeds max {max_size} bytes")
-        await self._client.write_gatt_char(
-            self._profile.write_uuid,
-            data,
-            response=self._profile.write_with_response,
-        )
+        try:
+            await self._client.write_gatt_char(
+                self._profile.write_uuid,
+                data,
+                response=self._profile.write_with_response,
+            )
+        except BleakError as exc:
+            self._connected = False
+            raise ConnectionError(f"BLE write failed: {exc}") from exc
 
     async def write_chunked(
         self,
