@@ -6,9 +6,11 @@ layer.
 
 Key protocol constraints for the Phomemo M08F device:
 - Maximum write size: 244 bytes per ``write_gatt_char`` call.
-- Write method: Write Without Response (``response=False``).
-- Inter-chunk delay: 20ms is reliable for full-page jobs.
-- No per-chunk acknowledgement — fire-and-forget protocol.
+- Flow control: ATT Write Request (``response=True``). The printer holds
+  its response while its receive buffer is full, so the sender is paced by
+  the print head. Unacknowledged writes overflow the buffer on full-page
+  jobs: following rows shift horizontally, the next raster header is
+  misparsed and the MCU stops responding until power-cycled.
 - ``0x0A`` outside raster data triggers a line feed (~5mm paper advance).
 """
 
@@ -146,7 +148,7 @@ class BleTransport:
     async def write(self, data: bytes) -> None:
         """Write raw bytes to the printer's command channel.
 
-        Uses Write Without Response as required by the protocol.
+        The write mode follows ``profile.write_with_response``.
 
         Args:
             data: Bytes to send. Must be ≤ ``max_chunk_bytes``.
@@ -161,7 +163,9 @@ class BleTransport:
         if len(data) > max_size:
             raise ValueError(f"Write size {len(data)} exceeds max {max_size} bytes")
         await self._client.write_gatt_char(
-            self._profile.write_uuid, data, response=False
+            self._profile.write_uuid,
+            data,
+            response=self._profile.write_with_response,
         )
 
     async def write_chunked(
