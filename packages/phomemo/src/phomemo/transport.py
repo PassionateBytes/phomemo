@@ -51,6 +51,11 @@ class BleTransport:
         """Whether the BLE connection is active."""
         return self._connected and self._client is not None
 
+    @property
+    def chunk_bytes(self) -> int:
+        """Largest payload a single ``write`` accepts on the current link."""
+        return self._effective_chunk_bytes
+
     async def connect(
         self,
         address: str | BLEDevice,

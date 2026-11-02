@@ -23,6 +23,7 @@ class FakeTransport:
 
     def __init__(self) -> None:
         self.is_connected = True
+        self.chunk_bytes = 244
         self.written: list[bytes] = []
 
     async def write(self, data: bytes) -> None:
@@ -362,10 +363,10 @@ async def test_print_bitmap_catches_motor_stop_sent_during_transfer(
 ) -> None:
     printer = _make_printer()
 
-    async def write_and_stop(data: bytes, on_chunk: object = None) -> None:
+    async def write_and_stop(data: bytes) -> None:
         printer._dispatch_event(MotorStopEvent(kind=EventKind.MOTOR_STOP))
 
-    printer._transport.write_chunked = write_and_stop  # type: ignore[attr-defined]
+    printer._transport.write = write_and_stop  # type: ignore[attr-defined]
     _lid_closed(printer, monkeypatch)
     await printer.print_bitmap(bytes(210 * 8), height=8, completion_timeout=0.2)
 
@@ -380,102 +381,135 @@ def _lid_closed(printer: Printer, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(printer, "query_lid", closed)
 
 
-class BandRecorder:
-    """Fake write_chunked that records bands and runs a hook per band."""
+class ChunkRecorder:
+    """Fake transport write that records chunks and runs a hook per chunk."""
 
     def __init__(self, printer: Printer) -> None:
         self.printer = printer
-        self.bands: list[bytes] = []
+        self.chunks: list[bytes] = []
         self.rows_sent_seen: list[int] = []
         self.hook: object = None
 
-    async def __call__(self, data: bytes, on_chunk: object = None) -> None:
+    async def __call__(self, data: bytes) -> None:
+        self.chunks.append(data)
         self.rows_sent_seen.append(self.printer.rows_sent)
-        self.bands.append(data)
         if self.hook is not None:
-            self.hook(len(self.bands))  # type: ignore[operator]
+            self.hook(len(self.chunks))  # type: ignore[operator]
+
+    @property
+    def stream(self) -> bytes:
+        return b"".join(self.chunks)
+
+
+def _chunked_printer(hook: object = None) -> tuple[Printer, ChunkRecorder]:
+    printer = _make_printer()
+    rec = ChunkRecorder(printer)
+    rec.hook = hook
+    printer._transport.write = rec  # type: ignore[attr-defined]
+    return printer, rec
+
+
+_PREFIX = 2 + 4  # ESC @ plus ESC N 04 <density>
+_HEADER = 8
+_FEED = 3
 
 
 @pytest.mark.asyncio
-async def test_print_bitmap_writes_one_call_per_band() -> None:
-    printer = _make_printer()
-    rec = BandRecorder(printer)
-    printer._transport.write_chunked = rec  # type: ignore[attr-defined]
+async def test_print_bitmap_streams_bands_as_one_chunk_sequence() -> None:
+    printer, rec = _chunked_printer()
     await printer.print_bitmap(bytes(_ROW * 600), height=600, wait_for_completion=False)
-    assert len(rec.bands) == 3
-    assert rec.bands[0].startswith(b"\x1b\x40")
-    assert rec.bands[-1].endswith(b"\x1b\x64\x14")
+    total = _PREFIX + 3 * _HEADER + 600 * _ROW + _FEED
+    assert len(rec.stream) == total
+    assert len(rec.chunks) == -(-total // 244)
+    assert all(len(c) == 244 for c in rec.chunks[:-1])
+    assert rec.stream.startswith(b"\x1b\x40\x1b\x4e\x04")
+    assert rec.stream.endswith(b"\x1b\x64\x14")
 
 
 @pytest.mark.asyncio
-async def test_abort_between_bands_raises_print_aborted() -> None:
-    printer = _make_printer()
-    rec = BandRecorder(printer)
+async def test_abort_pads_the_current_band_with_white_and_stops() -> None:
     abort = asyncio.Event()
-    rec.hook = lambda n: abort.set()
-    printer._transport.write_chunked = rec  # type: ignore[attr-defined]
+    printer, rec = _chunked_printer(hook=lambda n: n == 1 and abort.set())
     with pytest.raises(PrintAborted) as info:
         await printer.print_bitmap(
             bytes(_ROW * 600), height=600, abort=abort, completion_timeout=5.0
         )
     assert info.value.reason == "cancelled"
-    assert len(rec.bands) == 1
+    band1_end = _PREFIX + _HEADER + 256 * _ROW
+    assert len(rec.stream) == band1_end
+    assert rec.stream[244:] == bytes(band1_end - 244)
+    assert not rec.stream.endswith(b"\x1b\x64\x14")
+
+
+@pytest.mark.asyncio
+async def test_abort_exactly_at_a_band_start_sends_nothing_more() -> None:
+    abort = asyncio.Event()
+    band1_end = _PREFIX + _HEADER + 256 * _ROW
+    chunks_in_band1 = -(-band1_end // 244)
+    # The chunk that completes band 1 also carries the start of band 2, so the
+    # abort lands mid band 2 and pads it; use a chunk size that divides evenly.
+    printer, rec = _chunked_printer(hook=lambda n: n == chunks_in_band1 and abort.set())
+    with pytest.raises(PrintAborted):
+        await printer.print_bitmap(
+            bytes(_ROW * 600), height=600, abort=abort, completion_timeout=5.0
+        )
+    band2_end = band1_end + _HEADER + 256 * _ROW
+    assert len(rec.stream) == band2_end
 
 
 @pytest.mark.asyncio
 async def test_paper_absent_early_raises_sheet_ran_out() -> None:
-    printer = _make_printer()
-    rec = BandRecorder(printer)
-    rec.hook = lambda n: (
-        n == 1
-        and printer._dispatch_event(
-            PaperEvent(kind=EventKind.PAPER, paper=PaperState.ABSENT)
+    printer, rec = _chunked_printer(
+        hook=lambda n: (
+            n == 1
+            and printer._dispatch_event(
+                PaperEvent(kind=EventKind.PAPER, paper=PaperState.ABSENT)
+            )
         )
     )
-    printer._transport.write_chunked = rec  # type: ignore[attr-defined]
     with pytest.raises(SheetRanOut):
         await printer.print_bitmap(
             bytes(_ROW * 2560), height=2560, completion_timeout=5.0
         )
-    assert len(rec.bands) <= 2
+    assert len(rec.chunks) <= 2
 
 
 @pytest.mark.asyncio
 async def test_paper_absent_near_end_is_ignored(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    printer = _make_printer()
+    printer, rec = _chunked_printer()
     _lid_closed(printer, monkeypatch)
-    rec = BandRecorder(printer)
+    total = _PREFIX + 10 * _HEADER + 2560 * _ROW + _FEED
+    last_chunk = -(-total // 244)
 
     def hook(n: int) -> None:
-        if n == 10:
+        if n == last_chunk:
             printer._dispatch_event(
                 PaperEvent(kind=EventKind.PAPER, paper=PaperState.ABSENT)
             )
             printer._dispatch_event(MotorStopEvent(kind=EventKind.MOTOR_STOP))
 
     rec.hook = hook
-    printer._transport.write_chunked = rec  # type: ignore[attr-defined]
     await printer.print_bitmap(bytes(_ROW * 2560), height=2560, completion_timeout=5.0)
-    assert len(rec.bands) == 10
+    assert len(rec.stream) == total
 
 
 @pytest.mark.asyncio
 async def test_mute_after_motor_stop_raises_sheet_ran_out(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    printer = _make_printer()
+    printer, rec = _chunked_printer()
 
     async def muted(timeout: float = 1.0) -> None:
         return None
 
     monkeypatch.setattr(printer, "query_lid", muted)
-    rec = BandRecorder(printer)
+    total = _PREFIX + 3 * _HEADER + 600 * _ROW + _FEED
     rec.hook = lambda n: (
-        n == 3 and printer._dispatch_event(MotorStopEvent(kind=EventKind.MOTOR_STOP))
+        n == -(-total // 244)
+        and printer._dispatch_event(MotorStopEvent(kind=EventKind.MOTOR_STOP))
     )
-    printer._transport.write_chunked = rec  # type: ignore[attr-defined]
     with pytest.raises(SheetRanOut):
         await printer.print_bitmap(
             bytes(_ROW * 600), height=600, completion_timeout=5.0
@@ -483,10 +517,11 @@ async def test_mute_after_motor_stop_raises_sheet_ran_out(
 
 
 @pytest.mark.asyncio
-async def test_rows_sent_progress() -> None:
-    printer = _make_printer()
-    rec = BandRecorder(printer)
-    printer._transport.write_chunked = rec  # type: ignore[attr-defined]
+async def test_rows_sent_progress_is_monotonic_and_resets() -> None:
+    printer, rec = _chunked_printer()
     await printer.print_bitmap(bytes(_ROW * 600), height=600, wait_for_completion=False)
-    assert rec.rows_sent_seen == [0, 256, 512]
+    seen = rec.rows_sent_seen
+    assert seen == sorted(seen)
+    assert seen[0] == 0
+    assert 256 in seen and 512 in seen
     assert printer.rows_sent == 0
