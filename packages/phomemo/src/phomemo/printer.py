@@ -31,6 +31,7 @@ from typing import Self
 
 from PIL import Image
 
+from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
 
 from phomemo.discovery import discover
@@ -192,22 +193,26 @@ class Printer:
     async def connect(self, discovery_timeout: float = 5.0) -> None:
         """Connect to the printer.
 
-        If an ``address`` was provided at instantiation, connects directly to
-        that BLE MAC address. Otherwise, scans for a nearby device whose
-        advertised name matches the profile's ``ble_name_pattern`` and connects
-        to the first match found.
+        The transport always receives a ``BLEDevice`` from a live scan:
+        BlueZ can only connect to a device it has seen advertising recently,
+        so a bare MAC address is resolved through a targeted scan first.
+        Without an ``address``, scans for a nearby device whose advertised
+        name matches the profile's ``ble_name_pattern`` and connects to the
+        first match.
 
         Args:
-            discovery_timeout: Scan duration in seconds when auto-discovering.
-                Ignored if an address was provided at instantiation.
+            discovery_timeout: Scan duration in seconds, for both name-based
+                discovery and MAC resolution. Ignored if a ``BLEDevice`` was
+                provided at instantiation.
 
         Raises:
-            ConnectionError: If the connection fails, or if auto-discovery
-                finds no matching device within ``discovery_timeout``.
+            ConnectionError: If the connection fails, if no matching device
+                is discovered, or if the given MAC address is not seen within
+                ``discovery_timeout``.
             RuntimeError: If already connected.
         """
-        address = self._address
-        if address is None:
+        device = self._address
+        if device is None:
             pattern = self._profile.ble_name_pattern
             devices = await discover(name_pattern=pattern, timeout=discovery_timeout)
             if not devices:
@@ -215,11 +220,20 @@ class Printer:
                     f"No device found matching profile {self._profile.name!r} "
                     f"(pattern {pattern!r}) within {discovery_timeout}s"
                 )
-            address = devices[0].address
-            logger.info("Discovered %s at %s", devices[0].name, address)
+            device = devices[0]
+            logger.info("Discovered %s at %s", device.name, device.address)
+        elif isinstance(device, str):
+            found = await BleakScanner.find_device_by_address(
+                device, timeout=discovery_timeout
+            )
+            if found is None:
+                raise ConnectionError(
+                    f"Device {device} not found within {discovery_timeout}s"
+                )
+            device = found
 
         await self._transport.connect(
-            address,
+            device,
             on_event=self._on_notification,
         )
 
