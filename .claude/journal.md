@@ -8,7 +8,7 @@
 
 - Transport: BLE via bleak. `connect` resolves MAC to `BLEDevice` through `BleakScanner` (BlueZ needs the scan cache).
 - Flow control: raster stream paced by ATT write-with-response; printer paces the sender (~7.4 KiB/s sparse, ~5.7 KiB/s dense). Unacknowledged writes at 20 ms overflow the printer buffer on A4.
-- Profiles carry `max_rows` / `top_margin_mm`: A4 2285 rows, 11 mm margin (measured); Letter 2145 rows (derived from A4 margin, not measured).
+- Profiles carry `max_rows` / `top_margin_mm`: A4 2290 rows, 10 mm margin (measured); Letter 2150 rows (derived from A4 margin, not measured).
 - `ImageFit.FIT_PAGE`, `Printer.wait_for_ready`, sensor-driven `Printer.eject_paper`.
 - Verified on hardware incl. a 457 KB photo at high density with 10 mm margins.
 - Protocol reference and README cover ATT flow control, paper-out behaviour, sheet geometry.
