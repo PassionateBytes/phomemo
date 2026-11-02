@@ -16,7 +16,21 @@ from enum import StrEnum
 
 from PIL import Image, ImageChops
 
+from phomemo.registry import PrinterProfile
+
 logger = logging.getLogger(__name__)
+
+# 8x8 Bayer matrix; each cell is the threshold rank of its pixel in the tile.
+_BAYER_8 = (
+    (0, 32, 8, 40, 2, 34, 10, 42),
+    (48, 16, 56, 24, 50, 18, 58, 26),
+    (12, 44, 4, 36, 14, 46, 6, 38),
+    (60, 28, 52, 20, 62, 30, 54, 22),
+    (3, 35, 11, 43, 1, 33, 9, 41),
+    (51, 19, 59, 27, 49, 17, 57, 25),
+    (15, 47, 7, 39, 13, 45, 5, 37),
+    (63, 31, 55, 23, 61, 29, 53, 21),
+)
 
 
 class DitherMode(StrEnum):
@@ -29,6 +43,19 @@ class DitherMode(StrEnum):
 
     FLOYD_STEINBERG = "floyd_steinberg"
     THRESHOLD = "threshold"
+
+
+class ToneMode(StrEnum):
+    """How 8-bit gray becomes the head's 1-bit output.
+
+    ``THRESHOLD`` splits at mid gray (true black and white, crisp text).
+    ``ORDERED`` uses an 8x8 Bayer pattern (even tone, cheap).
+    ``DIFFUSION`` uses Floyd-Steinberg error diffusion (photos).
+    """
+
+    THRESHOLD = "threshold"
+    ORDERED = "ordered"
+    DIFFUSION = "diffusion"
 
 
 class ImageFit(StrEnum):
@@ -153,3 +180,79 @@ def image_to_bitmap(img: Image.Image) -> bytes:
         "image_to_bitmap: %dx%d -> %d bytes", img.size[0], img.size[1], len(bitmap)
     )
     return bitmap
+
+
+def _bayer_tile(width: int, height: int) -> Image.Image:
+    """Threshold image tiled from the 8x8 Bayer matrix, values 2..254."""
+    tile = Image.new("L", (8, 8))
+    tile.putdata([int((rank + 0.5) * 4) for row in _BAYER_8 for rank in row])
+    canvas = Image.new("L", (width, height))
+    for y in range(0, height, 8):
+        for x in range(0, width, 8):
+            canvas.paste(tile, (x, y))
+    return canvas
+
+
+def _apply_tone(img: Image.Image, tone: ToneMode) -> Image.Image:
+    """Convert a mode ``L`` image to mode ``1`` with the given tone mode."""
+    match tone:
+        case ToneMode.THRESHOLD:
+            return img.point(lambda v: 255 if v >= 128 else 0).convert(
+                "1", dither=Image.Dither.NONE
+            )
+        case ToneMode.ORDERED:
+            above = ImageChops.subtract(img, _bayer_tile(*img.size))
+            return above.point(lambda v: 255 if v > 0 else 0).convert(
+                "1", dither=Image.Dither.NONE
+            )
+        case ToneMode.DIFFUSION:
+            return img.convert("1", dither=Image.Dither.FLOYDSTEINBERG)
+        case _:
+            raise ValueError(f"Unsupported tone mode: {tone}")
+
+
+def prepare_page(
+    img: Image.Image,
+    profile: PrinterProfile,
+    length_mm: float | None,
+    tone: ToneMode,
+    rotate: bool = False,
+) -> Image.Image:
+    """Map a client page raster onto the printable area of a sheet.
+
+    The raster is optionally rotated a quarter turn counter-clockwise (an
+    A5 portrait page printed on a sheet fed long edge first), centred on
+    the head width when narrower and cropped when wider, stripped of the
+    rows that fall into the unprintable top lead, and clipped to the rows
+    the sheet can hold. Gray input is converted with ``tone``; 1-bit input
+    keeps its pixels.
+
+    Args:
+        img: Page raster, mode ``L`` (0 = black) or mode ``1``.
+        profile: Printer geometry: head width, dpi, margins.
+        length_mm: Sheet length, or ``None`` for roll media (no clipping).
+        tone: Conversion for gray input; ignored for 1-bit input.
+        rotate: Rotate the raster 90 degrees counter-clockwise first.
+
+    Returns:
+        A mode ``1`` image ``profile.print_width_px`` wide.
+    """
+    if img.mode not in ("L", "1"):
+        raise ValueError(f"page raster must be mode L or 1, got {img.mode}")
+    if rotate:
+        img = img.transpose(Image.Transpose.ROTATE_90)
+    width = profile.print_width_px
+    if img.width != width:
+        canvas = Image.new(img.mode, (width, img.height), 255)
+        canvas.paste(
+            img.crop((0, 0, min(img.width, width), img.height)),
+            (max(0, (width - img.width) // 2), 0),
+        )
+        img = canvas
+    top = profile.lead_rows
+    max_rows = profile.rows_for(length_mm)
+    bottom = img.height if max_rows is None else min(img.height, top + max_rows)
+    img = img.crop((0, top, width, bottom))
+    if img.mode == "L":
+        img = _apply_tone(img, tone)
+    return img
