@@ -76,3 +76,32 @@ async def test_write_chunked_positive_delay_sleeps_between_chunks(
     monkeypatch.setattr(transport_module.asyncio, "sleep", record_sleep)
     await transport.write_chunked(bytes(600))
     assert sleeps == [0.01, 0.01]
+
+
+@pytest.mark.asyncio
+async def test_subscribe_failure_is_a_connection_error_even_without_services(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from bleak.exc import BleakError
+
+    class FlakyClient:
+        is_connected = True
+
+        async def connect(self) -> None:
+            pass
+
+        async def disconnect(self) -> None:
+            pass
+
+        async def start_notify(self, uuid: str, cb: object) -> None:
+            raise BleakError("GATT Protocol Error: Unlikely Error")
+
+        @property
+        def services(self) -> object:
+            raise BleakError("Service Discovery has not been performed yet")
+
+    transport = BleTransport(replace(get_profile("M08F-A4"), negotiate_mtu=False))
+    monkeypatch.setattr(transport_module, "BleakClient", lambda address: FlakyClient())
+    with pytest.raises(ConnectionError, match="failed to subscribe"):
+        await transport.connect("60:6E:41:23:0B:D6", on_event=lambda data: None)
+    assert transport.is_connected is False

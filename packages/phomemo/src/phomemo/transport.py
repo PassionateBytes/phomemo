@@ -123,13 +123,7 @@ class BleTransport:
                     lambda _handle, data: on_status(bytes(data)),
                 )
         except BleakError as exc:
-            logger.debug(
-                "Subscription failed; available services: %s",
-                {
-                    str(svc.uuid): [str(c.uuid) for c in svc.characteristics]
-                    for svc in self._client.services
-                },
-            )
+            logger.debug("Subscription failed: %s", exc)
             await self.disconnect()
             raise ConnectionError(
                 f"Connected to {address} but failed to subscribe "
