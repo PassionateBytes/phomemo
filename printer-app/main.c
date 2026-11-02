@@ -37,6 +37,7 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
 int
 main(int argc, char *argv[])
 {
+  phomemo_device_add_scheme();
   return papplMainloop(argc, argv, PHOMEMO_VERSION, footer_html,
                        (int)(sizeof(drivers) / sizeof(drivers[0])), drivers,
                        phomemo_autoadd_cb, phomemo_driver_cb, NULL, NULL,
