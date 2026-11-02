@@ -1,0 +1,4 @@
+phomemo-printer-app
+*.o
+tests/test_bridge
+tests/test_driver
