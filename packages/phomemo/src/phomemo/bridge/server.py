@@ -1,7 +1,9 @@
 """Bridge daemon: socket server, shared printer link, hold timer."""
 
 import asyncio
+import contextlib
 import logging
+import signal
 from collections.abc import Callable
 from dataclasses import dataclass, fields, replace
 from pathlib import Path
@@ -162,6 +164,13 @@ async def start_server(
     Returns:
         The listening server; close it to stop.
     """
+    server, _bridge = await _start(config, printer_factory)
+    return server
+
+
+async def _start(
+    config: BridgeConfig, printer_factory: PrinterFactory
+) -> tuple[asyncio.AbstractServer, Bridge]:
     from phomemo.bridge.session import Session
 
     bridge = Bridge(config, printer_factory)
@@ -176,18 +185,38 @@ async def start_server(
         config.socket_path.unlink()
     server = await asyncio.start_unix_server(handle, path=str(config.socket_path))
     logger.info("Listening on %s", config.socket_path)
-    return server
+    return server, bridge
 
 
 async def serve(
     config: BridgeConfig, printer_factory: PrinterFactory = Printer
 ) -> None:
-    """Run the bridge until cancelled.
+    """Run the bridge until cancelled or signalled.
+
+    SIGTERM and SIGINT stop the server. On the way out the printer link is
+    dropped (BlueZ would otherwise keep it and the printer would stop
+    advertising) and the socket file is removed.
 
     Args:
         config: Bridge settings.
         printer_factory: Builds the printer object; replaced in tests.
     """
-    server = await start_server(config, printer_factory)
-    async with server:
-        await server.serve_forever()
+    server, bridge = await _start(config, printer_factory)
+    loop = asyncio.get_running_loop()
+    stop = asyncio.Event()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        with contextlib.suppress(NotImplementedError, RuntimeError):
+            loop.add_signal_handler(sig, stop.set)
+    try:
+        async with server:
+            await stop.wait()
+    finally:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            with contextlib.suppress(NotImplementedError, RuntimeError):
+                loop.remove_signal_handler(sig)
+        server.close()
+        with contextlib.suppress(Exception):
+            await asyncio.shield(bridge.disconnect())
+        with contextlib.suppress(OSError):
+            config.socket_path.unlink()
+        logger.info("Bridge stopped")
