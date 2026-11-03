@@ -135,15 +135,17 @@ def render_test_page(
 
     draw.text((x, y), "Lines of 1 to 5 px:", font=text_font, fill=0)
     y += 44
-    run = round(80 * px_per_mm)
+    run = round(120 * px_per_mm)
     for w in (1, 2, 3, 4, 5):
         draw.line((x, y, x + run, y), fill=0, width=w)
         y += 18
     y += 10
+    # Five diagonals side by side, together as wide as the straight lines.
     drop = round(12 * px_per_mm)
+    segment = run // 5
     for i, w in enumerate((1, 2, 3, 4, 5)):
-        left = x + i * (run // 4)
-        draw.line((left, y, left + run // 5, y + drop), fill=0, width=w)
+        left = x + i * segment
+        draw.line((left, y, left + segment - 8, y + drop), fill=0, width=w)
     y += drop + 30
 
     sample = "The quick brown fox jumps over the lazy dog"
