@@ -83,6 +83,7 @@ class Bridge:
         self.printer: Printer | None = None
         self.session_active = False
         self._hold_handle: asyncio.TimerHandle | None = None
+        self._hold_task: asyncio.Task[None] | None = None
 
     @property
     def connected(self) -> bool:
@@ -140,10 +141,10 @@ class Bridge:
         if not self.connected:
             return
         loop = asyncio.get_running_loop()
-        self._hold_handle = loop.call_later(
-            self.config.hold_seconds,
-            lambda: asyncio.ensure_future(self.disconnect()),
-        )
+        self._hold_handle = loop.call_later(self.config.hold_seconds, self._expire_hold)
+
+    def _expire_hold(self) -> None:
+        self._hold_task = asyncio.ensure_future(self.disconnect())
 
     def cancel_hold(self) -> None:
         """Cancel a pending hold expiry."""

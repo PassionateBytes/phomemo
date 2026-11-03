@@ -14,9 +14,10 @@ _M08F_NOTIFY = "00000000-0000-0000-0000-00000000ff01"
 _M08F_STATUS = "00000000-0000-0000-0000-00000000ff03"
 
 # The sensor sits 10mm ahead of the head, so the first 10mm of a sheet cannot be
-# printed. The bottom margin keeps the raster and its trailing feed on the sheet.
+# printed. The bottom margin keeps the raster off the sheet end; a page longer
+# than that is clipped.
 _TOP_MARGIN_MM = 10.0
-_BOTTOM_MARGIN_MM = 6.0
+_BOTTOM_MARGIN_MM = 5.0
 
 M08F_A4 = PrinterProfile(
     name="M08F-A4",
