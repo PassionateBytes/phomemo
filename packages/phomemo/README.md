@@ -162,10 +162,10 @@ await printer.feed(20)
 # the overrun error state; the link is reconnected once to clear it.
 await printer.wait_for_ready(timeout=300, settle=3.0)
 
-# Feed 32mm at a time until the paper sensor reports the sheet gone,
-# then one more feed to clear the rollers. Returns False if the sheet
-# is still present after max_feeds.
-ejected = await printer.eject_paper(max_feeds=16)
+# Feeds 32mm steps three at a time (continuous motion) until the printer's
+# paper-absent event arrives, then one more feed clears the rollers. Returns
+# False if the sheet is still present after max_feeds (100, about 3 m).
+ejected = await printer.eject_paper()
 ```
 
 ### Event Listening
