@@ -255,6 +255,26 @@ async def test_eject_treats_query_timeout_like_absent(
 
 
 @pytest.mark.asyncio
+async def test_eject_waits_three_seconds_per_batch_before_queuing_more(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    printer = _eject_printer(monkeypatch, [PaperState.PRESENT])
+    timeouts: list[float] = []
+    original = printer_module.asyncio.wait_for
+
+    async def record(awaitable: object, timeout: float) -> object:
+        timeouts.append(timeout)
+        printer._dispatch_event(
+            PaperEvent(kind=EventKind.PAPER, paper=PaperState.ABSENT)
+        )
+        return await original(awaitable, timeout=timeout)
+
+    monkeypatch.setattr(printer_module.asyncio, "wait_for", record)
+    assert await printer.eject_paper() is True
+    assert timeouts == [3.0]
+
+
+@pytest.mark.asyncio
 async def test_eject_gives_up_after_the_feed_cap(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
