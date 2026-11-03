@@ -74,6 +74,7 @@ class Session:
         self._pending_cmd: str | None = None
         self._abort = asyncio.Event()
         self._page: PageBuffer | None = None
+        self._used_link = False
 
     async def run(self) -> None:
         """Read commands until EOF, then release the printer link to the hold timer."""
@@ -90,7 +91,8 @@ class Session:
                 await self._request_abort()
                 await asyncio.gather(self._pending, return_exceptions=True)
             bridge.session_active = False
-            bridge.start_hold()
+            if self._used_link:
+                bridge.start_hold()
             self._writer.close()
 
     async def _loop(self) -> None:
@@ -197,6 +199,7 @@ class Session:
 
     async def _cmd_open(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         """Bring the link up if reachable; ``wait_ready`` keeps retrying otherwise."""
+        self._used_link = True
         address = obj.get("address")
         try:
             await self._bridge.connect(
@@ -229,6 +232,7 @@ class Session:
         }
 
     async def _cmd_eject(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
+        self._used_link = True
         printer = self._require_printer()
         return {"ejected": await printer.eject_paper()}
 
@@ -246,6 +250,7 @@ class Session:
         self, obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
         bridge = self._bridge
+        self._used_link = True
         settle = float(obj.get("settle", bridge.config.settle_seconds))
         abort = self._abort
         state: str | None = None
@@ -380,6 +385,7 @@ class Session:
             raise CommandError(f"received {page.rows} of {page.length_rows} rows")
         printer = self._require_printer()
         bridge = self._bridge
+        self._used_link = True
         try:
             prepared = prepare_page(
                 page.image(),
@@ -419,7 +425,8 @@ class Session:
             except PrintAborted as exc:
                 if exc.reason == "cancelled":
                     await asyncio.sleep(bridge.config.drain_seconds)
-                    await printer.eject_paper()
+                    if not await printer.eject_paper():
+                        logger.warning("Sheet not ejected after the cancel")
                 else:
                     logger.warning("Page aborted: %s", exc.reason)
                     await self._recover_link()

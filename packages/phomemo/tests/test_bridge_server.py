@@ -34,6 +34,7 @@ class FakePrinter:
         self.battery = 77
         self.muted = False
         self.ejects = 0
+        self.eject_result = True
         self.printed: list[tuple[int, int, str]] = []
         self.print_error: Exception | None = None
         self.print_started = asyncio.Event()
@@ -82,7 +83,7 @@ class FakePrinter:
 
     async def eject_paper(self, **kwargs: Any) -> bool:
         self.ejects += 1
-        return True
+        return self.eject_result
 
     async def print_bitmap(
         self,
@@ -195,6 +196,27 @@ async def test_open_connects_once_within_hold_window(bridge: BridgeConfig) -> No
     assert (await client.call({"cmd": "open"}))["connected"] is True
     assert _printer().connects == 1
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_status_session_does_not_rearm_hold(tmp_path: Path) -> None:
+    FakePrinter.instances.clear()
+    config = BridgeConfig(socket_path=tmp_path / "bridge.sock", hold_seconds=0.4)
+    server = await start_server(config, printer_factory=FakePrinter)
+    try:
+        client = await _connect(config)
+        assert (await client.call({"cmd": "open"}))["connected"] is True
+        assert (await client.call({"cmd": "close"}))["ok"]
+        await client.close()
+        await asyncio.sleep(0.2)
+        poll = await _connect(config)
+        assert (await poll.call({"cmd": "status"}))["connected"] is True
+        await poll.close()
+        await asyncio.sleep(0.3)
+        assert _printer().connected is False
+    finally:
+        server.close()
+        server.close_clients()
 
 
 @pytest.mark.asyncio
@@ -324,6 +346,40 @@ async def test_lines_beyond_declared_length_is_an_error(bridge: BridgeConfig) ->
     reply = await client.call({"cmd": "lines", "count": 11}, b"\xff" * (1680 * 11))
     assert reply["ok"] is False
     assert "length_rows" in reply["error"]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_cancelled_page_warns_when_the_sheet_stays(
+    bridge: BridgeConfig, caplog: pytest.LogCaptureFixture
+) -> None:
+    client = await _connect(bridge)
+    assert (await client.call({"cmd": "open"}))["connected"] is True
+    printer = _printer()
+    printer.eject_result = False
+    printer.release_print = asyncio.Event()
+    await client.call(
+        {
+            "cmd": "page_begin",
+            "width": 1680,
+            "length_rows": 100,
+            "bits": 8,
+            "tone": "threshold",
+            "content": "auto",
+            "density": "medium",
+            "media_length_mm": None,
+            "rotate": False,
+        }
+    )
+    await client.call({"cmd": "lines", "count": 100}, b"\xff" * (1680 * 100))
+    await client.send({"cmd": "page_end"})
+    await printer.print_started.wait()
+    with caplog.at_level("WARNING", logger="phomemo.bridge.session"):
+        assert (await client.call({"cmd": "abort"}))["ok"]
+        printer.release_print.set()
+        reply = await client.reply()
+    assert reply["error"] == "cancelled"
+    assert any("eject" in r.getMessage().lower() for r in caplog.records)
     await client.close()
 
 

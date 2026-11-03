@@ -250,6 +250,10 @@ def prepare_page(
         )
         img = canvas
     top = profile.lead_rows
+    if img.height <= top:
+        raise ValueError(
+            f"page of {img.height} rows lies inside the {top}-row unprintable lead"
+        )
     max_rows = profile.rows_for(length_mm)
     bottom = img.height if max_rows is None else min(img.height, top + max_rows)
     img = img.crop((0, top, width, bottom))

@@ -225,6 +225,8 @@ phomemo_write_cb(pappl_device_t *device, const void *buffer, size_t bytes)
 
 // Sends status on a bridge connection and maps the reply onto printer
 // state reasons. Returns false when the bridge did not answer.
+// Not registered as the scheme's device status callback: a call while a
+// job holds the connection would be taken for the job's pending reply.
 static bool
 query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, char *err,
              size_t errsize)
@@ -250,24 +252,6 @@ query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, char *err,
 
   cJSON_Delete(reply);
   return true;
-}
-
-static pappl_preason_t
-phomemo_devstatus_cb(pappl_device_t *device)
-{
-  phomemo_device_t *dev = papplDeviceGetData(device);
-  pappl_preason_t reasons;
-  char err[256];
-
-  if (!dev || dev->bridge.fd < 0)
-    return PAPPL_PREASON_OTHER;
-
-  if (!query_status(&dev->bridge, &reasons, err, sizeof(err)))
-  {
-    papplDeviceError(device, "phomemo-bridge status failed: %s", err);
-    return PAPPL_PREASON_OTHER;
-  }
-  return reasons;
 }
 
 // Idle poll, called by PAPPL while no job holds the device. Uses a
@@ -305,6 +289,6 @@ phomemo_device_add_scheme(void)
 {
   papplDeviceAddScheme(PHOMEMO_URI_SCHEME, PAPPL_DEVTYPE_CUSTOM_LOCAL,
                        phomemo_list_cb, phomemo_open_cb, phomemo_close_cb,
-                       phomemo_read_cb, phomemo_write_cb, phomemo_devstatus_cb,
+                       phomemo_read_cb, phomemo_write_cb, NULL,
                        phomemo_id_cb);
 }

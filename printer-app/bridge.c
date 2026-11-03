@@ -91,7 +91,7 @@ write_all(phomemo_bridge_t *b, const void *data, size_t len, char *err,
   const char *p = data;
   while (len)
   {
-    ssize_t n = write(b->fd, p, len);
+    ssize_t n = send(b->fd, p, len, MSG_NOSIGNAL);
     if (n < 0)
     {
       if (errno == EINTR)

@@ -231,7 +231,7 @@ phomemo_rstartpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
   }
   cJSON_Delete(reply);
 
-  papplJobSetMessage(job, "Sending page %u.", page);
+  papplJobSetMessage(job, "Sending page %u.", page + 1);
   pj->page_open = true;
   return true;
 }
@@ -284,11 +284,9 @@ phomemo_rendpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
   cJSON_Delete(request);
   if (!reply)
   {
-    if (!strcmp(err, "cancelled"))
-    {
-      papplJobSetReasons(job, PAPPL_JREASON_JOB_CANCELED_AT_DEVICE, 0);
-    }
-    else
+    // "cancelled" is the echo of our own abort; PAPPL already marks the
+    // job canceled.
+    if (strcmp(err, "cancelled"))
     {
       papplJobSetReasons(job, PAPPL_JREASON_ERRORS_DETECTED, 0);
       papplJobSetMessage(job, "%s", err);
@@ -296,6 +294,8 @@ phomemo_rendpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
     return false;
   }
   cJSON_Delete(reply);
+
+  papplJobSetMessage(job, "Page %u printed.", page + 1);
   return true;
 }
 

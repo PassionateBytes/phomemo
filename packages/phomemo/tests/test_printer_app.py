@@ -451,6 +451,7 @@ async def test_a4_job_prints_through_bridge(printer: AppServer, tmp_path: Path) 
     attrs = await finish_job(start_job(printer, tmp_path, raster))
     assert attrs["job-state"] == "completed", attrs
     assert attrs["job-impressions-completed"] == "1"
+    assert attrs["job-state-message"] == "Page 1 printed."
     assert printer.bridge.printer.printed == [(210 * A4_ROWS, A4_ROWS, "MEDIUM")]
     assert printer.bridge.printer.ejects == 1
 
@@ -514,6 +515,7 @@ async def test_cancel_while_waiting_for_sheet(
     assert code == 0, err
     attrs = await finish_job(task)
     assert attrs["job-state"] == "canceled", attrs
+    assert "job-canceled-at-device" not in attrs["job-state-reasons"]
     assert printer.bridge.printer.printed == []
 
 

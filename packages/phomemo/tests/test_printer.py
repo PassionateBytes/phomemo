@@ -577,6 +577,21 @@ async def test_abort_exactly_at_a_band_end_sends_nothing_more() -> None:
 
 
 @pytest.mark.asyncio
+async def test_abort_during_the_trailing_feed_completes_the_stream() -> None:
+    abort = asyncio.Event()
+    total = _PREFIX + 3 * _HEADER + 600 * _ROW + _FEED
+    printer, rec = _chunked_printer(hook=lambda n: n == 1 and abort.set())
+    # The first chunk ends one byte into ESC d n: aborting there would leave
+    # the printer waiting for the rest of the command.
+    printer._transport.chunk_bytes = total - _FEED + 1  # type: ignore[attr-defined]
+    await printer.print_bitmap(
+        bytes(_ROW * 600), height=600, abort=abort, wait_for_completion=False
+    )
+    assert len(rec.stream) == total
+    assert rec.stream.endswith(b"\x1b\x64\x14")
+
+
+@pytest.mark.asyncio
 async def test_lid_opened_during_transfer_aborts_and_pads() -> None:
     printer, rec = _chunked_printer(
         hook=lambda n: (
