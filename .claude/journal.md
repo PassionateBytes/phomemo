@@ -2,7 +2,7 @@
 
 ## Goal
 
-`phomemo` library = fully functional M08F driver. Next stage: a CUPS/system printer driver (or printer application) on top, so the printer works like any other printer. `packages/phomemo-tui` is a test harness only, no feature work.
+`phomemo` library = fully functional M08F driver. Next stage: a CUPS/system printer driver (or printer application) on top, so the printer works like any other printer. The TUI package was removed from the repo on 2026-11-03 (its last code sits in the git history and in the parked stashes).
 
 ## Current state (as of 2026-11-03)
 
@@ -51,7 +51,7 @@
 ## Short-term
 
 - `eject_paper`: 2 s paper-query timeout is treated as "absent" (heuristic). Retry probe would be safer [inferred]
-- `eject_paper` during an in-flight print (TUI cancel path): unverified on hardware [inferred]
+- `eject_paper` during an in-flight print (bridge cancel path): verified on hardware 2026-11-03 through CUPS cancel [user]
 - Dead `reason = "not ready"` branch in `wait_for_ready` [inferred]
 - Page retry on interruption [user, 2026-11-03, decided]: a lid opened mid-page or a sheet that runs out no longer aborts the job. The bridge keeps the prepared page and loops inside `page_end`: reconnect, then if paper is sensed at the first check after the lid closes (or after the short sheet) eject it (position unknown), wait for a sheet, reprint the same page; a sheet inserted after that first check is taken as fresh and printed on. No retry cap (progress only on user action; cancel ends it). PAPPL side unchanged (the `waiting` events already map to reasons). Docs: close the lid first, then insert the sheet. Hardware: lid mid-page, short sheet. First feature branch after the merge.
 - Features stage (after packaging/CI): Paul leads the decisions; candidates in the ledger and this list (identify/test page/icons, battery supply, roll media modes and custom lengths, Letter verification, auto-add name collision) [user, 2026-11-03]
@@ -60,22 +60,21 @@
 
 ## Future work (after Plan B, in this order) [user, 2026-11-02]
 
-- Repo cleanup [user, 2026-11-03]: the public repo holds only the core Python library (`packages/phomemo`), the printer driver (`printer-app`, bridge, CUPS integration), packaging, CI and documentation. Remove `packages/phomemo-tui` (uv workspace member, root pytest paths, README mentions, stash stays parked), the untracked `scripts/` probes (`testladder.py`, `ippeve_phomemo.*`, `twopage_test.py`, `buffer_probe.py`, `poc_connect.py`, their outputs) and anything else that only served the investigation. Facts those scripts established are already in `docs/m08f-protocol-reference.md`.
+- Repo cleanup, done 2026-11-03 (branch `chore/repo-cleanup`): the public repo holds only the core Python library (`packages/phomemo`), the printer driver (`printer-app`, bridge, CUPS integration), packaging, CI and documentation. Remove `packages/phomemo-tui` (uv workspace member, root pytest paths, README mentions, stash stays parked), the untracked `scripts/` probes (`testladder.py`, `ippeve_phomemo.*`, `twopage_test.py`, `buffer_probe.py`, `poc_connect.py`, their outputs) and anything else that only served the investigation. Facts those scripts established are already in `docs/m08f-protocol-reference.md`.
 - Repo hygiene pass: remove identifiable device information (printer MAC, serial pattern in docs, journal, docstrings, tests), personal paths, anything secret-like; gitleaks clean; placeholders instead. Move the journal and all Claude-facing docs out of the repo into the KB (`passionate-bytes/projects/phomemo.md`, `.claude` via the dot-claude symlink pattern); only a neutral `AGENTS.md` stays.
 - Packaging plan: PyPI (`phomemo` wheel via `uv build`/`uv publish`, trusted publishing), COPR (`python3-phomemo` with the bridge unit, `phomemo-printer-app`; builds from git tags; needs Paul's Fedora account + COPR project), snap for the printer app (OpenPrinting style), GitHub Releases (tagged tarballs, changelog, RPM/snap artefacts).
 - Build scripts and docs (Sphinx, published to GitHub Pages), then GitHub Actions CI: tests + lint on PRs; release workflow on tags (build, PyPI publish, COPR trigger, release assets); docs build and publish.
 
 ## Deliberate non-goals
 
-- TUI feature work: test harness only. Paul's uncommitted TUI edits sit in git stash "tui-rebuild WIP (parked 2026-11-02, TUI no longer pursued)"; branch `feature/tui-rebuild` abandoned (its commits reached main via the flow-control merge).
+- TUI: removed from the repo 2026-11-03. Paul's uncommitted TUI edits sit in git stashes "tui-rebuild WIP (parked 2026-11-02, TUI no longer pursued)" and "tui file_utils WIP (parked 2026-11-03, package removed from repo)"; branch `feature/tui-rebuild` abandoned (its commits reached main via the flow-control merge).
 - Vendor-app reverse engineering: dropped, not needed.
 
 ## Workflow notes
 
-- Tests: `uv run pytest` at the root (both packages; root pyproject sets `--import-mode=importlib` because both packages use the `tests.*` module names) or per package: `uv run pytest packages/phomemo -q`, `uv run pytest packages/phomemo-tui -q`. Lint: `uv run ruff check packages/phomemo`. C: `make -C printer-app test`; the printer-app pytest module skips without the built binary.
+- Tests: `uv run pytest` at the root (root pyproject sets `--import-mode=importlib`; the tests import each other as `tests.*`). Lint: `uv run ruff check packages/phomemo`. C: `make -C printer-app test`; the printer-app pytest module skips without the built binary.
 - The printer-app harness runs PAPPL servers with `TMPDIR`, `HOME`, `XDG_CONFIG_HOME` under the test's tmp dir. A `phomemo-printer-app devices` run outside the harness auto-starts a private server that keeps running (`pgrep -af 'phomemo-printer-app server'`) and writes `~/.config/phomemo-printer-app.*`.
 - Pre-commit hook (`.claude/settings.json`) runs `uv run pytest` before every `git commit`; a red root suite blocks commits.
 - BLE tests need the printer on, within ~2 m (advertised at -95 dBm from its usual spot, barely usable), and not connected elsewhere. `bluetoothctl info 60:6E:41:23:0B:D6` sometimes shows a stale `Connected: yes`; `bluetoothctl disconnect` fixes it. Printer MAC `60:6E:41:23:0B:D6`.
-- `scripts/testladder.py`, `scripts/poc_connect.py`: untracked throwaway test scripts, keep untracked.
 - `docs/superpowers/` is gitignored. Flow-control spec (`docs/superpowers/specs/2026-11-02-flow-control-design.md`) and plan (`docs/superpowers/plans/2026-11-02-flow-control.md`) exist locally only.
 - `.claude/settings.local.json` stays uncommitted (global git ignore).
