@@ -103,4 +103,5 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 | `driver.c` | Printer capabilities (media, resolution, raster type, `phomemo-tone`) and option mapping helpers. |
 | `job.c` | Raster callbacks: wait for a sheet, stream rows, finish the page, surface errors. |
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
+| `icons/` | Printer icons (48, 128, 512 px PNG), embedded into the binary at build time by `icons/embed.sh`. |
 | `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |

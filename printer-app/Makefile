@@ -15,7 +15,8 @@ CFLAGS  += -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror -Wno-unused-parameter \
 LDLIBS  += $(shell pkg-config --libs pappl)
 
 APP      = phomemo-printer-app
-SRCS     = main.c bridge.c device.c driver.c job.c
+SRCS     = main.c bridge.c device.c driver.c job.c icons.c
+ICONS    = icons/m08f-48.png icons/m08f-128.png icons/m08f-512.png
 VENDOR   = third_party/cJSON.c
 VOBJS    = $(VENDOR:.c=.o)
 OBJS     = $(SRCS:.c=.o)
@@ -29,13 +30,16 @@ $(APP): $(OBJS) $(VOBJS)
 %.o: %.c phomemo.h bridge.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+icons.c: $(ICONS) icons/embed.sh
+	sh icons/embed.sh $(ICONS) > $@
+
 third_party/%.o: third_party/%.c
 	$(CC) $(CFLAGS) -Wno-error -c -o $@ $<
 
 tests/test_bridge: tests/test_bridge.o bridge.o $(VOBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
-tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o $(VOBJS)
+tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o icons.o $(VOBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
 
 test: $(TESTS)
@@ -54,6 +58,6 @@ install: $(APP)
 	esac
 
 clean:
-	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o third_party/*.o
+	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o third_party/*.o icons.c
 
 .PHONY: all test install clean
