@@ -1,4 +1,8 @@
-"""``phomemo-bridge`` command line: run the daemon or drive it for testing."""
+"""``phomemo-bridge`` command line: run the daemon or drive it directly.
+
+Sub-command names follow the printer application's where both do the same
+thing (``server``, ``devices``, ``status``).
+"""
 
 import argparse
 import asyncio
@@ -20,7 +24,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     ap.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     sub = ap.add_subparsers(dest="command", required=True)
-    sub.add_parser("serve", help="run the bridge daemon")
+    sub.add_parser("server", help="run the bridge daemon")
     pr = sub.add_parser("print", help="print one image file as a page")
     pr.add_argument("file", type=Path)
     pr.add_argument("--media", choices=sorted(MEDIA), default="a4")
@@ -35,9 +39,12 @@ def _parser() -> argparse.ArgumentParser:
         "--abort-after", type=float, help="send abort N seconds into the transfer"
     )
     sub.add_parser("status", help="show link and sensor state")
-    disc = sub.add_parser("discover", help="scan for printers")
-    disc.add_argument("--timeout", type=float, default=5.0)
+    devices = sub.add_parser("devices", help="list printers in range")
+    devices.add_argument("--timeout", type=float, default=5.0)
     sub.add_parser("eject", help="feed the sheet out")
+    sub.add_parser("identify", help="eject a loaded sheet, then pulse the feed")
+    tp = sub.add_parser("testpage", help="print the test page")
+    tp.add_argument("--quality", choices=sorted(QUALITY), default="normal")
     return ap
 
 
@@ -58,13 +65,25 @@ async def _run_client(args: argparse.Namespace, socket_path: Path) -> int:
             print(f"printed {impressions} page(s)")
         elif args.command == "status":
             print(json.dumps(await client.status(), indent=2))
-        elif args.command == "discover":
-            for printer in await client.discover(args.timeout):
+        elif args.command == "devices":
+            printers = await client.discover(args.timeout)
+            for printer in printers:
                 print(f"{printer['address']}  {printer['name']}")
+            if not printers:
+                print("no printer in range", file=sys.stderr)
+                return 1
         elif args.command == "eject":
             await client.open()
             print("ejected" if await client.eject() else "sheet still present")
             await client.close()
+        elif args.command == "identify":
+            await client.open()
+            await client.identify()
+            await client.close()
+            print("identified")
+        elif args.command == "testpage":
+            impressions = await client.print_test_page(quality=args.quality)
+            print(f"printed {impressions} page(s)")
     return 0
 
 
@@ -91,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"configuration error: {exc}", file=sys.stderr)
         return 2
     try:
-        if args.command == "serve":
+        if args.command == "server":
             asyncio.run(serve(config))
             return 0
         return asyncio.run(_run_client(args, config.socket_path))

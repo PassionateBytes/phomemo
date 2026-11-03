@@ -225,8 +225,10 @@ Profile fields beyond the BLE UUIDs:
 `phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../../printer-app/README.md) (PAPPL based) or the bundled CLI drives it.
 
 ```bash
-phomemo-bridge serve                      # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
-phomemo-bridge discover                   # list printers in range
+phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
+phomemo-bridge devices                    # list printers in range
+phomemo-bridge identify                   # eject a loaded sheet, pulse the feed three times
+phomemo-bridge testpage                   # print the test page
 phomemo-bridge status                     # link and sensor state
 phomemo-bridge print page.png --media a4 --quality high --tone diffusion
 phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page's right edge leads

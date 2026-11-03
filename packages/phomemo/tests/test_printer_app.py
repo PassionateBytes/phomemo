@@ -69,6 +69,7 @@ class FakeBridge:
     env: dict[str, str]
     server: Any
     page_begins: list[dict[str, Any]] = field(default_factory=list)
+    in_range: list[BLEDevice] = field(default_factory=list)
 
     @property
     def printer(self) -> FakePrinter:
@@ -86,8 +87,15 @@ async def fake_bridge(
     open that long after a job.
     """
 
+    param = getattr(request, "param", {})
+    in_range: list[BLEDevice] = (
+        []
+        if param.get("none_in_range")
+        else [BLEDevice(address=ADDRESS, name="M08F", details=None)]
+    )
+
     async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
-        return [BLEDevice(address=ADDRESS, name="M08F", details=None)]
+        return list(in_range)
 
     page_begins: list[dict[str, Any]] = []
     original_page_begin = Session._cmd_page_begin
@@ -104,13 +112,13 @@ async def fake_bridge(
     ScriptedPrinter.paper_default = PaperState.PRESENT
     ScriptedPrinter.print_error_default = None
     ScriptedPrinter.reachable_default = True
-    hold = getattr(request, "param", {}).get("hold_seconds", 0.2)
+    hold = param.get("hold_seconds", 0.2)
     config = BridgeConfig(
         socket_path=tmp_path / "bridge.sock", hold_seconds=hold, drain_seconds=0.0
     )
     server = await start_server(config, printer_factory=ScriptedPrinter)
     env = {**os.environ, "PHOMEMO_BRIDGE_SOCKET": str(config.socket_path)}
-    bridge = FakeBridge(env, server, page_begins)
+    bridge = FakeBridge(env, server, page_begins, in_range)
     try:
         yield bridge
     finally:
@@ -158,6 +166,7 @@ async def app_server(
         "TMPDIR": str(tmp_path),
         "HOME": str(tmp_path),
         "XDG_CONFIG_HOME": str(tmp_path / "config"),
+        "PHOMEMO_AUTOADD_INTERVAL": "1",
     }
     param = getattr(request, "param", {})
     if "bridge_socket" in param:
@@ -621,6 +630,29 @@ async def test_printer_off_shows_offline_until_it_returns(
     attrs = await finish_job(task)
     assert attrs["job-state"] == "completed", attrs
     assert "offline" not in (await printer_state(printer, tmp_path))[1]
+
+
+@pytest.mark.parametrize("fake_bridge", [{"none_in_range": True}], indirect=True)
+async def test_server_registers_a_printer_switched_on_during_its_first_hour(
+    app_server: AppServer,
+) -> None:
+    code, out, _ = await run_app(app_server.env, "printers")
+    assert code == 0 and out.strip() == ""
+    app_server.bridge.in_range.append(
+        BLEDevice(address=ADDRESS, name="M08F", details=None)
+    )
+    for _ in range(40):
+        _, out, _ = await run_app(app_server.env, "printers")
+        if "Phomemo M08F" in out:
+            break
+        await asyncio.sleep(0.5)
+    assert "Phomemo M08F" in out
+
+
+async def test_dash_h_alone_prints_help(app_server: AppServer) -> None:
+    code, out, _ = await run_app(app_server.env, "-h")
+    assert code == 0
+    assert "Sub-commands:" in out
 
 
 async def test_identify_printer_pulses_the_feed(printer: AppServer) -> None:
