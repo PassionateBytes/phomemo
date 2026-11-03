@@ -48,11 +48,13 @@ class ScriptedPrinter(FakePrinter):
 
     paper_default = PaperState.PRESENT
     print_error_default: Exception | None = None
+    reachable_default = True
 
     def __init__(self, profile: PrinterProfile, address: object = None) -> None:
         super().__init__(profile, address)
         self.paper = ScriptedPrinter.paper_default
         self.print_error = ScriptedPrinter.print_error_default
+        self.reachable = ScriptedPrinter.reachable_default
 
 
 @dataclass
@@ -101,6 +103,7 @@ async def fake_bridge(
     FakePrinter.instances.clear()
     ScriptedPrinter.paper_default = PaperState.PRESENT
     ScriptedPrinter.print_error_default = None
+    ScriptedPrinter.reachable_default = True
     hold = getattr(request, "param", {}).get("hold_seconds", 0.2)
     config = BridgeConfig(
         socket_path=tmp_path / "bridge.sock", hold_seconds=hold, drain_seconds=0.0
@@ -597,3 +600,22 @@ async def test_idle_status_reports_lid_and_paper(
     fake.paper = PaperState.PRESENT
     await asyncio.sleep(2.1)
     assert (await printer_state(printer, tmp_path))[1] in {"", "none"}
+
+
+async def test_printer_off_shows_offline_until_it_returns(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    ScriptedPrinter.reachable_default = False
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    task = start_job(printer, tmp_path, raster)
+    for _ in range(60):
+        _, reasons = await printer_state(printer, tmp_path)
+        if "offline" in reasons:
+            break
+        await asyncio.sleep(0.5)
+    assert "offline" in reasons
+    assert not task.done()
+    printer.bridge.printer.reachable = True
+    attrs = await finish_job(task)
+    assert attrs["job-state"] == "completed", attrs
+    assert "offline" not in (await printer_state(printer, tmp_path))[1]

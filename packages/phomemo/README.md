@@ -248,7 +248,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `[printer] address` | discover by name | BLE address of the printer. |
 | `[printer] profile` | `M08F-A4` | Profile name. |
 
-Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": "no-sheet" | "printer-off" | "lid-open"}` lines. One client at a time; `abort` is the only command accepted while another is pending.
+Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": R}` lines with `R` one of `connecting` (link being brought up), `printer-off` (printer off, out of range or in use elsewhere), `adapter-off` (Bluetooth unavailable), `lid-open`, `no-sheet`, `short-sheet` (the last sheet ran out, a longer one is needed). One client at a time; `abort` is the only command accepted while another is pending.
 
 | Command | Arguments | Reply |
 |---------|-----------|-------|
