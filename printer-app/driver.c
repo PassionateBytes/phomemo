@@ -88,14 +88,14 @@ static const char *const strings_en =
   "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Diffusion dither\";\n"
   "\"media-type." PHOMEMO_MEDIA_TYPE "\" = \"Thermal paper\";\n";
 
-// Versions and labels shown by the system; PAPPL has no hook between
-// creating the system and loading printers, so the driver callback
-// publishes them once.
+// The application's version and the option labels; PAPPL lists its own
+// version and libraries by itself. PAPPL has no hook between creating the
+// system and loading printers, so the driver callback publishes them once.
 static void
 publish_system_details(pappl_system_t *system)
 {
   static pappl_system_t *published = NULL;
-  pappl_version_t versions[2];
+  pappl_version_t versions[1];
 
   if (published == system)
     return;
@@ -107,12 +107,7 @@ publish_system_details(pappl_system_t *system)
            PHOMEMO_VERSION);
   sscanf(PHOMEMO_VERSION, "%hu.%hu.%hu", &versions[0].version[0],
          &versions[0].version[1], &versions[0].version[2]);
-  snprintf(versions[1].name, sizeof(versions[1].name), "pappl");
-  snprintf(versions[1].sversion, sizeof(versions[1].sversion), "%s",
-           PAPPL_VERSION_STR);
-  sscanf(PAPPL_VERSION_STR, "%hu.%hu.%hu", &versions[1].version[0],
-         &versions[1].version[1], &versions[1].version[2]);
-  papplSystemSetVersions(system, 2, versions);
+  papplSystemSetVersions(system, 1, versions);
   papplSystemAddStringsData(system, "/phomemo.strings", "en", strings_en);
 }
 
