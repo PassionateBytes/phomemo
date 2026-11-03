@@ -311,7 +311,7 @@ async def test_page_roundtrip_prints_prepared_page(bridge: BridgeConfig) -> None
     reply = await _send_page(client, 2374)
     assert reply == {"ok": True, "cmd": "page_end", "impressions": 1}
     printer = _printer()
-    assert printer.printed == [(210 * 2293, 2293, "HIGH")]
+    assert printer.printed == [(210 * 2253, 2253, "HIGH")]
     assert printer.ejects == 1
     await client.close()
 

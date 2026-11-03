@@ -216,8 +216,8 @@ Profile fields beyond the BLE UUIDs:
 | `band_height` | `256` | Rows per `GS v 0` command. |
 | `sheet_length_mm` | `None` | Sheet length in the feed direction (`None` for roll media). |
 | `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet (sensor-to-head distance). |
-| `bottom_margin_mm` | `0.0` | Kept free at the sheet end; the M08F profiles use 0 and let the raster run to the sheet end. |
-| `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2293. |
+| `bottom_margin_mm` | `0.0` | Kept free at the sheet end (M08F profiles: 5 mm). |
+| `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2253. |
 
 ## Bridge Daemon
 
