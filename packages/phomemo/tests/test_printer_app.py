@@ -285,6 +285,7 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
         "iso_a5_148x210mm",
     }
     assert attrs["media-default"] == "iso_a4_210x297mm"
+    assert attrs["media-type-supported"] == "thermal"
     assert attrs["pwg-raster-document-resolution-supported"] == "203dpi"
     assert attrs["pwg-raster-document-type-supported"] == "sgray_8"
     assert attrs["print-color-mode-supported"] == "monochrome"
