@@ -27,8 +27,8 @@ _RETRY_SECONDS = 0.2
 _POLL_SECONDS = 0.5
 _LID_POLL_SECONDS = 0.2
 _IDENTIFY_PULSES = 3
-_IDENTIFY_FEED_LINES = 40
-_IDENTIFY_PAUSE_SECONDS = 0.3
+_IDENTIFY_FEED_LINES = 60
+_IDENTIFY_PAUSE_SECONDS = 0.5
 _MUTE_THRESHOLD = 3
 
 
@@ -277,8 +277,12 @@ class Session:
         printer = self._require_printer()
         if await printer.query_paper(timeout=1.0) == PaperState.PRESENT:
             await printer.eject_paper()
+            await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
+        # A query behind each feed is answered once the feed has run, so
+        # the pause lands between movements and the pulses stay distinct.
         for _ in range(_IDENTIFY_PULSES):
             await printer.feed(_IDENTIFY_FEED_LINES)
+            await printer.query_paper(timeout=2.0)
             await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
         return {}
 
