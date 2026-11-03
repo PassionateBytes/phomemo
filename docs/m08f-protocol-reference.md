@@ -448,23 +448,23 @@ Example: `1a 05 98  1a 06 88` = lid closed + paper absent (single notification).
 
 ### Paper Eject
 
-To eject a sheet, feed `ESC d 255` (~32 mm) repeatedly and query the paper
-sensor (`1f 11 11`) after each feed:
+To eject a sheet, queue `ESC d 255` (~32 mm) feeds a few at a time so the
+motor keeps running, and stop on the printer's own paper-absent event:
 
 ```
+1f 11 11            # → 1a 06 88 absent or no answer: a few feeds, done
 loop:
-  1b 64 ff          # feed 32mm
-  wait ~0.4s
-  1f 11 11          # → 1a 06 89 present: feed again
-                    # → 1a 06 88 absent, or no answer: one more feed, done
+  1b 64 ff ×3       # feed 96mm, motor runs continuously
+  wait for 1a 06 88 # trailing edge passed the rear sensor
+                    # (no event within ~1.5 s: queue three more)
+1b 64 ff            # one more feed clears the rollers
 ```
 
-Half an A4 sheet left the rear sensor after four feeds. Allow the sensor query
-about 2 s right after a feed; a 1 s timeout expired once while the motor was
-still moving. A missing answer after that means the printer has entered the
-overrun error state (see Print Completion Signal) and the sheet is already
-past the sensor. A blind burst of twelve
-feeds (~384 mm) also works but keeps the motor running after the sheet is out.
+Half an A4 sheet left the rear sensor after four feeds. The printer answers
+`1f 11 11` within about 2 s while the motor runs; no answer means the overrun
+error state (see Print Completion Signal), in which feed commands are also
+ignored until the printer recovers. A blind burst of twelve feeds (~384 mm)
+also works but keeps the motor running after the sheet is out.
 ---
 
 ## Density and Print Quality
@@ -723,7 +723,7 @@ payload  = init + density + header + data + feed
 | Density (low)         | `1b 4e 04 01`                      |
 | Density (medium)      | `1b 4e 04 05`                      |
 | Density (high)        | `1b 4e 04 06`                      |
-| Paper eject           | `1b 64 ff` until `1a 06 88`, +1    |
+| Paper eject           | `1b 64 ff` ×3 until `1a 06 88`, +1 |
 | Printable A4 rows     | 2253 (10 mm top, 5 mm bottom)      |
 
 ### Pre-Print State Check

@@ -162,10 +162,10 @@ await printer.feed(20)
 # the overrun error state; the link is reconnected once to clear it.
 await printer.wait_for_ready(timeout=300, settle=3.0)
 
-# Feed 32mm at a time until the paper sensor reports the sheet gone,
-# then one more feed to clear the rollers. Returns False if the sheet
-# is still present after max_feeds.
-ejected = await printer.eject_paper(max_feeds=16)
+# Feeds 32mm steps three at a time (continuous motion) until the printer's
+# paper-absent event arrives, then one more feed clears the rollers. Returns
+# False if the sheet is still present after max_feeds (100, about 3 m).
+ejected = await printer.eject_paper()
 ```
 
 ### Event Listening
@@ -248,7 +248,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `[printer] address` | discover by name | BLE address of the printer. |
 | `[printer] profile` | `M08F-A4` | Profile name. |
 
-Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": "no-sheet" | "printer-off" | "lid-open"}` lines. One client at a time; `abort` is the only command accepted while another is pending.
+Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": R}` lines with `R` one of `connecting` (link being brought up), `printer-off` (printer off, out of range or in use elsewhere), `adapter-off` (Bluetooth unavailable), `lid-open`, `no-sheet`, `short-sheet` (the last sheet ran out, a longer one is needed). One client at a time; `abort` is the only command accepted while another is pending.
 
 | Command | Arguments | Reply |
 |---------|-----------|-------|
@@ -258,7 +258,7 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |
-| `page_end` | | prints and ejects; `impressions: 1`, or `error`: `paper ran out`, `cancelled`, `lid opened`, `connection lost: ...` |
+| `page_end` | | prints and ejects; `impressions: 1`. A lid opened mid-page or a sheet that runs out does not end the page: the bridge reconnects, ejects a sheet it senses right after the lid closes (its position is unknown), waits for a sheet (`waiting` events) and prints the page again. `error`: `cancelled`, `connection lost: ...` |
 | `eject` | | `ejected` |
 | `abort` | | stops a pending `wait_ready` or transfer (the band in progress is padded white, then drain and eject); ok even when idle |
 | `close` | | starts the hold timer |

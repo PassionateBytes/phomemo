@@ -37,7 +37,7 @@ async def discover(
         discovered = await BleakScanner.discover(timeout=timeout, return_adv=True)
     except BleakError as exc:
         raise ConnectionError(
-            f"Bluetooth scan failed — is the adapter powered on? {exc}"
+            f"Bluetooth scan failed, is the adapter powered on? {exc}"
         ) from exc
     devices = [dev for dev, _ in discovered.values()]
 

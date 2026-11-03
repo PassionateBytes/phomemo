@@ -304,33 +304,56 @@ class Printer:
         logger.debug("Feeding %d lines", lines)
         await self._transport.write(encode_feed_lines(lines))
 
-    async def eject_paper(self, max_feeds: int = 16, settle: float = 0.4) -> bool:
-        """Feed the sheet out until the paper sensor reports it gone.
+    async def eject_paper(
+        self, max_feeds: int = 100, batch: int = 3, feed_seconds: float = 0.5
+    ) -> bool:
+        """Feed the sheet out until the sensor reports it gone, then clear the rollers.
 
-        Feeds ``ESC d 255`` (about 32mm) at a time and queries the paper
-        sensor after each feed. Once the sensor reports absent, one more
-        feed clears the rollers. A query timeout is treated as absent: a
-        printer that ran out of paper mid-raster stops answering queries.
+        Feeds of ``ESC d 255`` (about 32mm each) go out ``batch`` at a time so
+        the motor keeps running, and the printer's own paper-absent event ends
+        the loop. A sheet already past the sensor, or a printer that does not
+        answer the initial query, gets one batch to clear the rollers.
 
         Args:
             max_feeds: Maximum number of feeds before giving up.
-            settle: Seconds to wait after each feed before querying.
+            batch: Feeds queued before waiting for the sensor event.
+            feed_seconds: Time allowed per queued feed before queuing more.
 
         Returns:
             ``True`` once the sheet has left the sensor, ``False`` if it is
             still present after ``max_feeds`` feeds.
         """
-        for i in range(1, max_feeds + 1):
-            await self.feed(255)
-            await asyncio.sleep(settle)
+        absent = asyncio.Event()
+
+        def watch_paper(event: DeviceEvent) -> None:
+            if isinstance(event, PaperEvent) and event.paper == PaperState.ABSENT:
+                absent.set()
+
+        self._event_callbacks.append(watch_paper)
+        try:
             paper = await self.query_paper(timeout=2.0)
-            logger.debug("eject_paper: feed %d, paper=%s", i, paper)
-            if paper is None or paper == PaperState.ABSENT:
-                await self.feed(255)
-                logger.debug("eject_paper: sheet clear after %d feeds", i + 1)
+            if paper != PaperState.PRESENT:
+                for _ in range(batch):
+                    await self.feed(255)
+                logger.debug("eject_paper: no sheet at the sensor, rollers cleared")
                 return True
-        logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
-        return False
+
+            sent = 0
+            while sent < max_feeds:
+                for _ in range(min(batch, max_feeds - sent)):
+                    await self.feed(255)
+                    sent += 1
+                try:
+                    await asyncio.wait_for(absent.wait(), timeout=batch * feed_seconds)
+                except TimeoutError:
+                    continue
+                await self.feed(255)
+                logger.debug("eject_paper: sheet clear after %d feeds", sent + 1)
+                return True
+            logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
+            return False
+        finally:
+            self._event_callbacks.remove(watch_paper)
 
     async def set_auto_off_timer(self, minutes: int) -> None:
         """Set the auto-off timer.
