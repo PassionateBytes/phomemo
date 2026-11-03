@@ -175,15 +175,15 @@ async def test_print_bitmap_warns_above_max_rows(
     width_bytes = printer.profile.width_bytes
     with caplog.at_level("WARNING", logger="phomemo.printer"):
         await printer.print_bitmap(
-            bytes(width_bytes * 2245), height=2245, wait_for_completion=False
+            bytes(width_bytes * 2253), height=2253, wait_for_completion=False
         )
         assert not caplog.records
         await printer.print_bitmap(
-            bytes(width_bytes * 2246), height=2246, wait_for_completion=False
+            bytes(width_bytes * 2254), height=2254, wait_for_completion=False
         )
     assert len(caplog.records) == 1
-    assert "2246" in caplog.records[0].getMessage()
-    assert "2245" in caplog.records[0].getMessage()
+    assert "2254" in caplog.records[0].getMessage()
+    assert "2253" in caplog.records[0].getMessage()
 
 
 _FEED_255 = b"\x1b\x64\xff"
@@ -574,6 +574,21 @@ async def test_abort_exactly_at_a_band_end_sends_nothing_more() -> None:
             bytes(_ROW * 600), height=600, abort=abort, completion_timeout=5.0
         )
     assert len(rec.stream) == band1_end
+
+
+@pytest.mark.asyncio
+async def test_abort_during_the_trailing_feed_completes_the_stream() -> None:
+    abort = asyncio.Event()
+    total = _PREFIX + 3 * _HEADER + 600 * _ROW + _FEED
+    printer, rec = _chunked_printer(hook=lambda n: n == 1 and abort.set())
+    # The first chunk ends one byte into ESC d n: aborting there would leave
+    # the printer waiting for the rest of the command.
+    printer._transport.chunk_bytes = total - _FEED + 1  # type: ignore[attr-defined]
+    await printer.print_bitmap(
+        bytes(_ROW * 600), height=600, abort=abort, wait_for_completion=False
+    )
+    assert len(rec.stream) == total
+    assert rec.stream.endswith(b"\x1b\x64\x14")
 
 
 @pytest.mark.asyncio

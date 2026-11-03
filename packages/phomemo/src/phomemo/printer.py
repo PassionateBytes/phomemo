@@ -716,13 +716,16 @@ class Printer:
         chunk = self._transport.chunk_bytes
         width_bytes = self._profile.width_bytes
         total = -(-len(stream) // chunk)
+        # Past the last band only the trailing feed command remains; a stop
+        # there would leave the printer waiting for the rest of it.
+        tail_start = bands[-1][2] if bands else len(stream)
         offset = 0
         sent = 0
         while offset < len(stream):
-            if abort is not None and abort.is_set():
+            if abort is not None and abort.is_set() and offset < tail_start:
                 await self._pad_band(stream, offset, bands)
                 raise PrintAborted("cancelled")
-            if lid_open.is_set():
+            if lid_open.is_set() and offset < tail_start:
                 await self._pad_band(stream, offset, bands)
                 raise PrintAborted("lid opened")
             unsent = height - self._rows_sent

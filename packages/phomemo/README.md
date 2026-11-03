@@ -216,12 +216,12 @@ Profile fields beyond the BLE UUIDs:
 | `band_height` | `256` | Rows per `GS v 0` command. |
 | `sheet_length_mm` | `None` | Sheet length in the feed direction (`None` for roll media). |
 | `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet (sensor-to-head distance). |
-| `bottom_margin_mm` | `0.0` | Kept free at the sheet end so raster plus trailing feed never overrun the sheet. |
-| `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2245. |
+| `bottom_margin_mm` | `0.0` | Kept free at the sheet end (M08F profiles: 5 mm). |
+| `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2253. |
 
 ## Bridge Daemon
 
-`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. A printer application (PAPPL based, separate project stage) or the bundled CLI drives it.
+`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../../printer-app/README.md) (PAPPL based) or the bundled CLI drives it.
 
 ```bash
 phomemo-bridge serve                      # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock

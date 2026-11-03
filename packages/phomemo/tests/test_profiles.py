@@ -55,8 +55,8 @@ def test_a4_profile_printable_area() -> None:
     profile = get_profile("M08F-A4")
     assert profile.sheet_length_mm == 297.0
     assert profile.top_margin_mm == 10.0
-    assert profile.bottom_margin_mm == 6.0
-    assert profile.max_rows == 2245
+    assert profile.bottom_margin_mm == 5.0
+    assert profile.max_rows == 2253
 
 
 def test_letter_profile_uses_the_same_margins() -> None:
@@ -65,7 +65,7 @@ def test_letter_profile_uses_the_same_margins() -> None:
 
     profile = get_profile("M08F-Letter")
     assert profile.sheet_length_mm == 279.4
-    assert profile.max_rows == 2105
+    assert profile.max_rows == 2113
 
 
 def test_profile_rejects_margins_that_consume_the_sheet() -> None:
@@ -88,14 +88,14 @@ def test_rows_for_a4_matches_max_rows() -> None:
     from phomemo.registry import get_profile
 
     profile = get_profile("M08F-A4")
-    assert profile.rows_for(297.0) == 2245 == profile.max_rows
+    assert profile.rows_for(297.0) == 2253 == profile.max_rows
 
 
 def test_rows_for_a5_turned() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
-    assert get_profile("M08F-A4").rows_for(148.0) == 1054
+    assert get_profile("M08F-A4").rows_for(148.0) == 1062
 
 
 def test_rows_for_none_is_roll() -> None:

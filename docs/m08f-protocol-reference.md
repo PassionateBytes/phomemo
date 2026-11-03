@@ -684,7 +684,7 @@ data relay — but this was not consistently reproducible.
 | ------------------------ | --------------------------------------------------------------------------------------- |
 | Top margin               | ~10 mm from the leading paper edge to raster row 0 (sensor-to-head distance, hardware) |
 | Bottom edge              | Row 2300 of a full-width raster lands ~1 mm above the bottom edge                      |
-| Overrun                  | Raster + trailing feed past the sheet end leaves the printer muted (see Print Completion); keep a bottom margin (driver uses 6 mm, 2245 rows) |
+| Overrun                  | Raster past the sheet end leaves the printer muted (see Print Completion); the driver keeps a 5 mm bottom margin (A4: 2253 rows after the 10 mm lead) |
 | Sheet insertion          | `1a 06 89` fires when the leading edge reaches the rear sensor; the feed motor runs ~1.6 s more, then `1a 06 89` repeats. No motor-stop event for this feed. Raster sent before the repeat is discarded |
 | Verified photo job       | 1680x2178 raster at high density: 457 KB in 79.6 s (5.6 KiB/s), clean, 10 mm margins  |
 | Row pitch                | 100 rows = 12.5 mm at 203 dpi (measured: 12–12.5 mm)                                   |
@@ -724,7 +724,7 @@ payload  = init + density + header + data + feed
 | Density (medium)      | `1b 4e 04 05`                      |
 | Density (high)        | `1b 4e 04 06`                      |
 | Paper eject           | `1b 64 ff` until `1a 06 88`, +1    |
-| Printable A4 rows     | 2245 (10 mm top, 6 mm bottom)      |
+| Printable A4 rows     | 2253 (10 mm top, 5 mm bottom)      |
 
 ### Pre-Print State Check
 
@@ -757,7 +757,7 @@ Two signals tell a driver that the inserted sheet is shorter than the page:
 A5 is fed long edge first (210 mm wide, 148 mm long). A client renders A5
 portrait (148 x 210); the driver rotates the raster a quarter turn
 counter-clockwise, so the document's top edge ends up at the sheet's left
-edge. 1054 rows are printable after the 10 mm lead and 6 mm bottom margin.
+edge. 1062 rows are printable after the 10 mm lead and 5 mm bottom margin.
 
 ### Error Detection During Print
 
@@ -769,3 +769,13 @@ spontaneous events during print instead:
 | `1a 05 99` | Lid opened    | Pause/abort — print head exposed |
 | `1a 06 88` | Paper absent  | Paper ran out or was pulled out  |
 | `1a 0f 0c` | Motor stopped | Print complete (or aborted)      |
+
+### Printer Application
+
+The repository's [printer application](../printer-app/README.md) splits the
+driver in two: a PAPPL application in C speaks IPP and raster to the
+network and hands each page as 8-bit grayscale rows to `phomemo-bridge`
+over a unix socket; the bridge (Python, `phomemo.bridge`) owns the BLE link
+and applies everything above: the pre-print state check, continuous
+write-with-response streaming, short sheet and lid detection, and the
+sensor-driven eject.
