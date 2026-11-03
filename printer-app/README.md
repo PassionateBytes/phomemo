@@ -90,7 +90,7 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 
 - **No devices listed / jobs pause**: the bridge is not reachable. Check `systemctl --user status phomemo-bridge` and that `PHOMEMO_BRIDGE_SOCKET` (or `$XDG_RUNTIME_DIR/phomemo-bridge.sock`) is the same for both programs; `phomemo-bridge status` talks to the daemon directly.
 - **Printer not found although it is on**: BlueZ may still hold a stale link after a killed daemon; `bluetoothctl disconnect <address>` frees it. The printer does not advertise while connected, and switches off after ten minutes idle.
-- **Logs**: `phomemo-printer-app server -o log-file=/path -o log-level=debug`; the bridge logs with `phomemo-bridge serve -v`.
+- **Logs**: with the units, `journalctl --user -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge serve -v`.
 
 ## Sources
 
