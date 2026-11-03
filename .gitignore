@@ -13,3 +13,6 @@ wheels/
 .superpowers/
 docs/reports/
 docs/superpowers/
+
+# Sphinx output
+docs/_build/
