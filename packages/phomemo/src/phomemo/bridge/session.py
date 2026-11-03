@@ -11,6 +11,7 @@ from PIL import Image
 
 from phomemo.bridge.protocol import ProtocolError, encode_message, read_message
 from phomemo.bridge.server import Bridge
+from phomemo.events import LidState, PaperState
 from phomemo.imaging import ToneMode, image_to_bitmap, prepare_page
 from phomemo.printer import PrintAborted, SheetRanOut
 from phomemo.protocol import Density
@@ -396,49 +397,103 @@ class Session:
             )
             bitmap = image_to_bitmap(prepared)
             height = prepared.height
-            abort = self._abort
-            last = -1
-
-            def on_progress(_sent: int, _total: int) -> None:
-                nonlocal last
-                percent = (
-                    int(100 * printer.rows_sent / height) // 5 * 5 if height else 100
-                )
-                if percent != last:
-                    last = percent
-                    self._push("progress", percent=percent)
-
-            try:
-                await printer.print_bitmap(
-                    bitmap,
-                    height,
-                    density=page.density,
-                    abort=abort,
-                    on_progress=on_progress,
-                    completion_timeout=bridge.config.completion_timeout,
-                )
-            except SheetRanOut as exc:
-                logger.warning("Sheet ran out: %s", exc)
-                await self._recover_link()
-                await self._eject_remainder(printer)
-                raise CommandError(exc.reason) from exc
-            except PrintAborted as exc:
-                if exc.reason == "cancelled":
-                    await asyncio.sleep(bridge.config.drain_seconds)
-                    if not await printer.eject_paper():
-                        logger.warning("Sheet not ejected after the cancel")
-                else:
-                    logger.warning("Page aborted: %s", exc.reason)
+            # An interrupted page is printed again on a fresh sheet; only a
+            # cancel or a lost link ends the attempt loop.
+            while True:
+                try:
+                    await self._print_page(printer, bitmap, height, page.density)
+                except SheetRanOut as exc:
+                    logger.warning("Sheet ran out: %s; waiting for the next sheet", exc)
                     await self._recover_link()
-                raise CommandError(exc.reason) from exc
-            except (TimeoutError, ConnectionError, OSError) as exc:
-                raise CommandError(f"connection lost: {exc}") from exc
-            if last != 100:
-                await self._event("progress", percent=100)
+                    await self._eject_remainder(printer)
+                    await self._wait_for_fresh_sheet()
+                    continue
+                except PrintAborted as exc:
+                    if exc.reason == "cancelled":
+                        await asyncio.sleep(bridge.config.drain_seconds)
+                        if not await printer.eject_paper():
+                            logger.warning("Sheet not ejected after the cancel")
+                        raise CommandError(exc.reason) from exc
+                    logger.warning(
+                        "Page aborted: %s; waiting to print it again", exc.reason
+                    )
+                    await self._recover_link()
+                    await self._wait_for_fresh_sheet()
+                    continue
+                except (TimeoutError, ConnectionError, OSError) as exc:
+                    raise CommandError(f"connection lost: {exc}") from exc
+                break
             await printer.eject_paper()
             return {"impressions": 1}
         finally:
             self._page = None
+
+    async def _print_page(
+        self, printer: Any, bitmap: bytes, height: int, density: Density
+    ) -> None:
+        """Send one page and push progress events until the motor stops."""
+        last = -1
+
+        def on_progress(_sent: int, _total: int) -> None:
+            nonlocal last
+            percent = int(100 * printer.rows_sent / height) // 5 * 5 if height else 100
+            if percent != last:
+                last = percent
+                self._push("progress", percent=percent)
+
+        await printer.print_bitmap(
+            bitmap,
+            height,
+            density=density,
+            abort=self._abort,
+            on_progress=on_progress,
+            completion_timeout=self._bridge.config.completion_timeout,
+        )
+        if last != 100:
+            await self._event("progress", percent=100)
+
+    async def _wait_for_fresh_sheet(self) -> None:
+        """Wait for the lid to close, drop a sheet already inside, wait for a new one.
+
+        A sheet sensed as soon as the lid is closed may be the interrupted one
+        at an unknown position, so it is ejected. A sheet inserted after that
+        first check is taken as fresh and seated.
+
+        Raises:
+            CommandError: ``cancelled`` when an abort arrives meanwhile.
+        """
+        printer = self._require_printer()
+        abort = self._abort
+        reported = False
+        timeouts = 0
+        while True:
+            if abort.is_set():
+                raise CommandError("cancelled")
+            try:
+                lid = await printer.query_lid(timeout=2.0)
+            except ConnectionError as exc:
+                logger.info("Link lost while waiting for the lid: %s", exc)
+                lid = None
+            if lid == LidState.CLOSED:
+                break
+            if lid is None:
+                timeouts += 1
+                if timeouts >= _MUTE_THRESHOLD:
+                    timeouts = 0
+                    await self._recover_link()
+            elif not reported:
+                reported = True
+                await self._event("waiting", reason="lid-open")
+            await self._pause(_POLL_SECONDS)
+
+        try:
+            paper = await printer.query_paper(timeout=2.0)
+        except ConnectionError:
+            paper = None
+        if paper == PaperState.PRESENT:
+            logger.info("Sheet still inside after the interruption; ejecting it")
+            await printer.eject_paper()
+        await self._cmd_wait_ready({}, b"")
 
     async def _eject_remainder(self, printer: Any) -> None:
         """Clear a short sheet still held by the rollers after an overrun."""
