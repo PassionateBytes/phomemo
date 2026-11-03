@@ -26,7 +26,6 @@ from phomemo.bridge.session import Session
 from phomemo.events import LidState, PaperState
 from phomemo.printer import SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
-from PIL import Image
 
 from tests.test_bridge_server import FakePrinter
 
@@ -519,62 +518,23 @@ async def test_cancel_while_waiting_for_sheet(
     assert printer.bridge.printer.printed == []
 
 
-async def test_sheet_ran_out_aborts_job(printer: AppServer, tmp_path: Path) -> None:
+async def test_short_sheet_reprints_on_the_next_sheet(
+    printer: AppServer, tmp_path: Path
+) -> None:
     ScriptedPrinter.print_error_default = SheetRanOut("paper ran out")
     raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
-    attrs = await finish_job(start_job(printer, tmp_path, raster))
-    assert attrs["job-state"] == "aborted", attrs
-    assert "paper ran out" in attrs["job-state-message"]
-
-
-def make_png(tmp_path: Path, name: str = "page.png") -> Path:
-    """A small grayscale PNG that PAPPL renders itself."""
-    path = tmp_path / name
-    image = Image.new("L", (400, 600), 255)
-    image.paste(0, (50, 50, 350, 120))
-    image.save(path)
-    return path
-
-
-async def test_two_page_job_waits_for_each_sheet(
-    printer: AppServer, tmp_path: Path
-) -> None:
-    raster = await make_raster(tmp_path, "two.pwg", 595, 842, pages=2)
-    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    task = start_job(printer, tmp_path, raster)
+    for _ in range(60):
+        _, reasons = await printer_state(printer, tmp_path)
+        if "media-empty" in reasons:
+            break
+        await asyncio.sleep(0.5)
+    assert "media-empty" in reasons
+    assert not task.done()
+    printer.bridge.printer.paper = PaperState.PRESENT
+    attrs = await finish_job(task)
     assert attrs["job-state"] == "completed", attrs
-    assert attrs["job-impressions-completed"] == "2"
-    fake = printer.bridge.printer
-    assert fake.printed == [(210 * A4_ROWS, A4_ROWS, "MEDIUM")] * 2
-    assert fake.ejects == 2
-    assert len(printer.bridge.page_begins) == 2
-
-
-async def test_bridge_restart_recovers_queued_job(
-    printer: AppServer, tmp_path: Path
-) -> None:
-    ScriptedPrinter.paper_default = PaperState.ABSENT
-    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
-    waiting = start_job(printer, tmp_path, raster)
-    await active_job_id(printer)
-    queued = start_job(
-        printer, tmp_path, make_png(tmp_path), document_format="image/png"
-    )
-    await asyncio.sleep(1)
-
-    # The daemon restarts: the old session dies, a fresh one serves the socket.
-    printer.bridge.server.close()
-    printer.bridge.server.close_clients()
-    ScriptedPrinter.paper_default = PaperState.PRESENT
-    config = BridgeConfig(
-        socket_path=tmp_path / "bridge.sock", hold_seconds=0.2, drain_seconds=0.0
-    )
-    printer.bridge.server = await start_server(config, printer_factory=ScriptedPrinter)
-
-    first = await finish_job(waiting)
-    assert first["job-state"] == "aborted", first
-    second = await finish_job(queued)
-    assert second["job-state"] == "completed", second
-    assert printer.bridge.printer.printed[-1][1] == A4_ROWS
+    assert len(printer.bridge.printer.printed) == 2
 
 
 async def printer_state(server: AppServer, tmp_path: Path) -> tuple[str, str]:

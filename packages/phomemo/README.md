@@ -258,7 +258,7 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |
-| `page_end` | | prints and ejects; `impressions: 1`, or `error`: `paper ran out`, `cancelled`, `lid opened`, `connection lost: ...` |
+| `page_end` | | prints and ejects; `impressions: 1`. A lid opened mid-page or a sheet that runs out does not end the page: the bridge reconnects, ejects a sheet it senses right after the lid closes (its position is unknown), waits for a sheet (`waiting` events) and prints the page again. `error`: `cancelled`, `connection lost: ...` |
 | `eject` | | `ejected` |
 | `abort` | | stops a pending `wait_ready` or transfer (the band in progress is padded white, then drain and eject); ok even when idle |
 | `close` | | starts the hold timer |
