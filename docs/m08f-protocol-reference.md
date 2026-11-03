@@ -74,8 +74,8 @@ All findings are based on direct observation unless marked **[assumed]**
 - Brand: `Phomemo`
 - Model: `M08F` / `29002-M08F` / `2ASRB-M08F`
 - Manufacturer: `Zhuhai Quin Technology Co., Ltd.`
-- BLE MAC (test unit): `AA:BB:CC:DD:EE:FF`
-- Serial: `<serial>` (via `1f 11 09` → `1a 08` on `ff01`)
+- BLE MAC: per device; examples in this document use `AA:BB:CC:DD:EE:FF`
+- Serial: 15 ASCII characters (via `1f 11 09` → `1a 08` on `ff01`)
 - Firmware: `v1.1.3` (via `1f 11 07` → `1a 07 01 01 03` on `ff01`)
 
 ---
@@ -317,7 +317,7 @@ ESC/POS). Write to `ff02`; responses arrive on **`ff01`** in `1a <sub-type>
 | ---------- | -------------- | --------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `1f 11 08` | Battery        | `1a 04 <pct>`               | `1a 04 41` = 65%          | Live value, changes with charge state                                                                                                                                                                                                 |
 | `1f 11 07` | Firmware       | `1a 07 <maj> <min> <patch>` | `1a 07 01 01 03` = v1.1.3 |                                                                                                                                                                                                                                       |
-| `1f 11 09` | Serial (ASCII) | `1a 08 <string>`            | `1a 08 <serial>`   | Full serial number                                                                                                                                                                                                                    |
+| `1f 11 09` | Serial (ASCII) | `1a 08 <string>`            | `1a 08 <15 ASCII chars>`   | Full serial number                                                                                                                                                                                                                    |
 | `1f 11 13` | Serial (short) | `1a 03 <byte>`              | `1a 03 a8`                | Possibly hardware revision                                                                                                                                                                                                            |
 | `1f 11 11` | Paper state    | `1a 06 <state>`             | `88`=absent, `89`=present | Reports the **combined** state of all three optical sensors (see Physical Characteristics). `89` means paper is fully loaded past the print head. **Unreliable with lid open** — reports present even without paper. Query lid first. |
 | `1f 11 12` | Lid state      | `1a 05 <state>`             | `98`=closed, `99`=open    | Reliable in all conditions                                                                                                                                                                                                            |
