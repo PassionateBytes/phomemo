@@ -53,6 +53,7 @@
 - `eject_paper`: 2 s paper-query timeout is treated as "absent" (heuristic). Retry probe would be safer [inferred]
 - `eject_paper` during an in-flight print (TUI cancel path): unverified on hardware [inferred]
 - Dead `reason = "not ready"` branch in `wait_for_ready` [inferred]
+- Page retry on interruption [user, 2026-11-03, decided]: a lid opened mid-page or a sheet that runs out no longer aborts the job. The bridge keeps the prepared page and loops inside `page_end`: reconnect, then if paper is sensed at the first check after the lid closes (or after the short sheet) eject it (position unknown), wait for a sheet, reprint the same page; a sheet inserted after that first check is taken as fresh and printed on. No retry cap (progress only on user action; cancel ends it). PAPPL side unchanged (the `waiting` events already map to reasons). Docs: close the lid first, then insert the sheet. Hardware: lid mid-page, short sheet. First feature branch after the merge.
 - Features stage (after packaging/CI): Paul leads the decisions; candidates in the ledger and this list (identify/test page/icons, battery supply, roll media modes and custom lengths, Letter verification, auto-add name collision) [user, 2026-11-03]
 - Letter profile untested on hardware [inferred]
 - Printer app review leftover (2026-11-03): battery as a PAPPL supply level (spec item, parked for the features stage, Paul decides) [user]
