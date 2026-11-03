@@ -166,7 +166,6 @@ async def app_server(
         "TMPDIR": str(tmp_path),
         "HOME": str(tmp_path),
         "XDG_CONFIG_HOME": str(tmp_path / "config"),
-        "PHOMEMO_AUTOADD_INTERVAL": "1",
     }
     param = getattr(request, "param", {})
     if "bridge_socket" in param:
@@ -632,15 +631,9 @@ async def test_printer_off_shows_offline_until_it_returns(
     assert "offline" not in (await printer_state(printer, tmp_path))[1]
 
 
-@pytest.mark.parametrize("fake_bridge", [{"none_in_range": True}], indirect=True)
-async def test_server_registers_a_printer_switched_on_during_its_first_hour(
+async def test_server_registers_the_printer_in_range_at_start(
     app_server: AppServer,
 ) -> None:
-    code, out, _ = await run_app(app_server.env, "printers")
-    assert code == 0 and out.strip() == ""
-    app_server.bridge.in_range.append(
-        BLEDevice(address=ADDRESS, name="M08F", details=None)
-    )
     for _ in range(40):
         _, out, _ = await run_app(app_server.env, "printers")
         if "Phomemo M08F" in out:

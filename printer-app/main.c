@@ -1,7 +1,7 @@
 // Entry point: registers the m08f driver and hands control to PAPPL's main
 // loop (server, add, autoadd, devices, printers and the other standard
-// subcommands). The server also registers the first printer it can find
-// during its first hour, after that registration is manual.
+// subcommands). The server registers printers in range once at every
+// start; PAPPL alone does that only at the very first start.
 
 #include "phomemo.h"
 
@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <unistd.h>
 
 static pappl_pr_driver_t drivers[] = {
@@ -19,8 +18,6 @@ static pappl_pr_driver_t drivers[] = {
 
 static const char *footer_html =
   "Phomemo printer application. Printing goes through phomemo-bridge.";
-
-static char self_path[1024];
 
 const char *
 phomemo_autoadd_cb(const char *device_info, const char *device_uri,
@@ -32,96 +29,37 @@ phomemo_autoadd_cb(const char *device_info, const char *device_uri,
   return NULL;
 }
 
-// Seconds from an environment variable, or the default.
-static long
-env_seconds(const char *name, long fallback)
-{
-  const char *value = getenv(name);
-  return value && *value ? atol(value) : fallback;
-}
+static char self_path[1024];
 
-// The file whose mtime marks the server's first start.
+// The server's control socket, as PAPPL derives it for a non-root user.
 static void
-marker_path(char *buffer, size_t bufsize)
+server_socket_path(char *buffer, size_t bufsize)
 {
-  const char *config = getenv("XDG_CONFIG_HOME");
-  const char *home = getenv("HOME");
-
-  if (config && *config)
-    snprintf(buffer, bufsize, "%s/phomemo-printer-app.first-start", config);
-  else
-    snprintf(buffer, bufsize, "%s/.config/phomemo-printer-app.first-start",
-             home ? home : "");
+  const char *tmpdir = getenv("TMPDIR");
+  if (!tmpdir || !*tmpdir || access(tmpdir, W_OK))
+    tmpdir = "/tmp";
+  snprintf(buffer, bufsize, "%s/phomemo-printer-app%d.sock", tmpdir,
+           (int)getuid());
 }
 
-// Runs one of our own subcommands against the running server; returns
-// true when it printed anything.
-static bool
-subcommand_has_output(const char *subcommand)
-{
-  char command[1200];
-  char line[256];
-  bool output = false;
-
-  snprintf(command, sizeof(command), "'%s' %s 2>/dev/null", self_path,
-           subcommand);
-  FILE *fp = popen(command, "r");
-  if (!fp)
-    return false;
-  while (fgets(line, sizeof(line), fp))
-    output = true;
-  pclose(fp);
-  return output;
-}
-
-// Scans for a printer through the bridge at intervals during the server's
-// first hour, until one is configured.
+// Runs autoadd once the server listens: printers in range get registered
+// at every start, not only at the first one.
 static void *
-auto_register(void *data)
+register_at_start(void *data)
 {
-  char marker[1200];
+  char socket_path[1200];
   char command[1200];
   struct stat info;
-  time_t started;
-  long window = env_seconds("PHOMEMO_AUTOADD_WINDOW", 3600);
-  long interval = env_seconds("PHOMEMO_AUTOADD_INTERVAL", 30);
 
-  marker_path(marker, sizeof(marker));
-  if (stat(marker, &info) == 0)
-  {
-    started = info.st_mtime;
-  }
-  else
-  {
-    FILE *fp = fopen(marker, "w");
-    if (fp)
-      fclose(fp);
-    started = time(NULL);
-  }
-  if (time(NULL) - started >= window)
+  server_socket_path(socket_path, sizeof(socket_path));
+  for (int i = 0; i < 60 && stat(socket_path, &info) != 0; i++)
+    sleep(1);
+  if (stat(socket_path, &info) != 0)
     return NULL;
-
-  fprintf(stderr,
-          "phomemo-printer-app: looking for a printer every %ld s during the "
-          "first %ld s after the first start.\n",
-          interval, window);
-  snprintf(command, sizeof(command), "'%s' autoadd >/dev/null 2>&1",
-           self_path);
-  sleep((unsigned)(interval < 5 ? interval : 5));
-  while (time(NULL) - started < window)
-  {
-    if (subcommand_has_output("printers"))
-    {
-      fprintf(stderr, "phomemo-printer-app: a printer is configured; "
-                      "automatic registration done.\n");
-      return NULL;
-    }
-    if (system(command) != 0)
-      fprintf(stderr, "phomemo-printer-app: autoadd failed.\n");
-    sleep((unsigned)interval);
-  }
-  fprintf(stderr, "phomemo-printer-app: first hour over, no printer found; "
-                  "register one with autoadd or the web interface.\n");
+  sleep(1);
+  snprintf(command, sizeof(command), "'%s' autoadd", self_path);
+  if (system(command) != 0)
+    fprintf(stderr, "phomemo-printer-app: autoadd at start failed.\n");
   return NULL;
 }
 
@@ -143,7 +81,7 @@ main(int argc, char *argv[])
   if (argc >= 2 && !strcmp(argv[1], "server"))
   {
     pthread_t thread;
-    if (pthread_create(&thread, NULL, auto_register, NULL) == 0)
+    if (pthread_create(&thread, NULL, register_at_start, NULL) == 0)
       pthread_detach(thread);
   }
 
