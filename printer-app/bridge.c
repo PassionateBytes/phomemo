@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <poll.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,10 +13,27 @@
 #include <unistd.h>
 
 static void
-set_error(char *err, size_t errsize, const char *fmt, const char *arg)
+set_error(char *err, size_t errsize, const char *fmt, ...)
 {
-  if (err && errsize)
-    snprintf(err, errsize, fmt, arg);
+  va_list ap;
+
+  if (!err || !errsize)
+    return;
+  va_start(ap, fmt);
+  vsnprintf(err, errsize, fmt, ap);
+  va_end(ap);
+}
+
+// Forgets a socket the other side has dropped so later calls report
+// "not connected" and the owner can reconnect.
+static void
+drop_link(phomemo_bridge_t *b)
+{
+  if (b->fd >= 0)
+    close(b->fd);
+  b->fd = -1;
+  b->line_len = 0;
+  b->pending[0] = '\0';
 }
 
 bool
@@ -29,7 +47,7 @@ phomemo_bridge_connect(phomemo_bridge_t *b, const char *socket_path,
 
   if (strlen(socket_path) >= sizeof(addr.sun_path))
   {
-    set_error(err, errsize, "socket path too long: %s", socket_path);
+    set_error(err, errsize, "socket path %s is too long", socket_path);
     return false;
   }
 
@@ -45,7 +63,7 @@ phomemo_bridge_connect(phomemo_bridge_t *b, const char *socket_path,
   strcpy(addr.sun_path, socket_path);
   if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
   {
-    set_error(err, errsize, "connect: %s", strerror(errno));
+    set_error(err, errsize, "connect %s: %s", socket_path, strerror(errno));
     close(fd);
     return false;
   }
@@ -67,17 +85,19 @@ phomemo_bridge_close(phomemo_bridge_t *b)
 }
 
 static bool
-write_all(int fd, const void *data, size_t len, char *err, size_t errsize)
+write_all(phomemo_bridge_t *b, const void *data, size_t len, char *err,
+          size_t errsize)
 {
   const char *p = data;
   while (len)
   {
-    ssize_t n = write(fd, p, len);
+    ssize_t n = write(b->fd, p, len);
     if (n < 0)
     {
       if (errno == EINTR)
         continue;
       set_error(err, errsize, "write: %s", strerror(errno));
+      drop_link(b);
       return false;
     }
     p += n;
@@ -92,7 +112,7 @@ phomemo_bridge_send(phomemo_bridge_t *b, cJSON *request, const void *payload,
 {
   if (b->fd < 0)
   {
-    set_error(err, errsize, "bridge not connected%s", "");
+    set_error(err, errsize, "bridge not connected");
     return false;
   }
 
@@ -104,7 +124,7 @@ phomemo_bridge_send(phomemo_bridge_t *b, cJSON *request, const void *payload,
                                              (double)payload_len))
     {
       cJSON_Delete(message);
-      set_error(err, errsize, "out of memory%s", "");
+      set_error(err, errsize, "out of memory");
       return false;
     }
   }
@@ -114,7 +134,7 @@ phomemo_bridge_send(phomemo_bridge_t *b, cJSON *request, const void *payload,
     cJSON_Delete(message);
   if (!text)
   {
-    set_error(err, errsize, "out of memory%s", "");
+    set_error(err, errsize, "out of memory");
     return false;
   }
 
@@ -124,10 +144,10 @@ phomemo_bridge_send(phomemo_bridge_t *b, cJSON *request, const void *payload,
 
   size_t text_len = strlen(text);
   text[text_len++] = '\n';  // cJSON allocates room for the terminator
-  bool ok = write_all(b->fd, text, text_len, err, errsize);
+  bool ok = write_all(b, text, text_len, err, errsize);
   free(text);
   if (ok && payload_len > 0)
-    ok = write_all(b->fd, payload, payload_len, err, errsize);
+    ok = write_all(b, payload, payload_len, err, errsize);
   return ok;
 }
 
@@ -144,7 +164,7 @@ fill_line(phomemo_bridge_t *b, char *err, size_t errsize)
 
     if (b->line_len >= PHOMEMO_BRIDGE_MAX_LINE)
     {
-      set_error(err, errsize, "bridge sent an over-long line%s", "");
+      set_error(err, errsize, "bridge sent an over-long line");
       return -1;
     }
 
@@ -154,7 +174,7 @@ fill_line(phomemo_bridge_t *b, char *err, size_t errsize)
       char *line = realloc(b->line, size);
       if (!line)
       {
-        set_error(err, errsize, "out of memory%s", "");
+        set_error(err, errsize, "out of memory");
         return -1;
       }
       b->line = line;
@@ -168,11 +188,13 @@ fill_line(phomemo_bridge_t *b, char *err, size_t errsize)
       if (errno == EINTR)
         continue;
       set_error(err, errsize, "read: %s", strerror(errno));
+      drop_link(b);
       return -1;
     }
     if (n == 0)
     {
-      set_error(err, errsize, "bridge closed the connection%s", "");
+      set_error(err, errsize, "bridge closed the connection");
+      drop_link(b);
       return -1;
     }
     b->line_len += (size_t)n;
@@ -208,11 +230,13 @@ discard_payload(phomemo_bridge_t *b, size_t size, char *err, size_t errsize)
       if (errno == EINTR)
         continue;
       set_error(err, errsize, "read: %s", strerror(errno));
+      drop_link(b);
       return false;
     }
     if (n == 0)
     {
-      set_error(err, errsize, "bridge closed the connection%s", "");
+      set_error(err, errsize, "bridge closed the connection");
+      drop_link(b);
       return false;
     }
     size -= (size_t)n;
@@ -233,7 +257,7 @@ read_message(phomemo_bridge_t *b, char *err, size_t errsize)
   if (!obj || !cJSON_IsObject(obj))
   {
     cJSON_Delete(obj);
-    set_error(err, errsize, "bridge sent malformed JSON%s", "");
+    set_error(err, errsize, "bridge sent malformed JSON");
     return NULL;
   }
 
@@ -246,8 +270,7 @@ read_message(phomemo_bridge_t *b, char *err, size_t errsize)
     {
       cJSON_Delete(obj);
       if (size < 0 || size > PHOMEMO_BRIDGE_MAX_PAYLOAD)
-        set_error(err, errsize, "bridge sent an invalid payload length%s",
-                  "");
+        set_error(err, errsize, "bridge sent an invalid payload length");
       return NULL;
     }
   }
@@ -266,6 +289,7 @@ wait_readable(phomemo_bridge_t *b, char *err, size_t errsize)
     if (errno == EINTR)
       return 0;
     set_error(err, errsize, "poll: %s", strerror(errno));
+    drop_link(b);
   }
   return n;
 }
@@ -276,7 +300,7 @@ phomemo_bridge_reply(phomemo_bridge_t *b, phomemo_event_cb_t on_event,
 {
   if (b->fd < 0)
   {
-    set_error(err, errsize, "bridge not connected%s", "");
+    set_error(err, errsize, "bridge not connected");
     return NULL;
   }
 
@@ -323,9 +347,9 @@ phomemo_bridge_reply(phomemo_bridge_t *b, phomemo_event_cb_t on_event,
     if (cJSON_IsString(error) && error->valuestring[0])
       set_error(err, errsize, "%s", error->valuestring);
     else if (cJSON_IsFalse(ok))
-      set_error(err, errsize, "bridge reported an error%s", "");
+      set_error(err, errsize, "bridge reported an error");
     else
-      set_error(err, errsize, "bridge sent an unexpected message%s", "");
+      set_error(err, errsize, "bridge sent an unexpected message");
     cJSON_Delete(obj);
     return NULL;
   }

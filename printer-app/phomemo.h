@@ -11,6 +11,8 @@
 #include <pappl/pappl.h>
 #include <stddef.h>
 
+#include "bridge.h"
+
 #define PHOMEMO_VERSION "0.1.0"
 #define PHOMEMO_DRIVER_NAME "m08f"
 #define PHOMEMO_MAKE_AND_MODEL "Phomemo M08F"
@@ -28,6 +30,12 @@
 // is the printer's BLE address with dashes instead of colons
 // (phomemo://AA-BB-CC-DD-EE-FF), because a URI host cannot hold colons.
 void phomemo_device_add_scheme(void);
+
+// The bridge connection of an open device, reconnected (connect plus open)
+// when the daemon dropped it. NULL with err set when the daemon is not
+// reachable.
+phomemo_bridge_t *phomemo_device_bridge(pappl_device_t *device, char *err,
+                                        size_t errsize);
 
 // Resolves the bridge socket path: $PHOMEMO_BRIDGE_SOCKET, else
 // $XDG_RUNTIME_DIR/phomemo-bridge.sock, else /run/phomemo/bridge.sock.

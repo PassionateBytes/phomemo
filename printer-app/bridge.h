@@ -38,6 +38,9 @@ bool phomemo_bridge_connect(phomemo_bridge_t *b, const char *socket_path,
                             char *err, size_t errsize);
 
 // Closes the socket and frees the receive buffer. Safe on a closed bridge.
+// A transport failure (EOF, read or write error) closes the socket on its
+// own: fd becomes -1 and later calls fail with "bridge not connected"
+// until the owner reconnects.
 void phomemo_bridge_close(phomemo_bridge_t *b);
 
 // Sends one request. When payload_len > 0 the message gets a "bytes"
