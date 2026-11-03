@@ -15,7 +15,7 @@
 
 #define WAITING_REASONS                                                        \
   (PAPPL_PREASON_MEDIA_NEEDED | PAPPL_PREASON_MEDIA_EMPTY |                    \
-   PAPPL_PREASON_COVER_OPEN | PAPPL_PREASON_OTHER)
+   PAPPL_PREASON_COVER_OPEN | PAPPL_PREASON_OTHER | PAPPL_PREASON_OFFLINE)
 
 typedef struct
 {
@@ -61,25 +61,43 @@ job_event_cb(cJSON *event, void *data)
     if (cJSON_IsString(name) && !strcmp(name->valuestring, "waiting") &&
         cJSON_IsString(reason))
     {
-      if (!strcmp(reason->valuestring, "printer-off"))
+      const char *why = reason->valuestring;
+      pappl_preason_t others = WAITING_REASONS & ~PAPPL_PREASON_MEDIA_NEEDED;
+
+      if (!strcmp(why, "connecting"))
+      {
+        papplJobSetMessage(pj->job, "Connecting to the printer.");
+      }
+      else if (!strcmp(why, "printer-off"))
+      {
+        papplPrinterSetReasons(pj->printer, PAPPL_PREASON_OFFLINE,
+                               others & ~PAPPL_PREASON_OFFLINE);
+        papplJobSetMessage(pj->job,
+                           "Printer off, out of range or in use elsewhere; "
+                           "switch it on.");
+      }
+      else if (!strcmp(why, "adapter-off"))
       {
         papplPrinterSetReasons(pj->printer, PAPPL_PREASON_OTHER,
-                               PAPPL_PREASON_MEDIA_EMPTY |
-                                 PAPPL_PREASON_COVER_OPEN);
-        papplJobSetMessage(pj->job, "Switch the printer on.");
+                               others & ~PAPPL_PREASON_OTHER);
+        papplJobSetMessage(pj->job, "Turn on Bluetooth.");
       }
-      else if (!strcmp(reason->valuestring, "lid-open"))
+      else if (!strcmp(why, "lid-open"))
       {
         papplPrinterSetReasons(pj->printer, PAPPL_PREASON_COVER_OPEN,
-                               PAPPL_PREASON_MEDIA_EMPTY |
-                                 PAPPL_PREASON_OTHER);
+                               others & ~PAPPL_PREASON_COVER_OPEN);
         papplJobSetMessage(pj->job, "Close the lid.");
+      }
+      else if (!strcmp(why, "short-sheet"))
+      {
+        papplPrinterSetReasons(pj->printer, PAPPL_PREASON_MEDIA_EMPTY,
+                               others & ~PAPPL_PREASON_MEDIA_EMPTY);
+        papplJobSetMessage(pj->job, "Sheet too short; insert a longer one.");
       }
       else
       {
         papplPrinterSetReasons(pj->printer, PAPPL_PREASON_MEDIA_EMPTY,
-                               PAPPL_PREASON_COVER_OPEN |
-                                 PAPPL_PREASON_OTHER);
+                               others & ~PAPPL_PREASON_MEDIA_EMPTY);
         papplJobSetMessage(pj->job, "Insert a sheet.");
       }
     }
@@ -282,6 +300,9 @@ phomemo_rendpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
   cJSON *reply = phomemo_bridge_call(pj->bridge, request, NULL, 0, job_event_cb,
                                      pj, err, sizeof(err));
   cJSON_Delete(request);
+  // The bridge may have waited for the lid or a sheet while printing the
+  // page again; those reasons end with the page.
+  papplPrinterSetReasons(pj->printer, 0, WAITING_REASONS);
   if (!reply)
   {
     // "cancelled" is the echo of our own abort; PAPPL already marks the
