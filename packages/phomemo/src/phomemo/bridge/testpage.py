@@ -124,21 +124,27 @@ def render_test_page(
     y += 30
     draw.text((x, y), "Gray ramp:", font=text_font, fill=0)
     y += 44
-    patch = round(18 * px_per_mm)
-    for i in range(8):
-        value = round(255 * i / 7)
+    steps = 10
+    patch = round(17 * px_per_mm)
+    for i in range(steps):
+        value = round(255 * i / (steps - 1))
         left = x + i * (patch + 8)
         draw.rectangle((left, y, left + patch, y + patch), fill=value, outline=0)
         draw.text((left, y + patch + 6), str(value), font=small_font, fill=0)
     y += patch + 50
 
-    draw.text((x, y), "Lines of 1, 2, 3 px:", font=text_font, fill=0)
+    draw.text((x, y), "Lines of 1 to 5 px:", font=text_font, fill=0)
     y += 44
-    for w in (1, 2, 3):
-        draw.line((x, y, x + round(80 * px_per_mm), y), fill=0, width=w)
-        y += 16
-    draw.line((x, y, x + round(80 * px_per_mm), y + round(10 * px_per_mm)), fill=0)
-    y += round(10 * px_per_mm) + 30
+    run = round(80 * px_per_mm)
+    for w in (1, 2, 3, 4, 5):
+        draw.line((x, y, x + run, y), fill=0, width=w)
+        y += 18
+    y += 10
+    drop = round(12 * px_per_mm)
+    for i, w in enumerate((1, 2, 3, 4, 5)):
+        left = x + i * (run // 4)
+        draw.line((left, y, left + run // 5, y + drop), fill=0, width=w)
+    y += drop + 30
 
     sample = "The quick brown fox jumps over the lazy dog"
     for size in (20, 28, 40, 56):
