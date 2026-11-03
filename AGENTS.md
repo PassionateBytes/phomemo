@@ -25,7 +25,7 @@ make dist | tarball | srpm                # release artefacts into dist/
 make bump VERSION=x.y.z && make tag       # release: version everywhere, commit, tag
 ```
 
-CI (`.github/workflows/ci.yml`) runs the checks and both RPM builds in a Fedora container; a `v*` tag runs `release.yml` (PyPI via trusted publishing, source RPMs and a GitHub release; COPR builds from the tag through its webhook). Spec files and systemd units live in `packaging/`.
+CI (`.github/workflows/ci.yml`) runs the checks and both RPM builds in a Fedora container; a `v*` tag runs `release.yml` (PyPI via trusted publishing, the source RPM and a GitHub release; COPR builds from the tag through its webhook). Spec files and systemd units live in `packaging/`.
 
 The printer-app pytest module starts the built binary as a private server under the test's temporary directory. Never run `phomemo-printer-app devices` or `server` from a test or script outside that harness: it starts a long-lived server and writes state under the user's config directory.
 

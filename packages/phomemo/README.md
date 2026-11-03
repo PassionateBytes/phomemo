@@ -235,7 +235,7 @@ phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page'
 phomemo-bridge eject
 ```
 
-`packaging/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/90-phomemo-bridge.preset`); `packaging/python-phomemo.spec` builds the `python3-phomemo` RPM.
+`packaging/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/90-phomemo-bridge.preset`); `packaging/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
 Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOME/phomemo/bridge.toml`; every key is optional. `PHOMEMO_BRIDGE_SOCKET` overrides the socket path.
 
