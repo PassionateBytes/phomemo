@@ -186,6 +186,7 @@ async def test_print_bitmap_warns_above_max_rows(
     assert "2253" in caplog.records[0].getMessage()
 
 
+_FEED_CMD = b"\x1b\x64"
 _FEED_255 = b"\x1b\x64\xff"
 
 
@@ -210,77 +211,45 @@ def _eject_printer(monkeypatch: pytest.MonkeyPatch, paper: list[object]) -> Prin
 
 
 def _feeds(printer: Printer) -> int:
-    return printer._transport.written.count(_FEED_255)  # type: ignore[attr-defined]
+    written = printer._transport.written  # type: ignore[attr-defined]
+    return sum(1 for chunk in written if chunk.startswith(_FEED_CMD))
 
 
 @pytest.mark.asyncio
-async def test_eject_runs_until_the_paper_absent_event(
+async def test_eject_feeds_until_the_query_behind_a_feed_says_absent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    printer = _eject_printer(monkeypatch, [PaperState.PRESENT])
-    transport = printer._transport  # type: ignore[attr-defined]
-    original_write = transport.write
-
-    async def write(data: bytes) -> None:
-        await original_write(data)
-        # The trailing edge passes the sensor during the fifth feed.
-        if _feeds(printer) == 5:
-            printer._dispatch_event(
-                PaperEvent(kind=EventKind.PAPER, paper=PaperState.ABSENT)
-            )
-
-    monkeypatch.setattr(transport, "write", write)
+    printer = _eject_printer(
+        monkeypatch, [PaperState.PRESENT, PaperState.PRESENT, PaperState.ABSENT]
+    )
     assert await printer.eject_paper() is True
-    # Feeds go out three at a time; the batch holding the event completes
-    # (6), then one more clears the rollers.
-    assert _feeds(printer) == 7
+    # Three feeds answered present, present, absent, then the clearing feed.
+    assert _feeds(printer) == 4
 
 
 @pytest.mark.asyncio
-async def test_eject_without_paper_at_the_sensor_only_clears_the_rollers(
+async def test_eject_gives_the_query_four_seconds_for_the_feed_to_finish(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     printer = _eject_printer(monkeypatch, [PaperState.ABSENT])
-    assert await printer.eject_paper() is True
-    assert _feeds(printer) == 3
+    timeouts: list[float] = []
+
+    async def record(timeout: float) -> PaperState:
+        timeouts.append(timeout)
+        return PaperState.ABSENT
+
+    monkeypatch.setattr(printer, "query_paper", record)
+    await printer.eject_paper()
+    assert timeouts == [4.0]
 
 
 @pytest.mark.asyncio
-async def test_eject_treats_query_timeout_like_absent(
+async def test_eject_treats_a_silent_printer_as_cleared(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     printer = _eject_printer(monkeypatch, [None])
     assert await printer.eject_paper() is True
-    assert _feeds(printer) == 3
-
-
-@pytest.mark.asyncio
-async def test_eject_waits_three_seconds_per_batch_before_queuing_more(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    printer = _eject_printer(monkeypatch, [PaperState.PRESENT])
-    timeouts: list[float] = []
-    original = printer_module.asyncio.wait_for
-
-    async def record(awaitable: object, timeout: float) -> object:
-        timeouts.append(timeout)
-        printer._dispatch_event(
-            PaperEvent(kind=EventKind.PAPER, paper=PaperState.ABSENT)
-        )
-        return await original(awaitable, timeout=timeout)
-
-    monkeypatch.setattr(printer_module.asyncio, "wait_for", record)
-    assert await printer.eject_paper() is True
-    assert timeouts == [3.0]
-
-
-@pytest.mark.asyncio
-async def test_eject_gives_up_after_the_feed_cap(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    printer = _eject_printer(monkeypatch, [PaperState.PRESENT])
-    assert await printer.eject_paper(feed_seconds=0.001) is False
-    assert _feeds(printer) == 100
+    assert _feeds(printer) == 2
 
 
 @pytest.mark.asyncio
