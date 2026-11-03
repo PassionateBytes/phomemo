@@ -84,7 +84,8 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 - Cancelling a job while it waits for a sheet stops it; cancelling once printing has started stops the transfer and ejects the sheet. A job cancelled while its page is still being spooled leaves the seated sheet in the printer for the next job.
 - A lid opened mid-page or a sheet shorter than the page does not end the job: the printer reports `cover-open` or `media-empty`, a sheet still inside when the lid closes is ejected, and the page is printed again on the next sheet. Close the lid first, then insert the sheet; a sheet inserted before the lid closes is ejected as well.
 - When the bridge is not running the queue pauses (`printer-state` stopped, the device error in the log names the socket path) and resumes on its own once the bridge answers. A bridge restarted while jobs are queued fails the job in progress; the queued jobs reconnect and print.
-- While idle, lid and paper state show up in `printer-state-reasons` as long as the bridge still holds the link (two minutes after a job by default).
+- While idle, lid and paper state show up in `printer-state-reasons` and the battery charge as the printer's supply level, as long as the bridge still holds the link (two minutes after a job by default).
+- "Identify printer" (web interface button, IPP Identify-Printer) ejects a loaded sheet and pulses the feed three times.
 
 ## Troubleshooting
 

@@ -35,6 +35,7 @@ class FakePrinter:
         self.battery = 77
         self.muted = False
         self.ejects = 0
+        self.feeds: list[int] = []
         self.eject_result = True
         self.printed: list[tuple[int, int, str]] = []
         self.print_error: Exception | None = None
@@ -81,6 +82,9 @@ class FakePrinter:
 
     async def wait_for_ready(self, **kwargs: Any) -> None:
         return None
+
+    async def feed(self, lines: int = 20) -> None:
+        self.feeds.append(lines)
 
     async def eject_paper(self, **kwargs: Any) -> bool:
         self.ejects += 1
@@ -768,4 +772,35 @@ async def test_link_lost_mid_page_waits_for_the_printer_and_reprints(
     assert len(printer.printed) == 2
     assert printer.connects == 2
     assert "printer-off" in _waiting_reasons(client)
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_identify_ejects_a_loaded_sheet_then_pulses_the_feed(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    assert (await client.call({"cmd": "identify"}))["ok"]
+    assert printer.ejects == 1
+    assert len(printer.feeds) == 3
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_identify_connects_first_and_skips_the_eject_without_paper(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    await client.call({"cmd": "close"})
+    await asyncio.sleep(0.3)
+    assert printer.connected is False
+    printer.paper = PaperState.ABSENT
+    assert (await client.call({"cmd": "identify"}))["ok"]
+    assert printer.connected is True
+    assert printer.ejects == 0
+    assert len(printer.feeds) == 3
     await client.close()

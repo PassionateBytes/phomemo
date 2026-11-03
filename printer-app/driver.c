@@ -79,6 +79,42 @@ set_media(pappl_media_col_t *media, const char *size_name, int width,
   snprintf(media->type, sizeof(media->type), "stationery");
 }
 
+// Human-readable labels for the vendor option in the web interface.
+static const char *const strings_en =
+  "\"" PHOMEMO_TONE_OPTION "\" = \"Dithering\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".auto\" = \"Automatic (by content)\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".threshold\" = \"Threshold (text, line art)\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".ordered\" = \"Ordered dither\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Error diffusion (photos)\";\n";
+
+// Versions and labels shown by the system; PAPPL has no hook between
+// creating the system and loading printers, so the driver callback
+// publishes them once.
+static void
+publish_system_details(pappl_system_t *system)
+{
+  static pappl_system_t *published = NULL;
+  pappl_version_t versions[2];
+
+  if (published == system)
+    return;
+  published = system;
+
+  memset(versions, 0, sizeof(versions));
+  snprintf(versions[0].name, sizeof(versions[0].name), "phomemo-printer-app");
+  snprintf(versions[0].sversion, sizeof(versions[0].sversion), "%s",
+           PHOMEMO_VERSION);
+  sscanf(PHOMEMO_VERSION, "%hu.%hu.%hu", &versions[0].version[0],
+         &versions[0].version[1], &versions[0].version[2]);
+  snprintf(versions[1].name, sizeof(versions[1].name), "pappl");
+  snprintf(versions[1].sversion, sizeof(versions[1].sversion), "%s",
+           PAPPL_VERSION_STR);
+  sscanf(PAPPL_VERSION_STR, "%hu.%hu.%hu", &versions[1].version[0],
+         &versions[1].version[1], &versions[1].version[2]);
+  papplSystemSetVersions(system, 2, versions);
+  papplSystemAddStringsData(system, "/phomemo.strings", "en", strings_en);
+}
+
 bool
 phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
                   const char *device_uri, const char *device_id,
@@ -87,6 +123,10 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   if (strcmp(driver_name, PHOMEMO_DRIVER_NAME))
     return false;
 
+  data->identify_cb = phomemo_identify_cb;
+  data->identify_supported = PAPPL_IDENTIFY_ACTIONS_SOUND;
+  data->identify_default = PAPPL_IDENTIFY_ACTIONS_SOUND;
+  data->has_supplies = true;
   data->rstartjob_cb = phomemo_rstartjob_cb;
   data->rstartpage_cb = phomemo_rstartpage_cb;
   data->rwriteline_cb = phomemo_rwriteline_cb;
@@ -131,6 +171,8 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
 
   data->num_vendor = 1;
   data->vendor[0] = PHOMEMO_TONE_OPTION;
+
+  publish_system_details(system);
 
   if (!*attrs)
     *attrs = ippNew();

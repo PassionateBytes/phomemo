@@ -52,6 +52,19 @@ parse_address(const char *device_uri, char *address, size_t size)
   return true;
 }
 
+void
+phomemo_device_info(const char *address, int count, char *buffer,
+                    size_t bufsize)
+{
+  size_t len = strlen(address);
+  const char *tail = len > 8 ? address + len - 8 : address;
+
+  if (count > 1)
+    snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, tail);
+  else
+    snprintf(buffer, bufsize, "%s", PHOMEMO_MAKE_AND_MODEL);
+}
+
 // Builds the device URI for a BLE address (colons become dashes).
 static void
 format_uri(const char *address, char *uri, size_t size)
@@ -102,16 +115,20 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
     return false;
   }
 
+  cJSON *printers = cJSON_GetObjectItem(reply, "printers");
+  int count = cJSON_GetArraySize(printers);
   cJSON *printer;
-  cJSON_ArrayForEach(printer, cJSON_GetObjectItem(reply, "printers"))
+  cJSON_ArrayForEach(printer, printers)
   {
     cJSON *address = cJSON_GetObjectItem(printer, "address");
     if (!cJSON_IsString(address))
       continue;
 
+    char info[64];
     char uri[128];
+    phomemo_device_info(address->valuestring, count, info, sizeof(info));
     format_uri(address->valuestring, uri, sizeof(uri));
-    if (cb(PHOMEMO_MAKE_AND_MODEL, uri, PHOMEMO_DEVICE_ID, data))
+    if (cb(info, uri, PHOMEMO_DEVICE_ID, data))
     {
       stopped = true;
       break;
@@ -224,12 +241,13 @@ phomemo_write_cb(pappl_device_t *device, const void *buffer, size_t bytes)
 }
 
 // Sends status on a bridge connection and maps the reply onto printer
-// state reasons. Returns false when the bridge did not answer.
+// state reasons; battery gets the charge in percent, or -1 when unknown.
+// Returns false when the bridge did not answer.
 // Not registered as the scheme's device status callback: a call while a
 // job holds the connection would be taken for the job's pending reply.
 static bool
-query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, char *err,
-             size_t errsize)
+query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, int *battery,
+             char *err, size_t errsize)
 {
   cJSON *request = cJSON_CreateObject();
   cJSON_AddStringToObject(request, "cmd", "status");
@@ -241,7 +259,9 @@ query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, char *err,
 
   cJSON *lid = cJSON_GetObjectItem(reply, "lid");
   cJSON *paper = cJSON_GetObjectItem(reply, "paper");
+  cJSON *charge = cJSON_GetObjectItem(reply, "battery");
 
+  *battery = cJSON_IsNumber(charge) ? charge->valueint : -1;
   *reasons = PAPPL_PREASON_NONE;
   if (!cJSON_IsTrue(cJSON_GetObjectItem(reply, "connected")))
     *reasons = PAPPL_PREASON_OTHER;
@@ -262,19 +282,80 @@ phomemo_status_cb(pappl_printer_t *printer)
 {
   phomemo_bridge_t bridge;
   pappl_preason_t reasons;
+  int battery;
   char err[256];
 
   if (!bridge_connect(&bridge, err, sizeof(err)))
     return true;
 
-  bool answered = query_status(&bridge, &reasons, err, sizeof(err));
+  bool answered = query_status(&bridge, &reasons, &battery, err, sizeof(err));
   phomemo_bridge_close(&bridge);
   if (!answered)
     return true;
 
   pappl_preason_t sensed = PAPPL_PREASON_COVER_OPEN | PAPPL_PREASON_MEDIA_EMPTY;
   papplPrinterSetReasons(printer, reasons & sensed, sensed & ~reasons);
+  if (battery >= 0)
+    phomemo_set_battery(printer, battery);
   return true;
+}
+
+void
+phomemo_set_battery(pappl_printer_t *printer, int percent)
+{
+  pappl_supply_t supply;
+
+  memset(&supply, 0, sizeof(supply));
+  supply.color = PAPPL_SUPPLY_COLOR_NO_COLOR;
+  snprintf(supply.description, sizeof(supply.description), "Battery");
+  supply.is_consumed = true;
+  supply.level = percent;
+  supply.type = PAPPL_SUPPLY_TYPE_OTHER;
+  papplPrinterSetSupplies(printer, 1, &supply);
+}
+
+void
+phomemo_identify_cb(pappl_printer_t *printer, pappl_identify_actions_t actions,
+                    const char *message)
+{
+  phomemo_bridge_t bridge;
+  char address[64];
+  char err[256];
+
+  if (!parse_address(papplPrinterGetDeviceURI(printer), address,
+                     sizeof(address)) ||
+      !bridge_connect(&bridge, err, sizeof(err)))
+  {
+    papplLogPrinter(printer, PAPPL_LOGLEVEL_WARN,
+                    "Identify: phomemo-bridge not reachable.");
+    return;
+  }
+
+  cJSON *request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "open");
+  cJSON_AddStringToObject(request, "address", address);
+  cJSON *reply = phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL,
+                                     err, sizeof(err));
+  cJSON_Delete(request);
+  if (reply)
+  {
+    cJSON_Delete(reply);
+    request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", "identify");
+    reply = phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL, err,
+                                sizeof(err));
+    cJSON_Delete(request);
+  }
+  if (!reply)
+    papplLogPrinter(printer, PAPPL_LOGLEVEL_WARN, "Identify failed: %s", err);
+  cJSON_Delete(reply);
+
+  request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "close");
+  cJSON_Delete(phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL,
+                                   NULL, 0));
+  cJSON_Delete(request);
+  phomemo_bridge_close(&bridge);
 }
 
 static char *
