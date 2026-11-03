@@ -46,8 +46,9 @@
 - `eject_paper`: 2 s paper-query timeout is treated as "absent" (heuristic). Retry probe would be safer [inferred]
 - `eject_paper` during an in-flight print (TUI cancel path): unverified on hardware [inferred]
 - Dead `reason = "not ready"` branch in `wait_for_ready` [inferred]
+- Features stage (after packaging/CI): Paul leads the decisions; candidates in the ledger and this list (identify/test page/icons, battery supply, roll media modes and custom lengths, Letter verification, auto-add name collision) [user, 2026-11-03]
 - Letter profile untested on hardware [inferred]
-- Printer app review leftovers (2026-11-03, ledger): battery as a PAPPL supply level (spec item, parked); idle status polls re-arm the bridge hold timer; CANCELED_AT_DEVICE reason on user cancel; closing job message; send(MSG_NOSIGNAL); unreachable phomemo_devstatus_cb; README note on listen interfaces [inferred]
+- Printer app review leftover (2026-11-03): battery as a PAPPL supply level (spec item, parked for the features stage, Paul decides) [user]
 
 ## Future work (after Plan B, in this order) [user, 2026-11-02]
 
