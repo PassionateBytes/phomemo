@@ -448,22 +448,25 @@ Example: `1a 05 98  1a 06 88` = lid closed + paper absent (single notification).
 
 ### Paper Eject
 
-To eject a sheet, feed `ESC d 255` (~32 mm) and query the paper sensor
-right behind it. Commands execute in order, so the answer arrives once the
-feed has finished and doubles as the completion signal:
+To eject a sheet, keep a couple of short feeds queued so the motor runs
+without pauses, and stop on the printer's own paper-absent event:
 
 ```
+1f 11 11            # → 1a 06 88 absent, or no answer: a few feeds, done
+1b 64 78 ×2         # two 15mm feeds queued
 loop:
-  1b 64 ff          # feed 32mm
-  1f 11 11          # answered after the feed: 1a 06 89 present → again
-                    # 1a 06 88 absent, or no answer → done
-1b 64 ff            # one more feed clears the rollers
+  wait ≤0.7 s for 1a 06 88   # trailing edge passed the rear sensor
+  no event: 1b 64 78         # keep the queue two deep
+1b 64 a0            # 20mm clears the rollers
 ```
 
-Measured: a full A4 sheet clears the rear sensor after 9 feeds in 13.9 s,
-about 21 mm/s, the motion pausing only for the BLE round trip between feeds.
-No answer means the overrun error state (see Print Completion Signal), in
-which feed commands are also ignored until the printer recovers.
+The feed runs at about 21 mm/s (a full A4 sheet cleared the rear sensor in
+13.9 s), so 0.7 s per 15 mm section keeps the queue at depth two without
+piling feeds up; what is still queued when the sensor clears is the only
+travel beyond the clearance. Commands execute in order, so a status query
+behind a feed is answered once the feed has run (usable as a completion
+signal). No answer means the overrun error state (see Print Completion
+Signal), in which feed commands are also ignored until the printer recovers.
 ---
 
 ## Density and Print Quality
@@ -721,7 +724,7 @@ payload  = init + density + header + data + feed
 | Density (low)         | `1b 4e 04 01`                      |
 | Density (medium)      | `1b 4e 04 05`                      |
 | Density (high)        | `1b 4e 04 06`                      |
-| Paper eject           | `1b 64 ff` + `1f 11 11` until absent, +1 |
+| Paper eject           | `1b 64 78` queued ×2 until `1a 06 88`, +20 mm |
 | Printable A4 rows     | 2253 (10 mm top, 5 mm bottom)      |
 
 ### Pre-Print State Check

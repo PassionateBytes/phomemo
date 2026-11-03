@@ -318,44 +318,77 @@ class Printer:
         await self._transport.write(encode_feed_lines(lines))
 
     async def eject_paper(
-        self, max_feeds: int = 32, step_rows: int = 255, clear_rows: int = 255
+        self,
+        max_feeds: int = 64,
+        step_rows: int = 120,
+        ahead: int = 2,
+        feed_seconds: float = 0.7,
+        clear_rows: int = 160,
     ) -> bool:
         """Feed the sheet out until the sensor reports it gone, then clear the rollers.
 
-        The printer executes commands in order, so the paper query sent right
-        behind each feed is answered once that feed has finished: the reply
-        is both the completion signal and the sensor reading, and the next
-        feed follows within a BLE round trip. A query that goes unanswered
-        is taken as the sheet being gone (a printer that ran out of paper
-        mid-raster stops answering).
+        Feeds of ``step_rows`` (15mm by default) are kept ``ahead`` deep in
+        the printer's queue so the motor runs without pauses: one more goes
+        out whenever ``feed_seconds`` (about one section at the measured
+        feed speed) pass without the paper-absent event. On the event, one
+        feed of ``clear_rows`` pushes the sheet out of the rollers. A sheet
+        already past the sensor, or a printer that does not answer the
+        initial query, gets three feeds of ``clear_rows`` blind.
 
         Args:
             max_feeds: Maximum number of feeds before giving up (about 1m).
-            step_rows: Rows per feed (255 is about 32mm).
-            clear_rows: Rows fed once the sensor is clear, to push the sheet
-                out of the rollers.
+            step_rows: Rows per feed.
+            ahead: Feeds queued before waiting for the sensor event.
+            feed_seconds: Wait per feed for the sensor event before queuing
+                the next one; longer than the feed itself stalls the motion,
+                shorter queues ahead of the motor.
+            clear_rows: Rows fed once the sensor is clear.
 
         Returns:
             ``True`` once the sheet has left the sensor, ``False`` if it is
             still present after ``max_feeds`` feeds.
         """
-        started = asyncio.get_running_loop().time()
-        for sent in range(1, max_feeds + 1):
-            await self.feed(step_rows)
-            paper = await self.query_paper(timeout=4.0)
-            if paper == PaperState.PRESENT:
-                continue
-            await self.feed(clear_rows)
-            logger.info(
-                "eject_paper: sensor %s after %d feeds of %d rows, %.1f s",
-                "clear" if paper is not None else "silent",
-                sent,
-                step_rows,
-                asyncio.get_running_loop().time() - started,
-            )
-            return True
-        logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
-        return False
+        absent = asyncio.Event()
+
+        def watch_paper(event: DeviceEvent) -> None:
+            if isinstance(event, PaperEvent) and event.paper == PaperState.ABSENT:
+                absent.set()
+
+        self._event_callbacks.append(watch_paper)
+        try:
+            paper = await self.query_paper(timeout=2.0)
+            if paper != PaperState.PRESENT:
+                for _ in range(3):
+                    await self.feed(clear_rows)
+                logger.debug("eject_paper: no sheet at the sensor, rollers cleared")
+                return True
+
+            started = asyncio.get_running_loop().time()
+            sent = 0
+            while sent < min(ahead, max_feeds):
+                await self.feed(step_rows)
+                sent += 1
+            while True:
+                try:
+                    await asyncio.wait_for(absent.wait(), timeout=feed_seconds)
+                except TimeoutError:
+                    if sent >= max_feeds:
+                        break
+                    await self.feed(step_rows)
+                    sent += 1
+                    continue
+                await self.feed(clear_rows)
+                logger.info(
+                    "eject_paper: sensor clear after %d feeds of %d rows, %.1f s",
+                    sent,
+                    step_rows,
+                    asyncio.get_running_loop().time() - started,
+                )
+                return True
+            logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
+            return False
+        finally:
+            self._event_callbacks.remove(watch_paper)
 
     async def set_auto_off_timer(self, minutes: int) -> None:
         """Set the auto-off timer.
