@@ -22,6 +22,9 @@ _DENSITY = {"low": Density.LOW, "medium": Density.MEDIUM, "high": Density.HIGH}
 _RETRY_SECONDS = 0.2
 _POLL_SECONDS = 0.5
 _LID_POLL_SECONDS = 0.2
+_IDENTIFY_PULSES = 3
+_IDENTIFY_FEED_LINES = 40
+_IDENTIFY_PAUSE_SECONDS = 0.3
 _MUTE_THRESHOLD = 3
 
 
@@ -194,6 +197,7 @@ class Session:
             "open": self._cmd_open,
             "close": self._cmd_close,
             "status": self._cmd_status,
+            "identify": self._cmd_identify,
             "wait_ready": self._cmd_wait_ready,
             "page_begin": self._cmd_page_begin,
             "lines": self._cmd_lines,
@@ -245,6 +249,29 @@ class Session:
             "paper": paper.value if paper is not None else None,
             "battery": battery,
         }
+
+    async def _cmd_identify(
+        self, _obj: dict[str, Any], _payload: bytes
+    ) -> dict[str, Any]:
+        """Make the printer noticeable: eject a loaded sheet, then pulse the feed.
+
+        Raises:
+            CommandError: When the printer cannot be reached.
+        """
+        self._used_link = True
+        bridge = self._bridge
+        if not bridge.connected:
+            try:
+                await bridge.connect(discovery_timeout=5.0)
+            except ConnectionError as exc:
+                raise CommandError(f"printer not reachable: {exc}") from exc
+        printer = self._require_printer()
+        if await printer.query_paper(timeout=1.0) == PaperState.PRESENT:
+            await printer.eject_paper()
+        for _ in range(_IDENTIFY_PULSES):
+            await printer.feed(_IDENTIFY_FEED_LINES)
+            await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
+        return {}
 
     async def _cmd_eject(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         self._used_link = True
