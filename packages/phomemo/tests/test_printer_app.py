@@ -535,6 +535,7 @@ async def test_short_sheet_reprints_on_the_next_sheet(
     attrs = await finish_job(task)
     assert attrs["job-state"] == "completed", attrs
     assert len(printer.bridge.printer.printed) == 2
+    assert "media-empty" not in (await printer_state(printer, tmp_path))[1]
 
 
 async def printer_state(server: AppServer, tmp_path: Path) -> tuple[str, str]:
