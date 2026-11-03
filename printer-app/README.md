@@ -72,7 +72,7 @@ lp -d phomemo document.pdf
 
 For example `lp -d phomemo -o print-quality=5 -o phomemo-tone=ordered photo.png`.
 
-Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the first 10 mm; the bridge keeps the last 6 mm clear regardless) and 0 mm at the sides. One page per sheet, no duplex, grayscale only (`sgray_8` raster).
+Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the first 10 mm, and PAPPL only models symmetric margins) and 0 mm at the sides. A raster that ignores the bottom margin is printed down to the sheet end. One page per sheet, no duplex, grayscale only (`sgray_8` raster).
 
 ## Behaviour
 
