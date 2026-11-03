@@ -282,6 +282,9 @@ phomemo_rendpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
   cJSON *reply = phomemo_bridge_call(pj->bridge, request, NULL, 0, job_event_cb,
                                      pj, err, sizeof(err));
   cJSON_Delete(request);
+  // The bridge may have waited for the lid or a sheet while printing the
+  // page again; those reasons end with the page.
+  papplPrinterSetReasons(pj->printer, 0, WAITING_REASONS);
   if (!reply)
   {
     // "cancelled" is the echo of our own abort; PAPPL already marks the

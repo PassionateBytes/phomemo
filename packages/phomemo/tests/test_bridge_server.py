@@ -652,7 +652,7 @@ async def test_lid_opened_mid_page_reprints_after_a_fresh_sheet(
     assert reply == {"ok": True, "cmd": "page_end", "impressions": 1}
     assert len(printer.printed) == 2
     assert printer.ejects == 2
-    assert printer.connects == 2
+    assert printer.connects == 1
     assert "lid-open" in _waiting_reasons(client)
     assert "no-sheet" in _waiting_reasons(client)
     await client.close()

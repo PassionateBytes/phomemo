@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 _DENSITY = {"low": Density.LOW, "medium": Density.MEDIUM, "high": Density.HIGH}
 _RETRY_SECONDS = 0.2
 _POLL_SECONDS = 0.5
+_LID_POLL_SECONDS = 0.2
 _MUTE_THRESHOLD = 3
 
 
@@ -414,10 +415,11 @@ class Session:
                         if not await printer.eject_paper():
                             logger.warning("Sheet not ejected after the cancel")
                         raise CommandError(exc.reason) from exc
+                    # No reconnect here: the lid check must start at once so
+                    # the moment the lid closes is caught, not a reconnect later.
                     logger.warning(
                         "Page aborted: %s; waiting to print it again", exc.reason
                     )
-                    await self._recover_link()
                     await self._wait_for_fresh_sheet()
                     continue
                 except (TimeoutError, ConnectionError, OSError) as exc:
@@ -457,7 +459,9 @@ class Session:
 
         A sheet sensed as soon as the lid is closed may be the interrupted one
         at an unknown position, so it is ejected. A sheet inserted after that
-        first check is taken as fresh and seated.
+        first check is taken as fresh and seated. The lid is polled at once
+        and quickly so that first check lands right after the lid closes; a
+        printer that stops answering is reconnected.
 
         Raises:
             CommandError: ``cancelled`` when an abort arrives meanwhile.
@@ -470,7 +474,7 @@ class Session:
             if abort.is_set():
                 raise CommandError("cancelled")
             try:
-                lid = await printer.query_lid(timeout=2.0)
+                lid = await printer.query_lid(timeout=1.0)
             except ConnectionError as exc:
                 logger.info("Link lost while waiting for the lid: %s", exc)
                 lid = None
@@ -484,10 +488,10 @@ class Session:
             elif not reported:
                 reported = True
                 await self._event("waiting", reason="lid-open")
-            await self._pause(_POLL_SECONDS)
+            await self._pause(_LID_POLL_SECONDS)
 
         try:
-            paper = await printer.query_paper(timeout=2.0)
+            paper = await printer.query_paper(timeout=1.0)
         except ConnectionError:
             paper = None
         if paper == PaperState.PRESENT:
