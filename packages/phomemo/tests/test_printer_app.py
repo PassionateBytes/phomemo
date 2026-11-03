@@ -289,6 +289,7 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
     assert attrs["pwg-raster-document-type-supported"] == "sgray_8"
     assert attrs["print-color-mode-supported"] == "monochrome"
     assert attrs["phomemo-tone-supported"] == "auto,threshold,ordered,diffusion"
+    assert attrs["printer-icons"].count("http") == 3
     assert attrs["phomemo-tone-default"] == "auto"
 
 

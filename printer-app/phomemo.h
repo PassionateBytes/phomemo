@@ -42,6 +42,14 @@ void phomemo_identify_cb(pappl_printer_t *printer,
                          pappl_identify_actions_t actions,
                          const char *message);
 
+// Printer icons (PNG, 48, 128 and 512 px), embedded from icons/ at build time.
+extern const unsigned char phomemo_icon_m08f_48[];
+extern const size_t phomemo_icon_m08f_48_len;
+extern const unsigned char phomemo_icon_m08f_128[];
+extern const size_t phomemo_icon_m08f_128_len;
+extern const unsigned char phomemo_icon_m08f_512[];
+extern const size_t phomemo_icon_m08f_512_len;
+
 // Test page callback: the bridge renders a PNG with the device details;
 // returns its path in buffer, or NULL when the bridge is unreachable.
 const char *phomemo_testpage_cb(pappl_printer_t *printer, char *buffer,

@@ -123,6 +123,13 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   if (strcmp(driver_name, PHOMEMO_DRIVER_NAME))
     return false;
 
+  data->icons[0].data = phomemo_icon_m08f_48;
+  data->icons[0].datalen = phomemo_icon_m08f_48_len;
+  data->icons[1].data = phomemo_icon_m08f_128;
+  data->icons[1].datalen = phomemo_icon_m08f_128_len;
+  data->icons[2].data = phomemo_icon_m08f_512;
+  data->icons[2].datalen = phomemo_icon_m08f_512_len;
+
   data->testpage_cb = phomemo_testpage_cb;
   data->identify_cb = phomemo_identify_cb;
   data->identify_supported = PAPPL_IDENTIFY_ACTIONS_SOUND;
