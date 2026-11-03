@@ -12,7 +12,6 @@ The repository is a [uv workspace](https://docs.astral.sh/uv/concepts/workspaces
 |---------|-------------|
 | [**phomemo**](packages/phomemo/) | Async driver library. Modular, profile-based API for BLE communication, raster printing, device queries, and event handling. Ships `phomemo-bridge`, the daemon that owns the printer for the printer application. |
 | [**printer-app**](printer-app/) | [PAPPL](https://www.msweet.org/pappl/) printer application in C: presents the M08F as an IPP Everywhere printer to CUPS and other clients, driving `phomemo-bridge`. |
-| [**phomemo-tui**](packages/phomemo-tui/) | Terminal UI built on [Textual](https://textual.textualize.io/). Interactive device scanning, status monitoring, and paper transport controls. |
 
 ## Protocol Reference
 
@@ -26,11 +25,7 @@ cd phomemo-printer
 uv sync
 ```
 
-See the [phomemo README](packages/phomemo/README.md) for library usage. To use the M08F as a system printer, build and install the printer application and the bridge daemon as described in the [printer-app README](printer-app/README.md), or launch the TUI directly:
-
-```bash
-uv run phomemo-tui
-```
+See the [phomemo README](packages/phomemo/README.md) for library usage. To use the M08F as a system printer, build and install the printer application and the bridge daemon as described in the [printer-app README](printer-app/README.md).
 
 ## Supported Printers
 
@@ -50,5 +45,4 @@ The profile system is extensible; see the [driver README](packages/phomemo/READM
 ## License
 
 - **phomemo** (driver library): [LGPL-3.0-or-later](packages/phomemo/LICENSE)
-- **phomemo-tui** (terminal UI): [GPL-3.0-or-later](packages/phomemo-tui/LICENSE)
 - **Protocol reference**: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
