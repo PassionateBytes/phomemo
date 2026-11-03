@@ -93,7 +93,7 @@ The `Printer` class manages the BLE connection lifecycle. Pass a profile name or
 ```python
 from phomemo import Printer
 
-async with Printer("M08F-A4", "60:6E:41:23:0B:D6") as printer:
+async with Printer("M08F-A4", "AA:BB:CC:DD:EE:FF") as printer:
     await printer.connect()
     # ... use the printer ...
 # automatically disconnects on exit

@@ -91,7 +91,7 @@ async def test_wait_for_motor_stop_does_not_eat_other_events():
     assert len(received) == 2
 
 
-_MAC = "60:6E:41:23:0B:D6"
+_MAC = "AA:BB:CC:DD:EE:FF"
 
 
 def _fake_device() -> BLEDevice:

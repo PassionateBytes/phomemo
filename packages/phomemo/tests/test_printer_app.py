@@ -32,7 +32,7 @@ from tests.test_bridge_server import FakePrinter
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BINARY = REPO_ROOT / "printer-app" / "phomemo-printer-app"
-ADDRESS = "60:6E:41:23:0B:D6"
+ADDRESS = "AA:BB:CC:DD:EE:FF"
 DEVICE_URI = "phomemo://" + ADDRESS.replace(":", "-")
 PRINTER = "phomemo"
 
