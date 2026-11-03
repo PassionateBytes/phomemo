@@ -243,11 +243,15 @@ class Session:
     ) -> dict[str, Any]:
         bridge = self._bridge
         if not bridge.connected or bridge.printer is None:
-            return {"connected": False}
+            return {"connected": False, "battery": bridge.last_battery}
         printer = bridge.printer
         lid = await printer.query_lid(timeout=1.0)
         paper = await printer.query_paper(timeout=1.0)
         battery = await printer.query_battery(timeout=1.0)
+        if battery is not None:
+            bridge.last_battery = battery
+        else:
+            battery = bridge.last_battery
         return {
             "connected": True,
             "lid": lid.value if lid is not None else None,

@@ -261,6 +261,8 @@ query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, int *battery,
   cJSON *paper = cJSON_GetObjectItem(reply, "paper");
   cJSON *charge = cJSON_GetObjectItem(reply, "battery");
 
+  // The bridge remembers the last charge it read, so this is set while
+  // the link is down as well.
   *battery = cJSON_IsNumber(charge) ? charge->valueint : -1;
   *reasons = PAPPL_PREASON_NONE;
   if (!cJSON_IsTrue(cJSON_GetObjectItem(reply, "connected")))
