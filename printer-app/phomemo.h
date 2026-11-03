@@ -22,7 +22,7 @@
 #define PHOMEMO_HEAD_WIDTH 21000  // print head width in hundredths of a millimetre
 // Top and bottom margin in hundredths of a millimetre. PAPPL only models
 // symmetric margins, so the 10 mm the printer cannot reach at the top of
-// a sheet applies to both ends; the bridge clips the last 6 mm regardless.
+// a sheet applies to both ends.
 #define PHOMEMO_MARGIN 1000
 #define PHOMEMO_TONE_OPTION "phomemo-tone"
 

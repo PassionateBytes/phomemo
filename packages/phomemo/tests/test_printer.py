@@ -175,15 +175,15 @@ async def test_print_bitmap_warns_above_max_rows(
     width_bytes = printer.profile.width_bytes
     with caplog.at_level("WARNING", logger="phomemo.printer"):
         await printer.print_bitmap(
-            bytes(width_bytes * 2245), height=2245, wait_for_completion=False
+            bytes(width_bytes * 2293), height=2293, wait_for_completion=False
         )
         assert not caplog.records
         await printer.print_bitmap(
-            bytes(width_bytes * 2246), height=2246, wait_for_completion=False
+            bytes(width_bytes * 2294), height=2294, wait_for_completion=False
         )
     assert len(caplog.records) == 1
-    assert "2246" in caplog.records[0].getMessage()
-    assert "2245" in caplog.records[0].getMessage()
+    assert "2294" in caplog.records[0].getMessage()
+    assert "2293" in caplog.records[0].getMessage()
 
 
 _FEED_255 = b"\x1b\x64\xff"
