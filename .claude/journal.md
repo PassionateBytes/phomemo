@@ -47,6 +47,7 @@
 - `eject_paper` during an in-flight print (TUI cancel path): unverified on hardware [inferred]
 - Dead `reason = "not ready"` branch in `wait_for_ready` [inferred]
 - Letter profile untested on hardware [inferred]
+- Printer app review leftovers (2026-11-03, ledger): battery as a PAPPL supply level (spec item, parked); idle status polls re-arm the bridge hold timer; CANCELED_AT_DEVICE reason on user cancel; closing job message; send(MSG_NOSIGNAL); unreachable phomemo_devstatus_cb; README note on listen interfaces [inferred]
 
 ## Future work (after Plan B, in this order) [user, 2026-11-02]
 
