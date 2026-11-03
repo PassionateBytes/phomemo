@@ -10,7 +10,7 @@
 
 - Transport: BLE via bleak. `connect` resolves MAC to `BLEDevice` through `BleakScanner` (BlueZ needs the scan cache).
 - Flow control: raster stream sent with ATT write-with-response as one continuous chunk stream (never band-per-burst: the printer feeds blank paper when it runs dry at a band end); the ATT round trip caps it at ~6.5–7.4 KiB/s and the printer keeps up on all content tested. Unacknowledged writes at 20 ms overflow a ~100 KB buffer (bridge chip) on A4.
-- Profiles carry `sheet_length_mm` / `top_margin_mm` / `bottom_margin_mm`, `max_rows` derived: A4 2293 rows (10 mm top measured, 0 mm bottom: Paul dropped the 6 mm safety clip on 2026-11-03, PAPPL's symmetric 10 mm margin covers well-behaved clients and full-bleed rasters may use the whole sheet); Letter 2153 (margins copied, not measured).
+- Profiles carry `sheet_length_mm` / `top_margin_mm` / `bottom_margin_mm`, `max_rows` derived: A4 2253 rows (10 mm top measured, 5 mm bottom chosen by Paul on 2026-11-03 after trying 0: a full-bleed page printed cleanly, but between pages of a multi-page job the printer once stopped answering and needed the reconnect); Letter 2113 (margins copied, not measured).
 - `ImageFit.FIT_PAGE`, `Printer.wait_for_ready` (settles on the feed-complete paper event, reconnects once when queries go mute), `Printer.reconnect`, sensor-driven `Printer.eject_paper`; motor-stop waiter armed before the raster transfer.
 - Verified on hardware incl. a 457 KB photo at high density with 10 mm margins.
 - Protocol reference and README cover ATT flow control, paper-out behaviour, sheet geometry.
@@ -32,14 +32,21 @@
 - Cancel 15 s into a dense page: stopped, ejected, `cancelled`, 9 s from abort to done.
 - Bug found and fixed on hardware: sending each `GS v 0` band as its own write burst produced white stripes at every band boundary (printer advances paper when it runs dry at a band end); fixed by streaming continuously and padding the band with white rows on abort.
 - Bugs found and fixed: `open` with the printer off aborted the job; failed subscription right after connect raised a raw `BleakError`; short sheet left in the rollers after the overrun.
-- Observed, not fixed: vertical scale varied ~5 % between two identical prints before the band fix (stripes added length); re-check after the fix before touching the bottom margin. Bottom margin dropped to 0 on 2026-11-03; the runbook includes a full-bleed raster to confirm no overrun at the sheet end.
+- Observed, not fixed: vertical scale varied ~5 % between two identical prints before the band fix (stripes added length); re-check after the fix before touching the bottom margin. Bottom margin set to 5 mm on 2026-11-03 after the runbook.
 - Review fix pass re-checks: printer switched off while a job waited for a sheet, then on again: `printer-off` → reconnect → printed. Lid lifted mid-page: first run showed the gap (job failed only because the sheet was pulled), fixed by watching the lid event during the transfer; rerun: `lid opened` within seconds, reconnect, next print clean. SIGTERM now drops the BLE link and the socket (a killed daemon used to leave BlueZ holding the link so the printer stopped advertising).
 - Hardware quirk for operators: a daemon killed with SIGKILL leaves the link up; `bluetoothctl disconnect <MAC>` frees it.
 
+## Hardware verification 2026-11-03 (printer application through CUPS)
+
+- Units installed from `make -C printer-app install` and `packaging/phomemo-bridge.service`; `devices` lists the printer; added as "Phomemo M08F"; CUPS discovered it by DNS-SD as `Phomemo_M08F` (CUPS keeps only letters and digits in auto-queue names, so no dash variant) and printed without `lpadmin`.
+- A4 one-pager clean; 4-page job: page 2 after inserting the sheet (app shows media-empty, CUPS only "Printing."), cancelled mid page 3: ejected, job canceled; A5 rotated correctly; job queued with the printer off printed after power-on; lid lifted mid-page: "lid opened", reconnect, CUPS dropped the job and kept the queue enabled; full-bleed raster (0 mm bottom margin at the time) printed to the sheet end without a reconnect; two jobs back to back: second waited in CUPS, printed on the next sheet.
+- Observed once: between pages of the 4-page job the printer stopped answering queries and the bridge reconnected (~5 s); cause not pinned (margin was 0 then; the later full-bleed page did not trigger it).
+- Not run: remote client (phone/other machine).
+
 ## Immediate next
 
-- Plan B task 8: hardware runbook through CUPS with Paul (A4, A5, multi-page, printer off, cancel, short sheet, bridge restart), then the final whole-branch review, fix pass, merge to main [user]
-- Then the queued stages below in order (cleanup, hygiene, packaging, docs, CI).
+- Merge `feature/printer-app` to main, push [user]
+- Then the queued stages below in order (cleanup, hygiene, packaging, docs, CI), then the features stage led by Paul.
 
 ## Short-term
 
