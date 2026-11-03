@@ -62,7 +62,7 @@ verified on other hardware.
 | Text mode                                | Not supported — raster only             | Not supported on most models                       |
 | `0x0A` in raster data                    | Handled correctly (no escaping needed)  | phomemo_m02s escapes `0x0A → 0x14` in bitmap data  |
 | Connectivity                             | BLE only                                | Some models support Bluetooth Classic (RFCOMM)     |
-| Print width                              | 1680 px (A4) / 1728 px (Letter)         | 384 px (M02) / 576 px (M02S)                       |
+| Print width                              | 1680 px (A4 variant; a Letter variant exists, untested) | 384 px (M02) / 576 px (M02S)                       |
 | Standard ESC/POS queries (GS I, DLE EOT) | All return generic `01 01`              | Some models may return meaningful status bytes     |
 
 All findings are based on direct observation unless marked **[assumed]**
@@ -667,8 +667,7 @@ data relay — but this was not consistently reproducible.
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Print technology             | Direct thermal                                                                                                          |
 | Print resolution             | 203 DPI                                                                                                                 |
-| Print width (A4 profile)     | 1680 px = 210 bytes/row                                                                                                 |
-| Print width (Letter profile) | 1728 px = 216 bytes/row                                                                                                 |
+| Print width                  | 1680 px = 210 bytes/row (A4 variant; Phomemo also sells a Letter variant with a 216 mm head, not tested here)             |
 | Paper feed                   | Manual single-sheet insertion (no tray)                                                                                 |
 | Paper sensors (front)        | 2 optical sensors at paper entry — AND logic, both must detect paper. Triggers auto-feed motor. No direct BLE event.    |
 | Paper sensor (rear)          | 1 optical sensor behind print head, center. Detects paper fully loaded. Triggers `1a 06 89` event and stops feed motor. |

@@ -268,7 +268,6 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | Model | Profile | Print Width | Status |
 |-------|---------|-------------|--------|
 | M08F (A4) | `M08F-A4` | 1680 px (210 bytes/row) | Tested |
-| M08F (Letter) | `M08F-Letter` | 1728 px (216 bytes/row) | Untested |
 
 ## Architecture
 

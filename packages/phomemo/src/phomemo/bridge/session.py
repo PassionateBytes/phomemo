@@ -426,14 +426,17 @@ class Session:
         bridge = self._bridge
         self._used_link = True
         try:
-            prepared = prepare_page(
+            # Dithering a full page takes a moment; keep the loop free for
+            # the abort command meanwhile.
+            prepared = await asyncio.to_thread(
+                prepare_page,
                 page.image(),
                 bridge.profile,
                 page.media_length_mm,
                 page.tone,
                 page.rotate,
             )
-            bitmap = image_to_bitmap(prepared)
+            bitmap = await asyncio.to_thread(image_to_bitmap, prepared)
             height = prepared.height
             # An interrupted page is printed again on a fresh sheet; only a
             # cancel or a lost link ends the attempt loop.
