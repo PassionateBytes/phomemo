@@ -13,6 +13,8 @@ The repository is a [uv workspace](https://docs.astral.sh/uv/concepts/workspaces
 | [**phomemo**](packages/phomemo/) | Async driver library. Modular, profile-based API for BLE communication, raster printing, device queries, and event handling. Ships `phomemo-bridge`, the daemon that owns the printer for the printer application. |
 | [**printer-app**](printer-app/) | [PAPPL](https://www.msweet.org/pappl/) printer application in C: presents the M08F as an IPP Everywhere printer to CUPS and other clients, driving `phomemo-bridge`. |
 
+Documentation site: [passionatebytes.github.io/phomemo-driver](https://passionatebytes.github.io/phomemo-driver/) (built from this repository's READMEs, the protocol reference and the library's docstrings).
+
 ## Protocol Reference
 
 The [`docs/m08f-protocol-reference.md`](docs/m08f-protocol-reference.md) contains the complete reverse-engineered protocol specification for the Phomemo M08F, covering BLE services, raster format, the Phomemo query/event system, device configuration, and physical sensor behaviour.
