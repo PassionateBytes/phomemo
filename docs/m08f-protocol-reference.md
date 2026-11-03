@@ -448,23 +448,22 @@ Example: `1a 05 98  1a 06 88` = lid closed + paper absent (single notification).
 
 ### Paper Eject
 
-To eject a sheet, queue `ESC d 255` (~32 mm) feeds a few at a time so the
-motor keeps running, and stop on the printer's own paper-absent event:
+To eject a sheet, feed `ESC d 255` (~32 mm) and query the paper sensor
+right behind it. Commands execute in order, so the answer arrives once the
+feed has finished and doubles as the completion signal:
 
 ```
-1f 11 11            # → 1a 06 88 absent or no answer: a few feeds, done
 loop:
-  1b 64 ff ×3       # feed 96mm, motor runs continuously
-  wait for 1a 06 88 # trailing edge passed the rear sensor
-                    # (no event within ~1.5 s: queue three more)
+  1b 64 ff          # feed 32mm
+  1f 11 11          # answered after the feed: 1a 06 89 present → again
+                    # 1a 06 88 absent, or no answer → done
 1b 64 ff            # one more feed clears the rollers
 ```
 
-Half an A4 sheet left the rear sensor after four feeds. The printer answers
-`1f 11 11` within about 2 s while the motor runs; no answer means the overrun
-error state (see Print Completion Signal), in which feed commands are also
-ignored until the printer recovers. A blind burst of twelve feeds (~384 mm)
-also works but keeps the motor running after the sheet is out.
+Measured: a full A4 sheet clears the rear sensor after 9 feeds in 13.9 s,
+about 21 mm/s, the motion pausing only for the BLE round trip between feeds.
+No answer means the overrun error state (see Print Completion Signal), in
+which feed commands are also ignored until the printer recovers.
 ---
 
 ## Density and Print Quality
@@ -722,7 +721,7 @@ payload  = init + density + header + data + feed
 | Density (low)         | `1b 4e 04 01`                      |
 | Density (medium)      | `1b 4e 04 05`                      |
 | Density (high)        | `1b 4e 04 06`                      |
-| Paper eject           | `1b 64 ff` ×3 until `1a 06 88`, +1 |
+| Paper eject           | `1b 64 ff` + `1f 11 11` until absent, +1 |
 | Printable A4 rows     | 2253 (10 mm top, 5 mm bottom)      |
 
 ### Pre-Print State Check
