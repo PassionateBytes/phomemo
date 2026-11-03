@@ -1,5 +1,6 @@
 """Tests for the bridge client against a served fake printer."""
 
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -48,3 +49,24 @@ async def test_client_raises_bridge_error_on_failed_command(
     async with BridgeClient(served.socket_path) as client:
         with pytest.raises(BridgeError, match="no page in progress"):
             await client.page_end()
+
+
+@pytest.mark.asyncio
+async def test_client_reply_skips_the_abort_acknowledgement(
+    served: BridgeConfig,
+) -> None:
+    async with BridgeClient(served.socket_path) as client:
+        await client.open()
+        printer = FakePrinter.instances[-1]
+        printer.release_print = asyncio.Event()
+        await client.page_begin(1680, 100, media_length_mm=None)
+        await client.lines(100, b"\xff" * (1680 * 100))
+        await client.send({"cmd": "page_end"})
+        await printer.print_started.wait()
+        await client.send({"cmd": "abort"})
+        await asyncio.sleep(0.1)
+        printer.release_print.set()
+        # The bridge answers the abort first; the next reply must be the
+        # page_end outcome, not that acknowledgement.
+        with pytest.raises(BridgeError, match="cancelled"):
+            await client.reply()

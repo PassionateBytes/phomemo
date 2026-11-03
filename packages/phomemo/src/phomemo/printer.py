@@ -616,7 +616,6 @@ class Printer:
         """
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
-        reason = "not ready"
         timeouts = 0
         reconnected = False
         while True:
