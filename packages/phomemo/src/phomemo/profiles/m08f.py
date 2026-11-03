@@ -1,6 +1,6 @@
 """Built-in printer profiles for the Phomemo M08F.
 
-Registers M08F-A4 and M08F-Letter profiles on import. Profile data is
+Registers the M08F-A4 profile on import. Profile data is
 derived from the M08F Protocol Reference document.
 
 Third-party code can follow the same pattern: define ``PrinterProfile``
@@ -24,19 +24,6 @@ M08F_A4 = PrinterProfile(
     ble_name_pattern=r"^M08F",
     print_width_px=1680,
     sheet_length_mm=297.0,
-    top_margin_mm=_TOP_MARGIN_MM,
-    bottom_margin_mm=_BOTTOM_MARGIN_MM,
-    write_uuid=_M08F_WRITE,
-    notify_uuid=_M08F_NOTIFY,
-    status_uuid=_M08F_STATUS,
-)
-
-# Letter margins copied from A4, not measured on Letter stock.
-M08F_LETTER = PrinterProfile(
-    name="M08F-Letter",
-    ble_name_pattern=r"^M08F",
-    print_width_px=1728,
-    sheet_length_mm=279.4,
     top_margin_mm=_TOP_MARGIN_MM,
     bottom_margin_mm=_BOTTOM_MARGIN_MM,
     write_uuid=_M08F_WRITE,

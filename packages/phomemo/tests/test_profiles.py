@@ -59,15 +59,6 @@ def test_a4_profile_printable_area() -> None:
     assert profile.max_rows == 2253
 
 
-def test_letter_profile_uses_the_same_margins() -> None:
-    import phomemo.profiles  # noqa: F401, registers built-in profiles
-    from phomemo.registry import get_profile
-
-    profile = get_profile("M08F-Letter")
-    assert profile.sheet_length_mm == 279.4
-    assert profile.max_rows == 2113
-
-
 def test_profile_rejects_margins_that_consume_the_sheet() -> None:
     with pytest.raises(ValueError, match="margin"):
         _make_profile(sheet_length_mm=20.0, top_margin_mm=10.0, bottom_margin_mm=10.0)

@@ -82,6 +82,7 @@ class Bridge:
         self._address: str | None = config.address
         self.printer: Printer | None = None
         self.session_active = False
+        self.last_battery: int | None = None  # last charge read, survives the link
         self._hold_handle: asyncio.TimerHandle | None = None
         self._hold_task: asyncio.Task[None] | None = None
 

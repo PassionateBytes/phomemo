@@ -162,9 +162,10 @@ await printer.feed(20)
 # the overrun error state; the link is reconnected once to clear it.
 await printer.wait_for_ready(timeout=300, settle=3.0)
 
-# Feeds 32mm steps three at a time (continuous motion) until the printer's
-# paper-absent event arrives, then one more feed clears the rollers. Returns
-# False if the sheet is still present after max_feeds (100, about 3 m).
+# Keeps two 15mm feeds queued so the motor runs without pauses, adding one
+# every 0.7 s until the printer's paper-absent event arrives, then a 20mm
+# feed clears the rollers. Returns False if the sheet is still present after
+# max_feeds (64, about 1 m).
 ejected = await printer.eject_paper()
 ```
 
@@ -254,11 +255,13 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 |---------|-----------|-------|
 | `discover` | `timeout` | `printers: [{name, address}]` |
 | `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` when the printer is unreachable, `wait_ready` keeps retrying |
-| `status` | | `connected`, and when connected `lid`, `paper`, `battery` |
+| `status` | | `connected`, and when connected `lid`, `paper`; `battery` is the last charge read (null until the first link) |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |
 | `page_end` | | prints and ejects; `impressions: 1`. A lid opened mid-page or a sheet that runs out does not end the page: the bridge reconnects, ejects a sheet it senses right after the lid closes (its position is unknown), waits for a sheet (`waiting` events) and prints the page again. `error`: `cancelled`, `connection lost: ...` |
+| `identify` | | connects if needed, ejects a loaded sheet, then pulses the feed three times (the printer's way of saying "here") |
+| `test_page` | `printer_name`, `versions` (name to version) | connects if needed, queries the device and writes a test page PNG to `$XDG_RUNTIME_DIR/phomemo-testpage.png` (else the temp dir); `path` |
 | `eject` | | `ejected` |
 | `abort` | | stops a pending `wait_ready` or transfer (the band in progress is padded white, then drain and eject); ok even when idle |
 | `close` | | starts the hold timer |
@@ -268,7 +271,6 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | Model | Profile | Print Width | Status |
 |-------|---------|-------------|--------|
 | M08F (A4) | `M08F-A4` | 1680 px (210 bytes/row) | Tested |
-| M08F (Letter) | `M08F-Letter` | 1728 px (216 bytes/row) | Untested |
 
 ## Architecture
 

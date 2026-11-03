@@ -50,6 +50,12 @@ main(void)
   assert(phomemo_media_length_mm(&a5_portrait) == 148.0);
   assert(phomemo_media_length_mm(&a5_landscape) == 148.0);
 
+  char info[64];
+  phomemo_device_info("AA:BB:CC:DD:EE:FF", 1, info, sizeof(info));
+  assert(!strcmp(info, "Phomemo M08F"));
+  phomemo_device_info("AA:BB:CC:DD:EE:FF", 2, info, sizeof(info));
+  assert(!strcmp(info, "Phomemo M08F (DD:EE:FF)"));
+
   puts("test_driver: ok");
   return 0;
 }
