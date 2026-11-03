@@ -39,6 +39,7 @@ class BridgeClient:
         self._on_event = on_event
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
+        self._pending: str | None = None
 
     async def __aenter__(self) -> Self:
         await self.connect()
@@ -62,11 +63,17 @@ class BridgeClient:
     async def send(self, obj: dict[str, Any], payload: bytes = b"") -> None:
         """Send a command without waiting for its reply."""
         assert self._writer is not None, "not connected"
+        if obj.get("cmd") != "abort":
+            self._pending = obj.get("cmd")
         self._writer.write(encode_message(obj, payload))
         await self._writer.drain()
 
     async def reply(self) -> dict[str, Any]:
-        """Read the next reply, dispatching events on the way.
+        """Read the reply to the pending command, dispatching events on the way.
+
+        The bridge acknowledges an ``abort`` sent while another command is
+        pending before it answers that command; the acknowledgement is
+        skipped here.
 
         Raises:
             BridgeError: If the reply reports ``ok: false``.
@@ -77,6 +84,8 @@ class BridgeClient:
             if "event" in obj:
                 if self._on_event is not None:
                     self._on_event(obj)
+                continue
+            if obj.get("cmd") == "abort" and self._pending != "abort":
                 continue
             if not obj.get("ok"):
                 raise BridgeError(obj.get("error", "unknown error"))
@@ -194,7 +203,6 @@ class BridgeClient:
         if abort_after is not None:
             await asyncio.sleep(abort_after)
             await self.send({"cmd": "abort"})
-            await self.reply()
         reply = await self.reply()
         await self.close()
         return int(reply["impressions"])

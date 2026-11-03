@@ -70,12 +70,12 @@ A queue with a name of your choosing: `lpadmin -p <name> -E -v ipp://localhost:8
 |--------|--------|--------|
 | `media` | `iso_a4_210x297mm` (default), `iso_a5_148x210mm` | A5 is fed long edge first; a portrait A5 page is rotated so its right edge leads out of the printer. |
 | `print-quality` | `3` draft, `4` normal (default), `5` high | Printer density low, medium, high. |
-| `phomemo-tone` | `auto` (default), `threshold`, `ordered`, `diffusion` | Dithering. `auto` thresholds text and graphics and diffuses photos, following `print-content-optimize`. |
+| `phomemo-tone` | `auto` (default), `threshold`, `ordered`, `diffusion` | Rendering ("Rendering" in the web interface): black and white, ordered dither, diffusion dither; `auto` picks black and white for text and graphics and diffusion for photos, following `print-content-optimize`. |
 | `print-content-optimize` | `auto`, `text`, `graphic`, `photo` | Guides `phomemo-tone=auto`. |
 
 For example `lp -d phomemo -o print-quality=5 -o phomemo-tone=ordered photo.png`.
 
-Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the first 10 mm, and PAPPL only models symmetric margins) and 0 mm at the sides. A raster that ignores the bottom margin is printed to 5 mm before the sheet end, where the bridge clips. One page per sheet, no duplex, grayscale only (`sgray_8` raster).
+The only media type is `thermal` (the printer takes nothing else). Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the first 10 mm, and PAPPL only models symmetric margins) and 0 mm at the sides. A raster that ignores the bottom margin is printed to 5 mm before the sheet end, where the bridge clips. One page per sheet, no duplex, grayscale only (`sgray_8` raster).
 
 ## Behaviour
 
@@ -84,7 +84,9 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 - Cancelling a job while it waits for a sheet stops it; cancelling once printing has started stops the transfer and ejects the sheet. A job cancelled while its page is still being spooled leaves the seated sheet in the printer for the next job.
 - A lid opened mid-page or a sheet shorter than the page does not end the job: the printer reports `cover-open` or `media-empty`, a sheet still inside when the lid closes is ejected, and the page is printed again on the next sheet. Close the lid first, then insert the sheet; a sheet inserted before the lid closes is ejected as well.
 - When the bridge is not running the queue pauses (`printer-state` stopped, the device error in the log names the socket path) and resumes on its own once the bridge answers. A bridge restarted while jobs are queued fails the job in progress; the queued jobs reconnect and print.
-- While idle, lid and paper state show up in `printer-state-reasons` as long as the bridge still holds the link (two minutes after a job by default).
+- While idle, lid and paper state show up in `printer-state-reasons` as long as the bridge still holds the link (two minutes after a job by default). The battery charge is shown as the printer's supply level and keeps its last reading while the printer is off or out of range.
+- "Identify printer" (web interface button, IPP Identify-Printer) ejects a loaded sheet and pulses the feed three times.
+- "Print test page" (web interface) prints a page with the printer's address, firmware, serial, battery, link and version details, millimetre rulers, a gray ramp and line and text samples. The bridge renders it; the page goes through the normal job pipeline.
 
 ## Troubleshooting
 
@@ -101,4 +103,5 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 | `driver.c` | Printer capabilities (media, resolution, raster type, `phomemo-tone`) and option mapping helpers. |
 | `job.c` | Raster callbacks: wait for a sheet, stream rows, finish the page, surface errors. |
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
+| `icons/` | Printer icons (48, 128, 512 px PNG), embedded into the binary at build time by `icons/embed.sh`. |
 | `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |

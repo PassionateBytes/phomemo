@@ -285,10 +285,12 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
         "iso_a5_148x210mm",
     }
     assert attrs["media-default"] == "iso_a4_210x297mm"
+    assert attrs["media-type-supported"] == "thermal"
     assert attrs["pwg-raster-document-resolution-supported"] == "203dpi"
     assert attrs["pwg-raster-document-type-supported"] == "sgray_8"
     assert attrs["print-color-mode-supported"] == "monochrome"
     assert attrs["phomemo-tone-supported"] == "auto,threshold,ordered,diffusion"
+    assert attrs["printer-icons"].count("http") == 3
     assert attrs["phomemo-tone-default"] == "auto"
 
 
@@ -619,3 +621,37 @@ async def test_printer_off_shows_offline_until_it_returns(
     attrs = await finish_job(task)
     assert attrs["job-state"] == "completed", attrs
     assert "offline" not in (await printer_state(printer, tmp_path))[1]
+
+
+async def test_identify_printer_pulses_the_feed(printer: AppServer) -> None:
+    proc = await asyncio.to_thread(
+        subprocess.run,
+        [
+            "ipptool",
+            "-t",
+            printer.printer_url(),
+            "/usr/share/cups/ipptool/identify-printer.test",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    for _ in range(40):
+        if FakePrinter.instances and len(printer.bridge.printer.feeds) == 3:
+            break
+        await asyncio.sleep(0.25)
+    assert len(printer.bridge.printer.feeds) == 3
+
+
+@pytest.mark.parametrize("fake_bridge", [{"hold_seconds": 30}], indirect=True)
+async def test_idle_status_reports_the_battery_as_a_supply(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    await asyncio.sleep(2.1)
+    attrs = await printer_attributes(printer, tmp_path)
+    assert "Battery" in attrs["printer-supply-description"]
+    assert "level=77" in attrs["printer-supply"]

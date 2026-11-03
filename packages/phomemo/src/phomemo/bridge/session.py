@@ -3,14 +3,18 @@
 import asyncio
 import contextlib
 import logging
+import os
+import tempfile
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from PIL import Image
 
 from phomemo.bridge.protocol import ProtocolError, encode_message, read_message
 from phomemo.bridge.server import Bridge
+from phomemo.bridge.testpage import PageInfo, render_test_page, save_test_page
 from phomemo.events import LidState, PaperState
 from phomemo.imaging import ToneMode, image_to_bitmap, prepare_page
 from phomemo.printer import PrintAborted, SheetRanOut
@@ -22,6 +26,9 @@ _DENSITY = {"low": Density.LOW, "medium": Density.MEDIUM, "high": Density.HIGH}
 _RETRY_SECONDS = 0.2
 _POLL_SECONDS = 0.5
 _LID_POLL_SECONDS = 0.2
+_IDENTIFY_PULSES = 3
+_IDENTIFY_FEED_LINES = 40
+_IDENTIFY_PAUSE_SECONDS = 0.25
 _MUTE_THRESHOLD = 3
 
 
@@ -194,6 +201,8 @@ class Session:
             "open": self._cmd_open,
             "close": self._cmd_close,
             "status": self._cmd_status,
+            "identify": self._cmd_identify,
+            "test_page": self._cmd_test_page,
             "wait_ready": self._cmd_wait_ready,
             "page_begin": self._cmd_page_begin,
             "lines": self._cmd_lines,
@@ -234,11 +243,15 @@ class Session:
     ) -> dict[str, Any]:
         bridge = self._bridge
         if not bridge.connected or bridge.printer is None:
-            return {"connected": False}
-        printer = bridge.printer
+            return {"connected": False, "battery": bridge.last_battery}
+        printer = await self._answering_printer()
         lid = await printer.query_lid(timeout=1.0)
         paper = await printer.query_paper(timeout=1.0)
         battery = await printer.query_battery(timeout=1.0)
+        if battery is not None:
+            bridge.last_battery = battery
+        else:
+            battery = bridge.last_battery
         return {
             "connected": True,
             "lid": lid.value if lid is not None else None,
@@ -246,10 +259,88 @@ class Session:
             "battery": battery,
         }
 
+    async def _cmd_identify(
+        self, _obj: dict[str, Any], _payload: bytes
+    ) -> dict[str, Any]:
+        """Make the printer noticeable: eject a loaded sheet, then pulse the feed.
+
+        Raises:
+            CommandError: When the printer cannot be reached.
+        """
+        self._used_link = True
+        bridge = self._bridge
+        if not bridge.connected:
+            try:
+                await bridge.connect(discovery_timeout=5.0)
+            except ConnectionError as exc:
+                raise CommandError(f"printer not reachable: {exc}") from exc
+        printer = await self._answering_printer()
+        if await printer.query_paper(timeout=1.0) == PaperState.PRESENT:
+            await printer.eject_paper()
+            await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
+        # A query behind each feed is answered once the feed has run, so
+        # the pause lands between movements and the pulses stay distinct.
+        for _ in range(_IDENTIFY_PULSES):
+            await printer.feed(_IDENTIFY_FEED_LINES)
+            await printer.query_paper(timeout=2.0)
+            await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
+        return {}
+
+    async def _cmd_test_page(
+        self, obj: dict[str, Any], _payload: bytes
+    ) -> dict[str, Any]:
+        """Render the test page as a PNG and reply with its path.
+
+        Raises:
+            CommandError: When the printer cannot be reached.
+        """
+        self._used_link = True
+        bridge = self._bridge
+        if not bridge.connected:
+            try:
+                await bridge.connect(discovery_timeout=5.0)
+            except ConnectionError as exc:
+                raise CommandError(f"printer not reachable: {exc}") from exc
+        printer = await self._answering_printer()
+        device = await printer.query_device_info(timeout=1.0)
+        versions = obj.get("versions") or {}
+        info = PageInfo(
+            printer_name=str(obj.get("printer_name", "Phomemo M08F")),
+            address=getattr(printer, "address", None),
+            firmware=device.firmware,
+            serial=device.serial,
+            battery=device.battery,
+            auto_off_minutes=device.auto_off_minutes,
+            chunk_bytes=getattr(printer, "chunk_bytes", None),
+            versions={str(k): str(v) for k, v in versions.items()},
+            socket_path=str(bridge.config.socket_path),
+        )
+        length_mm = bridge.profile.sheet_length_mm or 297.0
+        directory = Path(os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir())
+        path = directory / "phomemo-testpage.png"
+        img = await asyncio.to_thread(render_test_page, info, bridge.profile, length_mm)
+        await asyncio.to_thread(save_test_page, img, path, bridge.profile.dpi)
+        return {"path": str(path)}
+
     async def _cmd_eject(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         self._used_link = True
         printer = self._require_printer()
         return {"ejected": await printer.eject_paper()}
+
+    async def _answering_printer(self) -> Any:
+        """The printer, reconnected once if it sits on the link without answering.
+
+        A link can come up with the printer ignoring queries and commands;
+        a fresh link clears that.
+        """
+        printer = self._require_printer()
+        if await printer.query_paper(timeout=1.0) is None:
+            logger.info("Printer not answering; reconnecting")
+            try:
+                await printer.reconnect()
+            except ConnectionError as exc:
+                raise CommandError(f"printer not reachable: {exc}") from exc
+        return printer
 
     def _require_printer(self) -> Any:
         bridge = self._bridge
@@ -426,14 +517,17 @@ class Session:
         bridge = self._bridge
         self._used_link = True
         try:
-            prepared = prepare_page(
+            # Dithering a full page takes a moment; keep the loop free for
+            # the abort command meanwhile.
+            prepared = await asyncio.to_thread(
+                prepare_page,
                 page.image(),
                 bridge.profile,
                 page.media_length_mm,
                 page.tone,
                 page.rotate,
             )
-            bitmap = image_to_bitmap(prepared)
+            bitmap = await asyncio.to_thread(image_to_bitmap, prepared)
             height = prepared.height
             # An interrupted page is printed again on a fresh sheet; only a
             # cancel or a lost link ends the attempt loop.

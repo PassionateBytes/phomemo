@@ -158,6 +158,19 @@ class Printer:
         return self._transport.is_connected
 
     @property
+    def address(self) -> str | None:
+        """The printer's BLE address, once known."""
+        device = self._address
+        if device is None:
+            return None
+        return getattr(device, "address", None) or str(device)
+
+    @property
+    def chunk_bytes(self) -> int:
+        """Bytes per BLE write on the current link."""
+        return self._transport.chunk_bytes
+
+    @property
     def rows_sent(self) -> int:
         """Raster rows handed to the transport in the current transfer, else 0."""
         return self._rows_sent
@@ -305,19 +318,31 @@ class Printer:
         await self._transport.write(encode_feed_lines(lines))
 
     async def eject_paper(
-        self, max_feeds: int = 100, batch: int = 3, feed_seconds: float = 0.5
+        self,
+        max_feeds: int = 64,
+        step_rows: int = 120,
+        ahead: int = 2,
+        feed_seconds: float = 0.7,
+        clear_rows: int = 160,
     ) -> bool:
         """Feed the sheet out until the sensor reports it gone, then clear the rollers.
 
-        Feeds of ``ESC d 255`` (about 32mm each) go out ``batch`` at a time so
-        the motor keeps running, and the printer's own paper-absent event ends
-        the loop. A sheet already past the sensor, or a printer that does not
-        answer the initial query, gets one batch to clear the rollers.
+        Feeds of ``step_rows`` (15mm by default) are kept ``ahead`` deep in
+        the printer's queue so the motor runs without pauses: one more goes
+        out whenever ``feed_seconds`` (about one section at the measured
+        feed speed) pass without the paper-absent event. On the event, one
+        feed of ``clear_rows`` pushes the sheet out of the rollers. A sheet
+        already past the sensor, or a printer that does not answer the
+        initial query, gets three feeds of ``clear_rows`` blind.
 
         Args:
-            max_feeds: Maximum number of feeds before giving up.
-            batch: Feeds queued before waiting for the sensor event.
-            feed_seconds: Time allowed per queued feed before queuing more.
+            max_feeds: Maximum number of feeds before giving up (about 1m).
+            step_rows: Rows per feed.
+            ahead: Feeds queued before waiting for the sensor event.
+            feed_seconds: Wait per feed for the sensor event before queuing
+                the next one; longer than the feed itself stalls the motion,
+                shorter queues ahead of the motor.
+            clear_rows: Rows fed once the sensor is clear.
 
         Returns:
             ``True`` once the sheet has left the sensor, ``False`` if it is
@@ -333,22 +358,32 @@ class Printer:
         try:
             paper = await self.query_paper(timeout=2.0)
             if paper != PaperState.PRESENT:
-                for _ in range(batch):
-                    await self.feed(255)
+                for _ in range(3):
+                    await self.feed(clear_rows)
                 logger.debug("eject_paper: no sheet at the sensor, rollers cleared")
                 return True
 
+            started = asyncio.get_running_loop().time()
             sent = 0
-            while sent < max_feeds:
-                for _ in range(min(batch, max_feeds - sent)):
-                    await self.feed(255)
-                    sent += 1
+            while sent < min(ahead, max_feeds):
+                await self.feed(step_rows)
+                sent += 1
+            while True:
                 try:
-                    await asyncio.wait_for(absent.wait(), timeout=batch * feed_seconds)
+                    await asyncio.wait_for(absent.wait(), timeout=feed_seconds)
                 except TimeoutError:
+                    if sent >= max_feeds:
+                        break
+                    await self.feed(step_rows)
+                    sent += 1
                     continue
-                await self.feed(255)
-                logger.debug("eject_paper: sheet clear after %d feeds", sent + 1)
+                await self.feed(clear_rows)
+                logger.info(
+                    "eject_paper: sensor clear after %d feeds of %d rows, %.1f s",
+                    sent,
+                    step_rows,
+                    asyncio.get_running_loop().time() - started,
+                )
                 return True
             logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
             return False
@@ -616,7 +651,6 @@ class Printer:
         """
         loop = asyncio.get_running_loop()
         deadline = loop.time() + timeout
-        reason = "not ready"
         timeouts = 0
         reconnected = False
         while True:

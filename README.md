@@ -32,7 +32,6 @@ See the [phomemo README](packages/phomemo/README.md) for library usage. To use t
 | Model | Profile | Print Width | Status |
 |-------|---------|-------------|--------|
 | M08F (A4) | `M08F-A4` | 1680 px | Tested |
-| M08F (Letter) | `M08F-Letter` | 1728 px | Untested |
 
 The profile system is extensible; see the [driver README](packages/phomemo/README.md#custom-profiles) for adding support for other models.
 

@@ -1,4 +1,5 @@
 phomemo-printer-app
 *.o
+icons.c
 tests/test_bridge
 tests/test_driver

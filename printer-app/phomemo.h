@@ -25,6 +25,36 @@
 // a sheet applies to both ends.
 #define PHOMEMO_MARGIN 1000
 #define PHOMEMO_TONE_OPTION "phomemo-tone"
+#define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printer takes
+#define PHOMEMO_LOW_BATTERY 15  // percent
+
+// Device info for a discovered printer: the make and model, with the last
+// three bytes of the address appended when more than one printer is in
+// range (PAPPL names auto-added printers after it).
+void phomemo_device_info(const char *address, int count, char *buffer,
+                         size_t bufsize);
+
+// Publishes the battery charge as the printer's supply level.
+void phomemo_set_battery(pappl_printer_t *printer, int percent);
+
+// Identify-Printer callback: the bridge ejects a loaded sheet and pulses
+// the feed.
+void phomemo_identify_cb(pappl_printer_t *printer,
+                         pappl_identify_actions_t actions,
+                         const char *message);
+
+// Printer icons (PNG, 48, 128 and 512 px), embedded from icons/ at build time.
+extern const unsigned char phomemo_icon_m08f_48[];
+extern const size_t phomemo_icon_m08f_48_len;
+extern const unsigned char phomemo_icon_m08f_128[];
+extern const size_t phomemo_icon_m08f_128_len;
+extern const unsigned char phomemo_icon_m08f_512[];
+extern const size_t phomemo_icon_m08f_512_len;
+
+// Test page callback: the bridge renders a PNG with the device details;
+// returns its path in buffer, or NULL when the bridge is unreachable.
+const char *phomemo_testpage_cb(pappl_printer_t *printer, char *buffer,
+                                size_t bufsize);
 
 // Registers the phomemo:// device scheme with PAPPL. The URI host part
 // is the printer's BLE address with dashes instead of colons
