@@ -255,7 +255,7 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 |---------|-----------|-------|
 | `discover` | `timeout` | `printers: [{name, address}]` |
 | `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` when the printer is unreachable, `wait_ready` keeps retrying |
-| `status` | | `connected`, and when connected `lid`, `paper`, `battery` |
+| `status` | | `connected`, and when connected `lid`, `paper`; `battery` is the last charge read (null until the first link) |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |

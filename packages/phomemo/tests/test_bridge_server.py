@@ -252,10 +252,24 @@ async def test_hold_timer_disconnects_after_hold_seconds(bridge: BridgeConfig) -
 
 
 @pytest.mark.asyncio
+async def test_status_keeps_the_last_battery_reading_while_disconnected(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    assert (await client.call({"cmd": "status"}))["battery"] == 77
+    printer = _printer()
+    printer.connected = False
+    reply = await client.call({"cmd": "status"})
+    assert reply == {"ok": True, "cmd": "status", "connected": False, "battery": 77}
+    await client.close()
+
+
+@pytest.mark.asyncio
 async def test_status_reports_sensors_and_connected_flag(bridge: BridgeConfig) -> None:
     client = await _connect(bridge)
     before = await client.call({"cmd": "status"})
-    assert before == {"ok": True, "cmd": "status", "connected": False}
+    assert before == {"ok": True, "cmd": "status", "connected": False, "battery": None}
     await client.call({"cmd": "open"})
     after = await client.call({"cmd": "status"})
     assert after == {
