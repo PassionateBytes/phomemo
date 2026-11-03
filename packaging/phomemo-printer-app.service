@@ -10,7 +10,7 @@ Wants=phomemo-bridge.service
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/phomemo-printer-app server -o log-level=info
+ExecStart=%h/.local/bin/phomemo-printer-app server -o log-file=- -o log-level=info
 Environment=PHOMEMO_BRIDGE_SOCKET=%t/phomemo-bridge.sock
 Restart=on-failure
 RestartSec=5
