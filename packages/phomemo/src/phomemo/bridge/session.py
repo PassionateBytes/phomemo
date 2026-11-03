@@ -27,8 +27,8 @@ _RETRY_SECONDS = 0.2
 _POLL_SECONDS = 0.5
 _LID_POLL_SECONDS = 0.2
 _IDENTIFY_PULSES = 3
-_IDENTIFY_FEED_LINES = 60
-_IDENTIFY_PAUSE_SECONDS = 0.5
+_IDENTIFY_FEED_LINES = 40
+_IDENTIFY_PAUSE_SECONDS = 0.25
 _MUTE_THRESHOLD = 3
 
 
@@ -244,7 +244,7 @@ class Session:
         bridge = self._bridge
         if not bridge.connected or bridge.printer is None:
             return {"connected": False, "battery": bridge.last_battery}
-        printer = bridge.printer
+        printer = await self._answering_printer()
         lid = await printer.query_lid(timeout=1.0)
         paper = await printer.query_paper(timeout=1.0)
         battery = await printer.query_battery(timeout=1.0)
@@ -274,7 +274,7 @@ class Session:
                 await bridge.connect(discovery_timeout=5.0)
             except ConnectionError as exc:
                 raise CommandError(f"printer not reachable: {exc}") from exc
-        printer = self._require_printer()
+        printer = await self._answering_printer()
         if await printer.query_paper(timeout=1.0) == PaperState.PRESENT:
             await printer.eject_paper()
             await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
@@ -301,7 +301,7 @@ class Session:
                 await bridge.connect(discovery_timeout=5.0)
             except ConnectionError as exc:
                 raise CommandError(f"printer not reachable: {exc}") from exc
-        printer = self._require_printer()
+        printer = await self._answering_printer()
         device = await printer.query_device_info(timeout=1.0)
         versions = obj.get("versions") or {}
         info = PageInfo(
@@ -326,6 +326,21 @@ class Session:
         self._used_link = True
         printer = self._require_printer()
         return {"ejected": await printer.eject_paper()}
+
+    async def _answering_printer(self) -> Any:
+        """The printer, reconnected once if it sits on the link without answering.
+
+        A link can come up with the printer ignoring queries and commands;
+        a fresh link clears that.
+        """
+        printer = self._require_printer()
+        if await printer.query_paper(timeout=1.0) is None:
+            logger.info("Printer not answering; reconnecting")
+            try:
+                await printer.reconnect()
+            except ConnectionError as exc:
+                raise CommandError(f"printer not reachable: {exc}") from exc
+        return printer
 
     def _require_printer(self) -> Any:
         bridge = self._bridge
