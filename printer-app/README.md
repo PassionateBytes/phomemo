@@ -30,12 +30,11 @@ sudo dnf copr enable <account>/phomemo
 sudo dnf install phomemo-printer-app
 ```
 
-From source, as root: the Python package system-wide (`pip install packages/phomemo` or the wheel from a release), its system unit, service user and preset from `packaging/`, then the application:
+From source, from the repository root: builds the application, installs the Python package into a virtual environment under `/usr/local/lib/phomemo`, installs both system units with their presets, creates the service user, enables and starts the services.
 
 ```bash
-sudo make -C printer-app install                 # PREFIX=/usr/local, unit in /etc/systemd/system
-sudo systemctl daemon-reload
-sudo systemctl enable --now phomemo-bridge phomemo-printer-app
+sudo dnf install gcc make pkgconf-pkg-config pappl-devel cups-devel python3 cups avahi bluez   # build and runtime dependencies
+sudo make                                        # PREFIX=/usr/local; `sudo make uninstall` reverses it
 ```
 
 Both services are system services: the bridge runs as the `phomemo` user and listens on `/run/phomemo/bridge.sock` (open to local users), the application runs as root like other PAPPL printer applications, with its state in `/var/lib` and the web interface on port 8000. Without the units, for development, run both by hand as your user (the bridge socket then lives in `$XDG_RUNTIME_DIR`):
