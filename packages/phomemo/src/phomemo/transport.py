@@ -144,6 +144,8 @@ class BleTransport:
         Safe to call even if not connected.
         """
         if self._client is not None:
+            # Cleared first so the disconnect callback stays silent.
+            self._connected = False
             try:
                 await self._client.disconnect()
             finally:
