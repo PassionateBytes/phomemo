@@ -34,7 +34,6 @@ class FakePrinter:
         self.paper = PaperState.PRESENT
         self.battery = 77
         self.muted = False
-        self.sticky_mute = False
         self.ejects = 0
         self.eject_result = True
         self.printed: list[tuple[int, int, str]] = []
@@ -60,8 +59,7 @@ class FakePrinter:
     async def reconnect(self, discovery_timeout: float = 5.0) -> None:
         await self.disconnect()
         await self.connect(discovery_timeout)
-        if not self.sticky_mute:
-            self.muted = False
+        self.muted = False
 
     async def query_lid(self, timeout: float = 1.0) -> LidState | None:
         return None if self.muted else self.lid
@@ -83,9 +81,6 @@ class FakePrinter:
 
     async def wait_for_ready(self, **kwargs: Any) -> None:
         return None
-
-    async def feed(self, lines: int = 1) -> None:
-        self.feeds = getattr(self, "feeds", 0) + 1
 
     async def eject_paper(self, **kwargs: Any) -> bool:
         self.ejects += 1
@@ -112,8 +107,6 @@ class FakePrinter:
             raise PrintAborted("cancelled")
         if self.print_error is not None:
             error, self.print_error = self.print_error, None
-            if isinstance(error, SheetRanOut):
-                self.muted = True
             raise error
         for i in range(1, 21):
             self.rows_sent = height * i // 20
@@ -775,31 +768,4 @@ async def test_link_lost_mid_page_waits_for_the_printer_and_reprints(
     assert len(printer.printed) == 2
     assert printer.connects == 2
     assert "printer-off" in _waiting_reasons(client)
-    await client.close()
-
-
-@pytest.mark.asyncio
-async def test_overrun_eject_waits_until_the_printer_answers(
-    bridge: BridgeConfig,
-) -> None:
-    client = await _connect(bridge)
-    await client.call({"cmd": "open"})
-    printer = _printer()
-    printer.release_print = asyncio.Event()
-    printer.print_error = SheetRanOut("paper ran out")
-    printer.sticky_mute = True
-    await _submit_page(client, printer)
-    printer.release_print.set()
-    await asyncio.sleep(1.2)
-    # Still mute: no feed has been attempted yet.
-    assert printer.ejects == 0
-    printer.muted = False
-    await asyncio.sleep(1.5)
-    assert printer.ejects == 1
-    assert getattr(printer, "feeds", 0) >= 1
-    printer.paper = PaperState.PRESENT
-    reply = await client.reply()
-    assert reply == {"ok": True, "cmd": "page_end", "impressions": 1}
-    assert len(printer.printed) == 2
-    assert "short-sheet" in _waiting_reasons(client)
     await client.close()

@@ -22,8 +22,6 @@ _DENSITY = {"low": Density.LOW, "medium": Density.MEDIUM, "high": Density.HIGH}
 _RETRY_SECONDS = 0.2
 _POLL_SECONDS = 0.5
 _LID_POLL_SECONDS = 0.2
-_OVERRUN_POLL_SECONDS = 1.0
-_OVERRUN_RECONNECT_SECONDS = 10.0
 _MUTE_THRESHOLD = 3
 
 
@@ -444,7 +442,8 @@ class Session:
                     await self._print_page(printer, bitmap, height, page.density)
                 except SheetRanOut as exc:
                     logger.warning("Sheet ran out: %s; waiting for the next sheet", exc)
-                    await self._clear_overrun(printer)
+                    await self._recover_link()
+                    await self._eject_remainder(printer)
                     await self._wait_for_fresh_sheet("short-sheet")
                     continue
                 except PrintAborted as exc:
@@ -547,39 +546,10 @@ class Session:
             await printer.eject_paper()
         await self._wait_ready(self._bridge.config.settle_seconds, empty_reason)
 
-    async def _clear_overrun(self, printer: Any) -> None:
-        """Eject the sheet left in the rollers once the printer answers again.
-
-        A printer that ran a raster off the sheet end ignores commands and
-        queries for a while, reconnect or not. Feeds sent meanwhile are
-        lost, so the eject waits for the first answered query, with a
-        reconnect every ``_OVERRUN_RECONNECT_SECONDS``. The eject then adds a
-        feed for the stretch of sheet beyond the sensor.
-
-        Raises:
-            CommandError: ``cancelled`` when an abort arrives meanwhile.
-        """
-        await self._event("waiting", reason="short-sheet")
-        await self._recover_link()
-        loop = asyncio.get_running_loop()
-        last_reconnect = loop.time()
-        while True:
-            if self._abort.is_set():
-                raise CommandError("cancelled")
-            try:
-                paper = await printer.query_paper(timeout=2.0)
-            except ConnectionError:
-                paper = None
-            if paper is not None:
-                break
-            if loop.time() - last_reconnect >= _OVERRUN_RECONNECT_SECONDS:
-                await self._recover_link()
-                last_reconnect = loop.time()
-            await self._pause(_OVERRUN_POLL_SECONDS)
-        logger.info("Printer answering again; ejecting the short sheet")
+    async def _eject_remainder(self, printer: Any) -> None:
+        """Clear a short sheet still held by the rollers after an overrun."""
         try:
             await printer.eject_paper()
-            await printer.feed(255)
         except (ConnectionError, OSError, TimeoutError) as exc:
             logger.warning("Eject after sheet overrun failed: %s", exc)
 
