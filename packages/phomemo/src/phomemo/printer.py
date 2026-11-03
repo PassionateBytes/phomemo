@@ -158,6 +158,19 @@ class Printer:
         return self._transport.is_connected
 
     @property
+    def address(self) -> str | None:
+        """The printer's BLE address, once known."""
+        device = self._address
+        if device is None:
+            return None
+        return getattr(device, "address", None) or str(device)
+
+    @property
+    def chunk_bytes(self) -> int:
+        """Bytes per BLE write on the current link."""
+        return self._transport.chunk_bytes
+
+    @property
     def rows_sent(self) -> int:
         """Raster rows handed to the transport in the current transfer, else 0."""
         return self._rows_sent

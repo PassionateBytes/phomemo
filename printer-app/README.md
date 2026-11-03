@@ -86,6 +86,7 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 - When the bridge is not running the queue pauses (`printer-state` stopped, the device error in the log names the socket path) and resumes on its own once the bridge answers. A bridge restarted while jobs are queued fails the job in progress; the queued jobs reconnect and print.
 - While idle, lid and paper state show up in `printer-state-reasons` and the battery charge as the printer's supply level, as long as the bridge still holds the link (two minutes after a job by default).
 - "Identify printer" (web interface button, IPP Identify-Printer) ejects a loaded sheet and pulses the feed three times.
+- "Print test page" (web interface) prints a page with the printer's address, firmware, serial, battery, link and version details, millimetre rulers, a gray ramp and line and text samples. The bridge renders it; the page goes through the normal job pipeline.
 
 ## Troubleshooting
 

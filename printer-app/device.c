@@ -365,6 +365,65 @@ phomemo_id_cb(pappl_device_t *device, char *buffer, size_t bufsize)
   return buffer;
 }
 
+const char *
+phomemo_testpage_cb(pappl_printer_t *printer, char *buffer, size_t bufsize)
+{
+  phomemo_bridge_t bridge;
+  char address[64];
+  char err[256];
+  const char *result = NULL;
+
+  if (!parse_address(papplPrinterGetDeviceURI(printer), address,
+                     sizeof(address)) ||
+      !bridge_connect(&bridge, err, sizeof(err)))
+  {
+    papplLogPrinter(printer, PAPPL_LOGLEVEL_WARN,
+                    "Test page: phomemo-bridge not reachable.");
+    return NULL;
+  }
+
+  cJSON *request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "open");
+  cJSON_AddStringToObject(request, "address", address);
+  cJSON *reply = phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL,
+                                     err, sizeof(err));
+  cJSON_Delete(request);
+  if (reply)
+  {
+    cJSON_Delete(reply);
+    request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", "test_page");
+    cJSON_AddStringToObject(request, "printer_name",
+                            papplPrinterGetName(printer));
+    cJSON *versions = cJSON_AddObjectToObject(request, "versions");
+    cJSON_AddStringToObject(versions, "phomemo-printer-app", PHOMEMO_VERSION);
+    cJSON_AddStringToObject(versions, "pappl", PAPPL_VERSION_STR);
+    reply = phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL, err,
+                                sizeof(err));
+    cJSON_Delete(request);
+  }
+  if (reply)
+  {
+    cJSON *path = cJSON_GetObjectItem(reply, "path");
+    if (cJSON_IsString(path))
+    {
+      snprintf(buffer, bufsize, "%s", path->valuestring);
+      result = buffer;
+    }
+    cJSON_Delete(reply);
+  }
+  if (!result)
+    papplLogPrinter(printer, PAPPL_LOGLEVEL_WARN, "Test page failed: %s", err);
+
+  request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "close");
+  cJSON_Delete(phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL,
+                                   NULL, 0));
+  cJSON_Delete(request);
+  phomemo_bridge_close(&bridge);
+  return result;
+}
+
 void
 phomemo_device_add_scheme(void)
 {

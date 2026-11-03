@@ -42,6 +42,11 @@ void phomemo_identify_cb(pappl_printer_t *printer,
                          pappl_identify_actions_t actions,
                          const char *message);
 
+// Test page callback: the bridge renders a PNG with the device details;
+// returns its path in buffer, or NULL when the bridge is unreachable.
+const char *phomemo_testpage_cb(pappl_printer_t *printer, char *buffer,
+                                size_t bufsize);
+
 // Registers the phomemo:// device scheme with PAPPL. The URI host part
 // is the printer's BLE address with dashes instead of colons
 // (phomemo://AA-BB-CC-DD-EE-FF), because a URI host cannot hold colons.
