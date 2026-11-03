@@ -70,7 +70,7 @@ A queue with a name of your choosing: `lpadmin -p <name> -E -v ipp://localhost:8
 |--------|--------|--------|
 | `media` | `iso_a4_210x297mm` (default), `iso_a5_148x210mm` | A5 is fed long edge first; a portrait A5 page is rotated so its right edge leads out of the printer. |
 | `print-quality` | `3` draft, `4` normal (default), `5` high | Printer density low, medium, high. |
-| `phomemo-tone` | `auto` (default), `threshold`, `ordered`, `diffusion` | Dithering. `auto` thresholds text and graphics and diffuses photos, following `print-content-optimize`. |
+| `phomemo-tone` | `auto` (default), `threshold`, `ordered`, `diffusion` | Rendering ("Rendering" in the web interface): black and white, ordered dither, diffusion dither; `auto` picks black and white for text and graphics and diffusion for photos, following `print-content-optimize`. |
 | `print-content-optimize` | `auto`, `text`, `graphic`, `photo` | Guides `phomemo-tone=auto`. |
 
 For example `lp -d phomemo -o print-quality=5 -o phomemo-tone=ordered photo.png`.

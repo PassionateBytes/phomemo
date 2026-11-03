@@ -81,11 +81,11 @@ set_media(pappl_media_col_t *media, const char *size_name, int width,
 
 // Human-readable labels for the vendor option in the web interface.
 static const char *const strings_en =
-  "\"" PHOMEMO_TONE_OPTION "\" = \"Dithering\";\n"
-  "\"" PHOMEMO_TONE_OPTION ".auto\" = \"Automatic (by content)\";\n"
-  "\"" PHOMEMO_TONE_OPTION ".threshold\" = \"Threshold (text, line art)\";\n"
+  "\"" PHOMEMO_TONE_OPTION "\" = \"Rendering\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".auto\" = \"Automatic\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".threshold\" = \"Black and white\";\n"
   "\"" PHOMEMO_TONE_OPTION ".ordered\" = \"Ordered dither\";\n"
-  "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Error diffusion (photos)\";\n"
+  "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Diffusion dither\";\n"
   "\"media-type." PHOMEMO_MEDIA_TYPE "\" = \"Thermal paper\";\n";
 
 // Versions and labels shown by the system; PAPPL has no hook between
