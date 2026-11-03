@@ -149,6 +149,47 @@ class BridgeClient:
     async def eject(self) -> bool:
         return bool((await self.call({"cmd": "eject"}))["ejected"])
 
+    async def identify(self) -> None:
+        """Eject a loaded sheet, then pulse the feed three times."""
+        await self.call({"cmd": "identify"})
+
+    async def test_page(self, versions: dict[str, str] | None = None) -> Path:
+        """Render the test page and return the PNG's path.
+
+        Args:
+            versions: Component versions to print, by name.
+        """
+        reply = await self.call(
+            {
+                "cmd": "test_page",
+                "printer_name": "Phomemo M08F",
+                "versions": versions or {},
+            }
+        )
+        return Path(reply["path"])
+
+    async def print_test_page(self, quality: str = "normal") -> int:
+        """Render the test page and print it through the bridge.
+
+        The page covers the area below the sheet's unprintable lead, so it
+        gets that lead as white rows on top before the normal page
+        preparation drops them again.
+
+        Args:
+            quality: ``draft``, ``normal`` or ``high``.
+
+        Returns:
+            Impressions printed (1).
+        """
+        path = await self.test_page()
+        page = Image.open(path).convert("L")
+        lead = round(10 / 25.4 * 203)
+        canvas = Image.new("L", (page.width, page.height + lead), 255)
+        canvas.paste(page, (0, lead))
+        padded = path.with_name("phomemo-testpage-sheet.png")
+        canvas.save(padded)
+        return await self.print_image(padded, media="a4", quality=quality)
+
     async def abort(self) -> None:
         await self.call({"cmd": "abort"})
 
