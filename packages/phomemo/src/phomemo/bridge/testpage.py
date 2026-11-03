@@ -111,19 +111,18 @@ def render_test_page(
     text_font = ImageFont.load_default(size=28)
     small_font = ImageFont.load_default(size=20)
 
-    draw.rectangle((0, 0, width - 1, height - 1), outline=0, width=2)
     _rulers(draw, width, height, px_per_mm, small_font)
 
     x = round(12 * px_per_mm)
     y = round(12 * px_per_mm)
-    draw.text((x, y), f"{info.printer_name} test page", font=title_font, fill=0)
+    draw.text((x, y), "Test Page", font=title_font, fill=0)
     y += 100
     for line in page_lines(info, profile, length_mm):
         draw.text((x, y), line, font=text_font, fill=0)
         y += 40
 
     y += 30
-    draw.text((x, y), "Gray ramp (dithered by the bridge):", font=text_font, fill=0)
+    draw.text((x, y), "Gray ramp:", font=text_font, fill=0)
     y += 44
     patch = round(18 * px_per_mm)
     for i in range(8):
@@ -156,22 +155,34 @@ def _rulers(
     px_per_mm: float,
     font: ImageFont.FreeTypeFont,
 ) -> None:
-    """Millimetre ticks along the top and left edges, labelled every 10 mm."""
+    """Millimetre scales along the top and left edges, labelled every 10 mm."""
+
+    def tick(mm: int) -> tuple[int, int]:
+        """Length and stroke of a tick: 10 mm, 5 mm and 1 mm marks."""
+        if mm % 10 == 0:
+            return 48, 4
+        if mm % 5 == 0:
+            return 30, 3
+        return 14, 2
+
+    # Top and bottom edges of the imageable area; no side borders.
+    draw.line((0, 1, width, 1), fill=0, width=3)
+    draw.line((0, height - 2, width, height - 2), fill=0, width=3)
     mm = 0
     while mm * px_per_mm < width:
         x = round(mm * px_per_mm)
-        tick = 24 if mm % 10 == 0 else 12 if mm % 5 == 0 else 6
-        draw.line((x, 0, x, tick), fill=0)
+        length, stroke = tick(mm)
+        draw.line((x, 0, x, length), fill=0, width=stroke)
         if mm % 10 == 0 and mm:
-            draw.text((x + 3, tick), str(mm), font=font, fill=0)
+            draw.text((x + 5, length + 2), str(mm), font=font, fill=0)
         mm += 1
     mm = 0
     while mm * px_per_mm < height:
         y = round(mm * px_per_mm)
-        tick = 24 if mm % 10 == 0 else 12 if mm % 5 == 0 else 6
-        draw.line((0, y, tick, y), fill=0)
+        length, stroke = tick(mm)
+        draw.line((0, y, length, y), fill=0, width=stroke)
         if mm % 10 == 0 and mm:
-            draw.text((tick + 2, y - 10), str(mm), font=font, fill=0)
+            draw.text((length + 4, y - 10), str(mm), font=font, fill=0)
         mm += 1
 
 
