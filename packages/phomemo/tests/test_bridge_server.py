@@ -856,3 +856,28 @@ async def test_test_page_renders_a_png_with_the_device_details(
     with Image.open(path) as img:
         assert img.size == (1678, 2213)
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_status_reconnects_a_silent_printer(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    printer.muted = True
+    reply = await client.call({"cmd": "status"})
+    assert reply["lid"] == "closed"
+    assert printer.connects == 2
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_identify_reconnects_a_silent_printer(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    printer.muted = True
+    printer.paper = PaperState.ABSENT
+    assert (await client.call({"cmd": "identify"}))["ok"]
+    assert printer.connects == 2
+    assert len(printer.feeds) == 3
+    await client.close()
