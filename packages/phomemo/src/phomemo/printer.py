@@ -318,7 +318,7 @@ class Printer:
         await self._transport.write(encode_feed_lines(lines))
 
     async def eject_paper(
-        self, max_feeds: int = 100, batch: int = 3, feed_seconds: float = 0.5
+        self, max_feeds: int = 100, batch: int = 3, feed_seconds: float = 1.0
     ) -> bool:
         """Feed the sheet out until the sensor reports it gone, then clear the rollers.
 
@@ -331,6 +331,9 @@ class Printer:
             max_feeds: Maximum number of feeds before giving up.
             batch: Feeds queued before waiting for the sensor event.
             feed_seconds: Time allowed per queued feed before queuing more.
+                Generous on purpose: queuing ahead of the motor turns into
+                roller travel after the sheet is out, while a long wait
+                only delays the next batch when the sensor never clears.
 
         Returns:
             ``True`` once the sheet has left the sensor, ``False`` if it is
@@ -352,6 +355,7 @@ class Printer:
                 return True
 
             sent = 0
+            started = asyncio.get_running_loop().time()
             while sent < max_feeds:
                 for _ in range(min(batch, max_feeds - sent)):
                     await self.feed(255)
@@ -360,8 +364,13 @@ class Printer:
                     await asyncio.wait_for(absent.wait(), timeout=batch * feed_seconds)
                 except TimeoutError:
                     continue
+                elapsed = asyncio.get_running_loop().time() - started
                 await self.feed(255)
-                logger.debug("eject_paper: sheet clear after %d feeds", sent + 1)
+                logger.info(
+                    "eject_paper: sensor clear after %d feeds queued, %.1f s",
+                    sent,
+                    elapsed,
+                )
                 return True
             logger.warning("eject_paper: paper still present after %d feeds", max_feeds)
             return False
