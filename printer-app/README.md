@@ -26,8 +26,8 @@ The pytest harness starts the built binary as a private server under the test's 
 Fedora, from the COPR repository (both parts, services enabled and started by the package presets):
 
 ```bash
-sudo dnf copr enable <account>/phomemo
-sudo dnf install phomemo-printer-app
+sudo dnf copr enable <account>/phomemo-driver
+sudo dnf install phomemo-driver
 ```
 
 From source, from the repository root: builds the application, installs the Python package into a virtual environment under `/usr/local/lib/phomemo`, installs both system units with their presets, creates the service user, enables and starts the services.

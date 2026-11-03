@@ -40,18 +40,18 @@ jobs:
       - name: Install packaging tools
         run: >
           dnf install -y --setopt=install_weak_deps=False
-          rpm-build rpmlint git python3-devel pyproject-rpm-macros
+          rpm-build rpmlint git python3-devel pyproject-rpm-macros dnf-plugins-core
+          python3-hatchling python3-bleak python3-pillow
           systemd-rpm-macros gcc make pkgconf-pkg-config pappl-devel cups-devel
       - uses: actions/checkout@v4
       - name: Mark the checkout safe for git archive
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Lint the spec files
-        run: rpmlint packaging/python-phomemo.spec packaging/phomemo-printer-app.spec
-      - name: Build both packages
+      - name: Lint the spec file
+        run: rpmlint packaging/phomemo-driver.spec
+      - name: Build the packages
         run: |
           make tarball
+          dnf builddep -y packaging/phomemo-driver.spec
           rpmbuild -ba --define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist" \
-            --define "_srcrpmdir $PWD/dist" packaging/python-phomemo.spec
-          rpmbuild -ba --define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist" \
-            --define "_srcrpmdir $PWD/dist" packaging/phomemo-printer-app.spec
+            --define "_srcrpmdir $PWD/dist" packaging/phomemo-driver.spec
           ls -R dist
