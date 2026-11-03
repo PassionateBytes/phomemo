@@ -27,6 +27,7 @@ class FakePrinter:
         self.profile = profile
         self.address = address
         self.reachable = True
+        self.connect_error = "Device not found"
         self.connected = False
         self.connects = 0
         self.lid = LidState.CLOSED
@@ -48,7 +49,7 @@ class FakePrinter:
 
     async def connect(self, discovery_timeout: float = 5.0) -> None:
         if not self.reachable:
-            raise ConnectionError("Device not found")
+            raise ConnectionError(self.connect_error)
         self.connected = True
         self.connects += 1
 
@@ -272,7 +273,7 @@ async def test_wait_ready_pushes_printer_off_then_no_sheet_then_ok(
     reply = await client.call({"cmd": "wait_ready", "settle": 0})
     assert reply == {"ok": True, "cmd": "wait_ready"}
     reasons = [e["reason"] for e in client.events if e["event"] == "waiting"]
-    assert reasons == ["printer-off", "no-sheet"]
+    assert reasons == ["connecting", "printer-off", "no-sheet"]
     await client.close()
 
 
@@ -508,7 +509,7 @@ async def test_wait_ready_survives_a_dropped_link(bridge: BridgeConfig) -> None:
     reply = await client.call({"cmd": "wait_ready", "settle": 0})
     assert reply["ok"]
     assert [e["reason"] for e in client.events if e["event"] == "waiting"] == [
-        "printer-off"
+        "connecting"
     ]
     assert printer.connects == 2
     await client.close()
@@ -695,10 +696,10 @@ async def test_short_sheet_reprints_the_page_on_the_next_sheet(
     printer.release_print.set()
     await asyncio.sleep(0.8)
     assert printer.ejects == 1
-    assert "no-sheet" in _waiting_reasons(client) or printer.paper == PaperState.ABSENT
     printer.paper = PaperState.PRESENT
     reply = await client.reply()
     assert reply == {"ok": True, "cmd": "page_end", "impressions": 1}
+    assert "short-sheet" in _waiting_reasons(client)
     assert len(printer.printed) == 2
     assert printer.ejects == 2
     assert printer.connects == 2
@@ -720,4 +721,51 @@ async def test_cancel_while_waiting_for_the_reprint(bridge: BridgeConfig) -> Non
     reply = await client.reply()
     assert reply == {"ok": False, "cmd": "page_end", "error": "cancelled"}
     assert len(printer.printed) == 1
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_adapter_off_is_reported_as_such(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    printer.connected = False
+    printer.reachable = False
+    printer.connect_error = "Bluetooth scan failed, is the adapter powered on?"
+
+    async def operator() -> None:
+        await asyncio.sleep(0.3)
+        printer.reachable = True
+
+    asyncio.create_task(operator())
+    reply = await client.call({"cmd": "wait_ready", "settle": 0})
+    assert reply["ok"]
+    assert _waiting_reasons(client)[:2] == ["connecting", "adapter-off"]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_link_lost_mid_page_waits_for_the_printer_and_reprints(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    printer = _printer()
+    printer.release_print = asyncio.Event()
+    printer.print_error = ConnectionError("Printer connection lost")
+    await _submit_page(client, printer)
+    printer.connected = False
+    printer.reachable = False
+    printer.release_print.set()
+    await asyncio.sleep(0.5)
+    # Printer back on with the interrupted sheet still inside.
+    printer.reachable = True
+    await asyncio.sleep(0.8)
+    assert printer.paper == PaperState.ABSENT
+    printer.paper = PaperState.PRESENT
+    reply = await client.reply()
+    assert reply == {"ok": True, "cmd": "page_end", "impressions": 1}
+    assert len(printer.printed) == 2
+    assert printer.connects == 2
+    assert "printer-off" in _waiting_reasons(client)
     await client.close()

@@ -55,6 +55,19 @@ class PageBuffer:
         return Image.frombytes("1", size, bytes(self.data), "raw", "1;I")
 
 
+class _Reporter:
+    """Pushes ``waiting`` events, one per state change."""
+
+    def __init__(self, session: "Session") -> None:
+        self._session = session
+        self.state: str | None = None
+
+    async def __call__(self, reason: str) -> None:
+        if self.state != reason:
+            self.state = reason
+            await self._session._event("waiting", reason=reason)
+
+
 class Session:
     """Serve one client until it disconnects.
 
@@ -251,28 +264,31 @@ class Session:
     async def _cmd_wait_ready(
         self, obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
-        bridge = self._bridge
-        self._used_link = True
-        settle = float(obj.get("settle", bridge.config.settle_seconds))
-        abort = self._abort
-        state: str | None = None
-        timeouts = 0
+        settle = float(obj.get("settle", self._bridge.config.settle_seconds))
+        await self._wait_ready(settle, "no-sheet")
+        return {}
 
-        async def report(reason: str) -> None:
-            nonlocal state
-            if state != reason:
-                state = reason
-                await self._event("waiting", reason=reason)
+    async def _wait_ready(self, settle: float, empty_reason: str) -> None:
+        """Block until a sheet is seated, pushing ``waiting`` events meanwhile.
+
+        Args:
+            settle: Seconds to let an inserted sheet seat before returning.
+            empty_reason: Reason pushed while no sheet is present (``no-sheet``,
+                or ``short-sheet`` after a sheet ran out).
+
+        Raises:
+            CommandError: ``cancelled`` when an abort arrives.
+        """
+        bridge = self._bridge
+        abort = self._abort
+        report = self._reporter()
+        timeouts = 0
 
         while True:
             if abort.is_set():
                 raise CommandError("cancelled")
             if not bridge.connected:
-                await report("printer-off")
-                try:
-                    await bridge.connect(discovery_timeout=5.0)
-                except ConnectionError:
-                    await self._pause(_RETRY_SECONDS)
+                await self._connect_once(report)
                 continue
             printer = bridge.printer
             assert printer is not None
@@ -283,7 +299,7 @@ class Session:
                 continue
             if ready:
                 if settle <= 0:
-                    return {}
+                    return
                 try:
                     await printer.wait_for_ready(
                         timeout=10.0, poll=_POLL_SECONDS, settle=settle
@@ -293,7 +309,7 @@ class Session:
                 except ConnectionError as exc:
                     logger.info("Link lost while settling: %s", exc)
                     continue
-                return {}
+                return
             if reason.startswith("Could not query"):
                 timeouts += 1
                 if timeouts >= _MUTE_THRESHOLD:
@@ -306,8 +322,29 @@ class Session:
                     continue
             else:
                 timeouts = 0
-                await report("lid-open" if reason.startswith("Lid") else "no-sheet")
+                await report("lid-open" if reason.startswith("Lid") else empty_reason)
             await self._pause(_POLL_SECONDS)
+
+    def _reporter(self) -> _Reporter:
+        """A ``waiting`` event pusher that only reports state changes."""
+        return _Reporter(self)
+
+    async def _connect_once(self, report: _Reporter) -> None:
+        """One attempt to bring the link up, reporting why it is down.
+
+        ``connecting`` is pushed before the first attempt of an outage; a
+        failed attempt pushes ``adapter-off`` when Bluetooth itself is
+        unavailable, else ``printer-off``.
+        """
+        if report.state is None:
+            await report("connecting")
+        try:
+            await self._bridge.connect(discovery_timeout=5.0)
+        except ConnectionError as exc:
+            await report(
+                "adapter-off" if "adapter" in str(exc).lower() else "printer-off"
+            )
+            await self._pause(_RETRY_SECONDS)
 
     # ------------------------------------------------------------------
     # Page pipeline
@@ -407,7 +444,7 @@ class Session:
                     logger.warning("Sheet ran out: %s; waiting for the next sheet", exc)
                     await self._recover_link()
                     await self._eject_remainder(printer)
-                    await self._wait_for_fresh_sheet()
+                    await self._wait_for_fresh_sheet("short-sheet")
                     continue
                 except PrintAborted as exc:
                     if exc.reason == "cancelled":
@@ -422,7 +459,13 @@ class Session:
                     )
                     await self._wait_for_fresh_sheet()
                     continue
-                except (TimeoutError, ConnectionError, OSError) as exc:
+                except ConnectionError as exc:
+                    logger.warning(
+                        "Link lost mid-page: %s; waiting for the printer", exc
+                    )
+                    await self._wait_for_fresh_sheet()
+                    continue
+                except (TimeoutError, OSError) as exc:
                     raise CommandError(f"connection lost: {exc}") from exc
                 break
             await printer.eject_paper()
@@ -454,7 +497,7 @@ class Session:
         if last != 100:
             await self._event("progress", percent=100)
 
-    async def _wait_for_fresh_sheet(self) -> None:
+    async def _wait_for_fresh_sheet(self, empty_reason: str = "no-sheet") -> None:
         """Wait for the lid to close, drop a sheet already inside, wait for a new one.
 
         A sheet sensed as soon as the lid is closed may be the interrupted one
@@ -466,9 +509,14 @@ class Session:
         Raises:
             CommandError: ``cancelled`` when an abort arrives meanwhile.
         """
-        printer = self._require_printer()
+        bridge = self._bridge
         abort = self._abort
-        reported = False
+        report = self._reporter()
+        while not bridge.connected:
+            if abort.is_set():
+                raise CommandError("cancelled")
+            await self._connect_once(report)
+        printer = self._require_printer()
         timeouts = 0
         while True:
             if abort.is_set():
@@ -485,9 +533,8 @@ class Session:
                 if timeouts >= _MUTE_THRESHOLD:
                     timeouts = 0
                     await self._recover_link()
-            elif not reported:
-                reported = True
-                await self._event("waiting", reason="lid-open")
+            else:
+                await report("lid-open")
             await self._pause(_LID_POLL_SECONDS)
 
         try:
@@ -497,7 +544,7 @@ class Session:
         if paper == PaperState.PRESENT:
             logger.info("Sheet still inside after the interruption; ejecting it")
             await printer.eject_paper()
-        await self._cmd_wait_ready({}, b"")
+        await self._wait_ready(self._bridge.config.settle_seconds, empty_reason)
 
     async def _eject_remainder(self, printer: Any) -> None:
         """Clear a short sheet still held by the rollers after an overrun."""
