@@ -8,7 +8,7 @@ After=bluetooth.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/phomemo-bridge serve
+ExecStart=%h/.local/bin/phomemo-bridge server
 Environment=PHOMEMO_BRIDGE_SOCKET=%t/phomemo-bridge.sock
 Restart=on-failure
 RestartSec=5

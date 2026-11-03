@@ -12,7 +12,7 @@ CFLAGS  ?= -O2 -g
 CFLAGS  += -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror -Wno-unused-parameter \
            -I. -Ithird_party $(shell pkg-config --cflags pappl) \
            -DPAPPL_VERSION_STR='"$(shell pkg-config --modversion pappl)"'
-LDLIBS  += $(shell pkg-config --libs pappl)
+LDLIBS  += $(shell pkg-config --libs pappl) -pthread
 
 APP      = phomemo-printer-app
 SRCS     = main.c bridge.c device.c driver.c job.c icons.c

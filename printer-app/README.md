@@ -41,15 +41,16 @@ phomemo-printer-app server -o log-level=info
 
 The server listens on port 8000 for the first user on a machine (the log names the port, `-o server-port=N` pins it) and serves a web interface at `http://localhost:8000/`. It binds all interfaces so other machines can print; `-o listen-hostname=localhost` keeps it local. Queue management through the web interface is limited to localhost by default.
 
-## Add the printer
+## Register the printer
 
-When the server starts without a saved state it looks for printers through the bridge and adds the first M08F in range as **Phomemo M08F**. To add one by hand (printer on, bridge running):
+During the first hour after its first start the server looks for a printer every 30 seconds (through the bridge, printer on and in range) and registers the first M08F it finds as **Phomemo M08F**. Nothing to do beyond switching the printer on. After that hour, or for a second printer, register by hand:
 
 ```bash
-phomemo-printer-app devices                          # lists phomemo://... URIs
-phomemo-printer-app add -d "Phomemo M08F" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF
-phomemo-printer-app printers
+phomemo-printer-app autoadd                          # scan and add every M08F in range
+phomemo-printer-app printers                         # confirm what is configured
 ```
+
+or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF` adds a known address. `phomemo-printer-app --help` (or `-h` on its own) lists all subcommands.
 
 The device URI carries the printer's BLE address with dashes instead of colons, because a URI host cannot hold colons. The printer name is what DNS-SD advertises and what printer dialogs show; the web interface lives at `http://localhost:8000/Phomemo_M08F/`.
 
@@ -92,7 +93,7 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 
 - **No devices listed / jobs pause**: the bridge is not reachable. Check `systemctl --user status phomemo-bridge` and that `PHOMEMO_BRIDGE_SOCKET` (or `$XDG_RUNTIME_DIR/phomemo-bridge.sock`) is the same for both programs; `phomemo-bridge status` talks to the daemon directly.
 - **Printer not found although it is on**: BlueZ may still hold a stale link after a killed daemon; `bluetoothctl disconnect <address>` frees it. The printer does not advertise while connected, and switches off after ten minutes idle.
-- **Logs**: with the units, `journalctl --user -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge serve -v`.
+- **Logs**: with the units, `journalctl --user -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge server -v`.
 
 ## Sources
 
