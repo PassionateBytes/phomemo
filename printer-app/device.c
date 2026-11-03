@@ -11,6 +11,12 @@
 
 #define URI_PREFIX PHOMEMO_URI_SCHEME "://"
 
+typedef struct
+{
+  phomemo_bridge_t bridge;
+  char address[64];  // BLE address sent with open
+} phomemo_device_t;
+
 const char *
 phomemo_socket_path(char *buffer, size_t bufsize)
 {
@@ -116,78 +122,105 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
   return stopped;
 }
 
+// Connects to the daemon and opens the printer. Closes the handle again
+// when the daemon rejects open.
+static bool
+open_bridge(phomemo_device_t *dev, char *err, size_t errsize)
+{
+  if (!bridge_connect(&dev->bridge, err, errsize))
+    return false;
+
+  cJSON *request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "open");
+  cJSON_AddStringToObject(request, "address", dev->address);
+  cJSON *reply = phomemo_bridge_call(&dev->bridge, request, NULL, 0, NULL, NULL,
+                                     err, errsize);
+  cJSON_Delete(request);
+  if (!reply)
+  {
+    phomemo_bridge_close(&dev->bridge);
+    return false;
+  }
+  cJSON_Delete(reply);
+  return true;
+}
+
 static bool
 phomemo_open_cb(pappl_device_t *device, const char *device_uri,
                 const char *name)
 {
-  char address[64];
   char err[256];
 
-  if (!parse_address(device_uri, address, sizeof(address)))
+  phomemo_device_t *dev = calloc(1, sizeof(*dev));
+  if (!dev)
+    return false;
+  dev->bridge.fd = -1;
+
+  if (!parse_address(device_uri, dev->address, sizeof(dev->address)))
   {
     papplDeviceError(device, "Bad device URI '%s'.", device_uri);
+    free(dev);
     return false;
   }
 
-  phomemo_bridge_t *bridge = calloc(1, sizeof(*bridge));
-  if (!bridge)
-    return false;
-
-  if (!bridge_connect(bridge, err, sizeof(err)))
+  if (!open_bridge(dev, err, sizeof(err)))
   {
     papplDeviceError(device, "Unable to reach phomemo-bridge: %s", err);
-    free(bridge);
+    free(dev);
     return false;
   }
 
-  cJSON *request = cJSON_CreateObject();
-  cJSON_AddStringToObject(request, "cmd", "open");
-  cJSON_AddStringToObject(request, "address", address);
-  cJSON *reply = phomemo_bridge_call(bridge, request, NULL, 0, NULL, NULL, err,
-                                     sizeof(err));
-  cJSON_Delete(request);
-  if (!reply)
-  {
-    papplDeviceError(device, "phomemo-bridge rejected open: %s", err);
-    phomemo_bridge_close(bridge);
-    free(bridge);
-    return false;
-  }
-  cJSON_Delete(reply);
-
-  papplDeviceSetData(device, bridge);
+  papplDeviceSetData(device, dev);
   return true;
+}
+
+phomemo_bridge_t *
+phomemo_device_bridge(pappl_device_t *device, char *err, size_t errsize)
+{
+  phomemo_device_t *dev = papplDeviceGetData(device);
+
+  if (!dev)
+  {
+    snprintf(err, errsize, "printer device is not open");
+    return NULL;
+  }
+  if (dev->bridge.fd < 0 && !open_bridge(dev, err, errsize))
+    return NULL;
+  return &dev->bridge;
 }
 
 static void
 phomemo_close_cb(pappl_device_t *device)
 {
-  phomemo_bridge_t *bridge = papplDeviceGetData(device);
-  if (!bridge)
+  phomemo_device_t *dev = papplDeviceGetData(device);
+  if (!dev)
     return;
 
-  cJSON *request = cJSON_CreateObject();
-  cJSON_AddStringToObject(request, "cmd", "close");
-  cJSON_Delete(phomemo_bridge_call(bridge, request, NULL, 0, NULL, NULL, NULL,
-                                   0));
-  cJSON_Delete(request);
-  phomemo_bridge_close(bridge);
-  free(bridge);
+  if (dev->bridge.fd >= 0)
+  {
+    cJSON *request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "cmd", "close");
+    cJSON_Delete(phomemo_bridge_call(&dev->bridge, request, NULL, 0, NULL,
+                                     NULL, NULL, 0));
+    cJSON_Delete(request);
+  }
+  phomemo_bridge_close(&dev->bridge);
+  free(dev);
   papplDeviceSetData(device, NULL);
 }
 
 static ssize_t
 phomemo_read_cb(pappl_device_t *device, void *buffer, size_t bytes)
 {
-  phomemo_bridge_t *bridge = papplDeviceGetData(device);
-  return bridge ? read(bridge->fd, buffer, bytes) : -1;
+  phomemo_device_t *dev = papplDeviceGetData(device);
+  return dev && dev->bridge.fd >= 0 ? read(dev->bridge.fd, buffer, bytes) : -1;
 }
 
 static ssize_t
 phomemo_write_cb(pappl_device_t *device, const void *buffer, size_t bytes)
 {
-  phomemo_bridge_t *bridge = papplDeviceGetData(device);
-  return bridge ? write(bridge->fd, buffer, bytes) : -1;
+  phomemo_device_t *dev = papplDeviceGetData(device);
+  return dev && dev->bridge.fd >= 0 ? write(dev->bridge.fd, buffer, bytes) : -1;
 }
 
 // Sends status on a bridge connection and maps the reply onto printer
@@ -222,14 +255,14 @@ query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, char *err,
 static pappl_preason_t
 phomemo_devstatus_cb(pappl_device_t *device)
 {
-  phomemo_bridge_t *bridge = papplDeviceGetData(device);
+  phomemo_device_t *dev = papplDeviceGetData(device);
   pappl_preason_t reasons;
   char err[256];
 
-  if (!bridge)
+  if (!dev || dev->bridge.fd < 0)
     return PAPPL_PREASON_OTHER;
 
-  if (!query_status(bridge, &reasons, err, sizeof(err)))
+  if (!query_status(&dev->bridge, &reasons, err, sizeof(err)))
   {
     papplDeviceError(device, "phomemo-bridge status failed: %s", err);
     return PAPPL_PREASON_OTHER;

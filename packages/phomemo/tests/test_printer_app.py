@@ -26,6 +26,7 @@ from phomemo.bridge.session import Session
 from phomemo.events import LidState, PaperState
 from phomemo.printer import SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
+from PIL import Image
 
 from tests.test_bridge_server import FakePrinter
 
@@ -36,6 +37,7 @@ DEVICE_URI = "phomemo://" + ADDRESS.replace(":", "-")
 PRINTER = "phomemo"
 
 SOURCE_PDF = Path("/usr/share/cups/ipptool/onepage-a4.pdf.gz")
+MULTIPAGE_PDF = Path("/usr/share/cups/ipptool/document-a4.pdf.gz")
 A4_ROWS = get_profile("M08F-A4").rows_for(297.0)
 
 if not BINARY.exists():
@@ -64,6 +66,7 @@ class FakeBridge:
     """
 
     env: dict[str, str]
+    server: Any
     page_begins: list[dict[str, Any]] = field(default_factory=list)
 
     @property
@@ -105,11 +108,12 @@ async def fake_bridge(
     )
     server = await start_server(config, printer_factory=ScriptedPrinter)
     env = {**os.environ, "PHOMEMO_BRIDGE_SOCKET": str(config.socket_path)}
+    bridge = FakeBridge(env, server, page_begins)
     try:
-        yield FakeBridge(env, page_begins)
+        yield bridge
     finally:
-        server.close()
-        server.close_clients()
+        bridge.server.close()
+        bridge.server.close_clients()
 
 
 class AppServer:
@@ -191,7 +195,11 @@ async def app_server(
         yield AppServer(env, port, fake_bridge)
     finally:
         proc.terminate()
-        await asyncio.to_thread(proc.wait, 10)
+        try:
+            await asyncio.to_thread(proc.wait, 10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            await asyncio.to_thread(proc.wait, 10)
 
 
 async def run_app(env: dict[str, str], *args: str) -> tuple[int, str, str]:
@@ -290,7 +298,7 @@ PRINT_JOB_TEST = """{{
   ATTR language attributes-natural-language en
   ATTR uri printer-uri $uri
   ATTR name requesting-user-name tester
-  ATTR mimeMediaType document-format image/pwg-raster
+  ATTR mimeMediaType document-format {document_format}
   GROUP job-attributes-tag
 {attributes}
   FILE $filename
@@ -301,13 +309,16 @@ PRINT_JOB_TEST = """{{
 """
 
 
-async def make_raster(tmp_path: Path, name: str, width_pt: int, height_pt: int) -> Path:
-    """Render page one of the CUPS sample PDF as sgray_8 PWG raster at 203 dpi."""
+async def make_raster(
+    tmp_path: Path, name: str, width_pt: int, height_pt: int, pages: int = 1
+) -> Path:
+    """Render the first pages of the CUPS sample document as sgray_8 PWG raster."""
     gs = shutil.which("gs")
     if gs is None:
         pytest.skip("ghostscript not installed")
     pdf = tmp_path / "source.pdf"
-    pdf.write_bytes(gzip.decompress(SOURCE_PDF.read_bytes()))
+    source = SOURCE_PDF if pages == 1 else MULTIPAGE_PDF
+    pdf.write_bytes(gzip.decompress(source.read_bytes()))
     out = tmp_path / name
     await asyncio.to_thread(
         subprocess.run,
@@ -317,7 +328,7 @@ async def make_raster(tmp_path: Path, name: str, width_pt: int, height_pt: int) 
             "-dNOPAUSE",
             "-dBATCH",
             "-dFirstPage=1",
-            "-dLastPage=1",
+            f"-dLastPage={pages}",
             "-sDEVICE=pwgraster",
             "-r203",
             "-dFIXEDMEDIA",
@@ -346,11 +357,12 @@ def parse_attributes(text: str) -> dict[str, str]:
 def start_job(
     server: AppServer,
     tmp_path: Path,
-    raster: Path,
+    document: Path,
     *,
     quality: int | None = None,
     tone: str | None = None,
     media: str | None = None,
+    document_format: str = "image/pwg-raster",
 ) -> asyncio.Task[subprocess.CompletedProcess[str]]:
     """Submit a raster with ipptool in the background.
 
@@ -364,12 +376,23 @@ def start_job(
         attributes.append(f"  ATTR keyword phomemo-tone {tone}")
     if media is not None:
         attributes.append(f"  ATTR keyword media {media}")
-    test_file = tmp_path / "print-job.test"
-    test_file.write_text(PRINT_JOB_TEST.format(attributes="\n".join(attributes)))
+    test_file = tmp_path / f"print-{document.name}.test"
+    test_file.write_text(
+        PRINT_JOB_TEST.format(
+            attributes="\n".join(attributes), document_format=document_format
+        )
+    )
     return asyncio.create_task(
         asyncio.to_thread(
             subprocess.run,
-            ["ipptool", "-tv", "-f", str(raster), server.printer_url(), str(test_file)],
+            [
+                "ipptool",
+                "-tv",
+                "-f",
+                str(document),
+                server.printer_url(),
+                str(test_file),
+            ],
             capture_output=True,
             text=True,
             timeout=90,
@@ -502,6 +525,56 @@ async def test_sheet_ran_out_aborts_job(printer: AppServer, tmp_path: Path) -> N
     assert "paper ran out" in attrs["job-state-message"]
 
 
+def make_png(tmp_path: Path, name: str = "page.png") -> Path:
+    """A small grayscale PNG that PAPPL renders itself."""
+    path = tmp_path / name
+    image = Image.new("L", (400, 600), 255)
+    image.paste(0, (50, 50, 350, 120))
+    image.save(path)
+    return path
+
+
+async def test_two_page_job_waits_for_each_sheet(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "two.pwg", 595, 842, pages=2)
+    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    assert attrs["job-impressions-completed"] == "2"
+    fake = printer.bridge.printer
+    assert fake.printed == [(210 * A4_ROWS, A4_ROWS, "MEDIUM")] * 2
+    assert fake.ejects == 2
+    assert len(printer.bridge.page_begins) == 2
+
+
+async def test_bridge_restart_recovers_queued_job(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    ScriptedPrinter.paper_default = PaperState.ABSENT
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    waiting = start_job(printer, tmp_path, raster)
+    await active_job_id(printer)
+    queued = start_job(
+        printer, tmp_path, make_png(tmp_path), document_format="image/png"
+    )
+    await asyncio.sleep(1)
+
+    # The daemon restarts: the old session dies, a fresh one serves the socket.
+    printer.bridge.server.close()
+    printer.bridge.server.close_clients()
+    ScriptedPrinter.paper_default = PaperState.PRESENT
+    config = BridgeConfig(
+        socket_path=tmp_path / "bridge.sock", hold_seconds=0.2, drain_seconds=0.0
+    )
+    printer.bridge.server = await start_server(config, printer_factory=ScriptedPrinter)
+
+    first = await finish_job(waiting)
+    assert first["job-state"] == "aborted", first
+    second = await finish_job(queued)
+    assert second["job-state"] == "completed", second
+    assert printer.bridge.printer.printed[-1][1] == A4_ROWS
+
+
 async def printer_state(server: AppServer, tmp_path: Path) -> tuple[str, str]:
     attrs = await printer_attributes(server, tmp_path)
     return attrs["printer-state"], attrs.get("printer-state-reasons", "")
@@ -521,6 +594,7 @@ async def test_bridge_down_pauses_queue_until_bridge_returns(
         await asyncio.sleep(0.25)
     assert state == "stopped", (state, reasons)
     assert not task.done()
+    assert str(tmp_path / "late.sock") in (tmp_path / "app.log").read_text()
 
     config = BridgeConfig(
         socket_path=tmp_path / "late.sock", hold_seconds=0.2, drain_seconds=0.0

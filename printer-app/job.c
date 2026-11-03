@@ -136,10 +136,13 @@ bool
 phomemo_rstartjob_cb(pappl_job_t *job, pappl_pr_options_t *options,
                      pappl_device_t *device)
 {
-  phomemo_bridge_t *bridge = papplDeviceGetData(device);
+  char err[256];
+
+  phomemo_bridge_t *bridge = phomemo_device_bridge(device, err, sizeof(err));
   if (!bridge)
   {
-    papplJobSetMessage(job, "Printer device is not open.");
+    papplJobSetReasons(job, PAPPL_JREASON_ERRORS_DETECTED, 0);
+    papplJobSetMessage(job, "Unable to reach phomemo-bridge: %s", err);
     return false;
   }
 
@@ -162,6 +165,14 @@ phomemo_rstartpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
 
   if (!pj)
     return false;
+
+  pj->bridge = phomemo_device_bridge(device, err, sizeof(err));
+  if (!pj->bridge)
+  {
+    papplJobSetReasons(job, PAPPL_JREASON_ERRORS_DETECTED, 0);
+    papplJobSetMessage(job, "Unable to reach phomemo-bridge: %s", err);
+    return false;
+  }
 
   pj->row_bytes = options->header.cupsBytesPerLine;
   unsigned char *buffer = realloc(pj->buffer, pj->row_bytes * ROWS_PER_MESSAGE);
@@ -253,8 +264,9 @@ phomemo_rendpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
     return false;
   pj->page_open = false;
 
-  // A cancelled page is dropped unfinished; the bridge discards it when
-  // the device closes.
+  // A cancelled page is dropped unfinished; the bridge replaces it at the
+  // next page_begin or when its session ends. The seated sheet stays in
+  // the printer.
   if (papplJobIsCanceled(job))
     return true;
 

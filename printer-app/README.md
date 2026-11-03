@@ -78,9 +78,9 @@ Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the 
 
 - A job waits for a sheet; the printer reports `media-empty`, `cover-open` or `other` (printer off) until the sheet is seated, then prints and ejects. A multi-page job waits for each sheet in turn.
 - A printer that is switched off while a job waits is picked up again when it comes back on.
-- Cancelling a job while it waits, or during the transfer, stops it and ejects the sheet.
+- Cancelling a job while it waits for a sheet stops it; cancelling once printing has started stops the transfer and ejects the sheet. A job cancelled while its page is still being spooled leaves the seated sheet in the printer for the next job.
 - A sheet shorter than the page aborts the job with `paper ran out`; a lid opened mid-page aborts it with `lid opened`.
-- When the bridge is not running the queue pauses (`printer-state` stopped, the device error names the socket path in the log) and resumes on its own once the bridge answers.
+- When the bridge is not running the queue pauses (`printer-state` stopped, the device error in the log names the socket path) and resumes on its own once the bridge answers. A bridge restarted while jobs are queued fails the job in progress; the queued jobs reconnect and print.
 - While idle, lid and paper state show up in `printer-state-reasons` as long as the bridge still holds the link (two minutes after a job by default).
 
 ## Troubleshooting
