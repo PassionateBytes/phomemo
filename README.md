@@ -21,7 +21,14 @@ The [`docs/m08f-protocol-reference.md`](docs/m08f-protocol-reference.md) contain
 
 ## Getting Started
 
-Use the M08F as a system printer, from source (Fedora; `pappl-devel` and `cups-devel` needed to build):
+Use the M08F as a system printer. On Fedora, from the COPR repository:
+
+```bash
+sudo dnf copr enable passionatebytes/phomemo-driver
+sudo dnf install phomemo-driver      # the whole driver; python3-phomemo alone for just the library
+```
+
+From source (Fedora; `pappl-devel` and `cups-devel` needed to build):
 
 ```bash
 git clone https://github.com/PassionateBytes/phomemo-driver.git
