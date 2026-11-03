@@ -43,7 +43,7 @@ The server listens on port 8000 for the first user on a machine (the log names t
 
 ## Register the printer
 
-During the first hour after its first start the server looks for a printer every 30 seconds (through the bridge, printer on and in range) and registers the first M08F it finds as **Phomemo M08F**. Nothing to do beyond switching the printer on. After that hour, or for a second printer, register by hand:
+At every start the server looks for printers through the bridge and registers each M08F in range (printer on, lid closed) as **Phomemo M08F**; a printer registered earlier stays. So: install, switch the printer on, start or restart the service. Later, or for a printer that was off at the time:
 
 ```bash
 phomemo-printer-app autoadd                          # scan and add every M08F in range
