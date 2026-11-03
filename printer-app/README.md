@@ -26,7 +26,7 @@ The pytest harness starts the built binary as a private server under the test's 
 Fedora, from the COPR repository (both parts, services enabled and started by the package presets):
 
 ```bash
-sudo dnf copr enable <account>/phomemo-driver
+sudo dnf copr enable passionatebytes/phomemo-driver
 sudo dnf install phomemo-driver
 ```
 
