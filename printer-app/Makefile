@@ -2,17 +2,21 @@
 #
 #   make            build phomemo-printer-app
 #   make test       build and run the C unit tests
-#   make install    install under $(PREFIX) (default ~/.local); with a
-#                   PREFIX inside $(HOME) the user unit goes to
-#                   ~/.config/systemd/user as well
+#   make install    install the binary, the system unit and its preset
+#                   (PREFIX=/usr/local, UNITDIR=/etc/systemd/system; needs
+#                   root; DESTDIR for package builds)
 
-PREFIX  ?= $(HOME)/.local
-CC      ?= cc
-CFLAGS  ?= -O2 -g
-CFLAGS  += -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror -Wno-unused-parameter \
-           -I. -Ithird_party $(shell pkg-config --cflags pappl) \
-           -DPAPPL_VERSION_STR='"$(shell pkg-config --modversion pappl)"'
-LDLIBS  += $(shell pkg-config --libs pappl) -pthread
+PREFIX    ?= /usr/local
+DESTDIR   ?=
+UNITDIR   ?= /etc/systemd/system
+PRESETDIR ?= /usr/lib/systemd/system-preset
+CC        ?= cc
+CFLAGS    ?= -O2 -g
+ALL_CFLAGS = $(CFLAGS) -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror \
+             -Wno-unused-parameter -I. -Ithird_party \
+             $(shell pkg-config --cflags pappl) \
+             -DPAPPL_VERSION_STR='"$(shell pkg-config --modversion pappl)"'
+ALL_LDLIBS = $(LDLIBS) $(shell pkg-config --libs pappl) -pthread
 
 APP      = phomemo-printer-app
 SRCS     = main.c bridge.c device.c driver.c job.c icons.c
@@ -25,37 +29,37 @@ TESTS    = tests/test_bridge tests/test_driver
 all: $(APP)
 
 $(APP): $(OBJS) $(VOBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(VOBJS) $(LDLIBS)
+	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(VOBJS) $(ALL_LDLIBS)
 
 %.o: %.c phomemo.h bridge.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
 icons.c: $(ICONS) icons/embed.sh
 	sh icons/embed.sh $(ICONS) > $@
 
 third_party/%.o: third_party/%.c
-	$(CC) $(CFLAGS) -Wno-error -c -o $@ $<
+	$(CC) $(ALL_CFLAGS) -Wno-error -c -o $@ $<
 
 tests/test_bridge: tests/test_bridge.o bridge.o $(VOBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^
 
 tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o icons.o $(VOBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^ $(ALL_LDLIBS)
 
 test: $(TESTS)
 	@for t in $(TESTS); do echo "== $$t"; ./$$t || exit 1; done
 
 UNIT     = ../packaging/phomemo-printer-app.service
-UNITDIR  = $(HOME)/.config/systemd/user
+PRESET   = ../packaging/90-phomemo-printer-app.preset
 
+# Installs the binary under PREFIX and the system unit (its ExecStart
+# rewritten to that PREFIX) and preset; DESTDIR for package builds.
 install: $(APP)
-	install -d $(PREFIX)/bin
-	install -m 755 $(APP) $(PREFIX)/bin/$(APP)
-	@case "$(PREFIX)" in \
-	  $(HOME)/*) install -d $(UNITDIR); install -m 644 $(UNIT) $(UNITDIR)/; \
-	    echo "installed $(UNITDIR)/phomemo-printer-app.service";; \
-	  *) echo "user unit not installed; copy $(UNIT) to the systemd unit directory";; \
-	esac
+	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(UNITDIR) $(DESTDIR)$(PRESETDIR)
+	install -m 755 $(APP) $(DESTDIR)$(PREFIX)/bin/$(APP)
+	sed 's|/usr/bin/phomemo-printer-app|$(PREFIX)/bin/phomemo-printer-app|' $(UNIT) \
+	  > $(DESTDIR)$(UNITDIR)/phomemo-printer-app.service
+	install -m 644 $(PRESET) $(DESTDIR)$(PRESETDIR)/90-phomemo-printer-app.preset
 
 clean:
 	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o third_party/*.o icons.c

@@ -186,6 +186,8 @@ async def _start(
     if config.socket_path.exists():
         config.socket_path.unlink()
     server = await asyncio.start_unix_server(handle, path=str(config.socket_path))
+    # Any local user may drive the printer, as with CUPS's own socket.
+    config.socket_path.chmod(0o666)
     logger.info("Listening on %s", config.socket_path)
     return server, bridge
 
