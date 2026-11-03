@@ -25,6 +25,7 @@
 // a sheet applies to both ends.
 #define PHOMEMO_MARGIN 1000
 #define PHOMEMO_TONE_OPTION "phomemo-tone"
+#define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printer takes
 #define PHOMEMO_LOW_BATTERY 15  // percent
 
 // Device info for a discovered printer: the make and model, with the last

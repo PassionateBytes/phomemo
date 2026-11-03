@@ -75,7 +75,7 @@ A queue with a name of your choosing: `lpadmin -p <name> -E -v ipp://localhost:8
 
 For example `lp -d phomemo -o print-quality=5 -o phomemo-tone=ordered photo.png`.
 
-Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the first 10 mm, and PAPPL only models symmetric margins) and 0 mm at the sides. A raster that ignores the bottom margin is printed to 5 mm before the sheet end, where the bridge clips. One page per sheet, no duplex, grayscale only (`sgray_8` raster).
+The only media type is `thermal` (the printer takes nothing else). Margins are 10 mm at the top and bottom of the sheet (the head cannot reach the first 10 mm, and PAPPL only models symmetric margins) and 0 mm at the sides. A raster that ignores the bottom margin is printed to 5 mm before the sheet end, where the bridge clips. One page per sheet, no duplex, grayscale only (`sgray_8` raster).
 
 ## Behaviour
 

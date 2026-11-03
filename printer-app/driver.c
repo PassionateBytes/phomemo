@@ -76,7 +76,7 @@ set_media(pappl_media_col_t *media, const char *size_name, int width,
   media->left_margin = 0;
   media->right_margin = 0;
   snprintf(media->source, sizeof(media->source), "main");
-  snprintf(media->type, sizeof(media->type), "stationery");
+  snprintf(media->type, sizeof(media->type), PHOMEMO_MEDIA_TYPE);
 }
 
 // Human-readable labels for the vendor option in the web interface.
@@ -85,7 +85,8 @@ static const char *const strings_en =
   "\"" PHOMEMO_TONE_OPTION ".auto\" = \"Automatic (by content)\";\n"
   "\"" PHOMEMO_TONE_OPTION ".threshold\" = \"Threshold (text, line art)\";\n"
   "\"" PHOMEMO_TONE_OPTION ".ordered\" = \"Ordered dither\";\n"
-  "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Error diffusion (photos)\";\n";
+  "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Error diffusion (photos)\";\n"
+  "\"media-type." PHOMEMO_MEDIA_TYPE "\" = \"Thermal paper\";\n";
 
 // Versions and labels shown by the system; PAPPL has no hook between
 // creating the system and loading printers, so the driver callback
@@ -167,7 +168,7 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   data->num_source = 1;
   data->source[0] = "main";
   data->num_type = 1;
-  data->type[0] = "stationery";
+  data->type[0] = PHOMEMO_MEDIA_TYPE;
   data->num_media = (int)(sizeof(media_sizes) / sizeof(media_sizes[0]));
   for (int i = 0; i < data->num_media; i++)
     data->media[i] = media_sizes[i];
