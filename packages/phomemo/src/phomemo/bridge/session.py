@@ -3,14 +3,18 @@
 import asyncio
 import contextlib
 import logging
+import os
+import tempfile
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from PIL import Image
 
 from phomemo.bridge.protocol import ProtocolError, encode_message, read_message
 from phomemo.bridge.server import Bridge
+from phomemo.bridge.testpage import PageInfo, render_test_page, save_test_page
 from phomemo.events import LidState, PaperState
 from phomemo.imaging import ToneMode, image_to_bitmap, prepare_page
 from phomemo.printer import PrintAborted, SheetRanOut
@@ -198,6 +202,7 @@ class Session:
             "close": self._cmd_close,
             "status": self._cmd_status,
             "identify": self._cmd_identify,
+            "test_page": self._cmd_test_page,
             "wait_ready": self._cmd_wait_ready,
             "page_begin": self._cmd_page_begin,
             "lines": self._cmd_lines,
@@ -272,6 +277,42 @@ class Session:
             await printer.feed(_IDENTIFY_FEED_LINES)
             await asyncio.sleep(_IDENTIFY_PAUSE_SECONDS)
         return {}
+
+    async def _cmd_test_page(
+        self, obj: dict[str, Any], _payload: bytes
+    ) -> dict[str, Any]:
+        """Render the test page as a PNG and reply with its path.
+
+        Raises:
+            CommandError: When the printer cannot be reached.
+        """
+        self._used_link = True
+        bridge = self._bridge
+        if not bridge.connected:
+            try:
+                await bridge.connect(discovery_timeout=5.0)
+            except ConnectionError as exc:
+                raise CommandError(f"printer not reachable: {exc}") from exc
+        printer = self._require_printer()
+        device = await printer.query_device_info(timeout=1.0)
+        versions = obj.get("versions") or {}
+        info = PageInfo(
+            printer_name=str(obj.get("printer_name", "Phomemo M08F")),
+            address=getattr(printer, "address", None),
+            firmware=device.firmware,
+            serial=device.serial,
+            battery=device.battery,
+            auto_off_minutes=device.auto_off_minutes,
+            chunk_bytes=getattr(printer, "chunk_bytes", None),
+            versions={str(k): str(v) for k, v in versions.items()},
+            socket_path=str(bridge.config.socket_path),
+        )
+        length_mm = bridge.profile.sheet_length_mm or 297.0
+        directory = Path(os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir())
+        path = directory / "phomemo-testpage.png"
+        img = await asyncio.to_thread(render_test_page, info, bridge.profile, length_mm)
+        await asyncio.to_thread(save_test_page, img, path, bridge.profile.dpi)
+        return {"path": str(path)}
 
     async def _cmd_eject(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         self._used_link = True

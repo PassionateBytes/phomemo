@@ -123,6 +123,7 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   if (strcmp(driver_name, PHOMEMO_DRIVER_NAME))
     return false;
 
+  data->testpage_cb = phomemo_testpage_cb;
   data->identify_cb = phomemo_identify_cb;
   data->identify_supported = PAPPL_IDENTIFY_ACTIONS_SOUND;
   data->identify_default = PAPPL_IDENTIFY_ACTIONS_SOUND;

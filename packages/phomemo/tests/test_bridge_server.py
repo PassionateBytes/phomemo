@@ -12,7 +12,7 @@ from bleak.backends.device import BLEDevice
 from phomemo.bridge.protocol import encode_message, read_message
 from phomemo.bridge.server import BridgeConfig, start_server
 from phomemo.events import LidState, PaperState
-from phomemo.printer import PrintAborted, SheetRanOut
+from phomemo.printer import DeviceInfo, PrintAborted, SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
 A4 = get_profile("M08F-A4")
@@ -67,6 +67,20 @@ class FakePrinter:
 
     async def query_paper(self, timeout: float = 1.0) -> PaperState | None:
         return None if self.muted else self.paper
+
+    async def query_device_info(self, timeout: float = 1.0) -> DeviceInfo:
+        return DeviceInfo(
+            battery=self.battery,
+            lid=self.lid,
+            paper=self.paper,
+            firmware="1.1.3",
+            serial="<serial>",
+            auto_off_minutes=10,
+        )
+
+    @property
+    def chunk_bytes(self) -> int:
+        return 244
 
     async def query_battery(self, timeout: float = 1.0) -> int | None:
         return None if self.muted else self.battery
@@ -803,4 +817,28 @@ async def test_identify_connects_first_and_skips_the_eject_without_paper(
     assert printer.connected is True
     assert printer.ejects == 0
     assert len(printer.feeds) == 3
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_test_page_renders_a_png_with_the_device_details(
+    bridge: BridgeConfig, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("XDG_RUNTIME_DIR", str(tmp_path))
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    reply = await client.call(
+        {
+            "cmd": "test_page",
+            "printer_name": "Phomemo M08F",
+            "versions": {"phomemo-printer-app": "0.1.0", "pappl": "1.4.12"},
+        }
+    )
+    assert reply["ok"]
+    path = Path(reply["path"])
+    assert path.parent == tmp_path
+    from PIL import Image
+
+    with Image.open(path) as img:
+        assert img.size == (1678, 2213)
     await client.close()
