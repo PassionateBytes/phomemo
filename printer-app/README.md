@@ -23,19 +23,25 @@ The pytest harness starts the built binary as a private server under the test's 
 
 ## Install
 
+Fedora, from the COPR repository (both parts, services enabled and started by the package presets):
+
 ```bash
-make -C printer-app install    # PREFIX defaults to ~/.local
+sudo dnf copr enable <account>/phomemo
+sudo dnf install phomemo-printer-app
 ```
 
-With a `PREFIX` under `$HOME` the systemd user unit `packaging/phomemo-printer-app.service` is installed to `~/.config/systemd/user/` as well. Install `phomemo` (with its `phomemo-bridge` unit) the same way, then:
+From source, as root: the Python package system-wide (`pip install packages/phomemo` or the wheel from a release), its system unit, service user and preset from `packaging/`, then the application:
 
 ```bash
-systemctl --user enable --now phomemo-bridge phomemo-printer-app
+sudo make -C printer-app install                 # PREFIX=/usr/local, unit in /etc/systemd/system
+sudo systemctl daemon-reload
+sudo systemctl enable --now phomemo-bridge phomemo-printer-app
 ```
 
-Both units point at the same bridge socket, `$XDG_RUNTIME_DIR/phomemo-bridge.sock`. Without the unit, run the server by hand:
+Both services are system services: the bridge runs as the `phomemo` user and listens on `/run/phomemo/bridge.sock` (open to local users), the application runs as root like other PAPPL printer applications, with its state in `/var/lib` and the web interface on port 8000. Without the units, for development, run both by hand as your user (the bridge socket then lives in `$XDG_RUNTIME_DIR`):
 
 ```bash
+phomemo-bridge server
 phomemo-printer-app server -o log-level=info
 ```
 
@@ -46,9 +52,11 @@ The server listens on port 8000 for the first user on a machine (the log names t
 At every start the server looks for printers through the bridge and registers each M08F in range (printer on, lid closed) as **Phomemo M08F**; a printer registered earlier stays. So: install, switch the printer on, start or restart the service. Later, or for a printer that was off at the time:
 
 ```bash
-phomemo-printer-app autoadd                          # scan and add every M08F in range
+sudo phomemo-printer-app autoadd                     # scan and add every M08F in range
 phomemo-printer-app printers                         # confirm what is configured
 ```
+
+(`sudo` because adding a printer to the system service is an administrative change; listing is not.)
 
 or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF` adds a known address. `phomemo-printer-app --help` (or `-h` on its own) lists all subcommands.
 
@@ -93,7 +101,7 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 
 - **No devices listed / jobs pause**: the bridge is not reachable. Check `systemctl --user status phomemo-bridge` and that `PHOMEMO_BRIDGE_SOCKET` (or `$XDG_RUNTIME_DIR/phomemo-bridge.sock`) is the same for both programs; `phomemo-bridge status` talks to the daemon directly.
 - **Printer not found although it is on**: BlueZ may still hold a stale link after a killed daemon; `bluetoothctl disconnect <address>` frees it. The printer does not advertise while connected, and switches off after ten minutes idle.
-- **Logs**: with the units, `journalctl --user -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge server -v`.
+- **Logs**: with the units, `journalctl -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge server -v`.
 
 ## Sources
 

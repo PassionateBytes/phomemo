@@ -87,3 +87,13 @@ def test_config_rejects_unknown_profile(tmp_path: Path) -> None:
 def test_config_explicit_missing_file_is_an_error(tmp_path: Path) -> None:
     with pytest.raises(ConfigError, match="absent.toml"):
         load_config(paths=[tmp_path / "absent.toml"], env={}, require_files=True)
+
+
+def test_default_socket_prefers_the_system_bridge_when_present(tmp_path: Path) -> None:
+    from phomemo.bridge.config import default_socket
+
+    system = tmp_path / "bridge.sock"
+    env = {"XDG_RUNTIME_DIR": str(tmp_path / "run")}
+    assert default_socket(env, system) == tmp_path / "run" / "phomemo-bridge.sock"
+    system.touch()
+    assert default_socket(env, system) == system

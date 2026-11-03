@@ -46,10 +46,17 @@ def default_paths(env: Mapping[str, str]) -> list[Path]:
     return [SYSTEM_CONFIG, Path(xdg).expanduser() / "phomemo" / "bridge.toml"]
 
 
-def default_socket(env: Mapping[str, str]) -> Path:
-    """Socket under ``XDG_RUNTIME_DIR`` for a user service, else the system path."""
+def default_socket(env: Mapping[str, str], system_socket: Path = SYSTEM_SOCKET) -> Path:
+    """The system bridge's socket when it exists, else one under ``XDG_RUNTIME_DIR``.
+
+    The system service listens at ``/run/phomemo/bridge.sock``; a user's
+    command line talks to it when it is there. Without it (development, a
+    user service) the socket lives in the user's runtime directory.
+    """
+    if system_socket.exists():
+        return system_socket
     runtime = env.get("XDG_RUNTIME_DIR")
-    return Path(runtime) / SOCKET_NAME if runtime else SYSTEM_SOCKET
+    return Path(runtime) / SOCKET_NAME if runtime else system_socket
 
 
 def _check(path: Path, key: str, value: Any) -> Any:
