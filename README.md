@@ -21,13 +21,22 @@ The [`docs/m08f-protocol-reference.md`](docs/m08f-protocol-reference.md) contain
 
 ## Getting Started
 
+Use the M08F as a system printer, from source (Fedora; `pappl-devel` and `cups-devel` needed to build):
+
 ```bash
 git clone https://github.com/PassionateBytes/phomemo-driver.git
 cd phomemo-driver
-uv sync
+sudo make              # builds, installs under /usr/local, enables and starts both services
 ```
 
-See the [phomemo README](packages/phomemo/README.md) for library usage. To use the M08F as a system printer, build and install the printer application and the bridge daemon as described in the [printer-app README](printer-app/README.md).
+Then switch the printer on and restart the service once (`sudo systemctl restart phomemo-printer-app`), or run `sudo phomemo-printer-app autoadd`; details and the package route in the [printer-app README](printer-app/README.md). For development or library use:
+
+```bash
+uv sync
+uv run pytest
+```
+
+See the [phomemo README](packages/phomemo/README.md) for library usage.
 
 ## Supported Printers
 
