@@ -20,8 +20,8 @@ The [`docs/m08f-protocol-reference.md`](docs/m08f-protocol-reference.md) contain
 ## Getting Started
 
 ```bash
-git clone <repo-url>
-cd phomemo-printer
+git clone https://github.com/PassionateBytes/phomemo-driver.git
+cd phomemo-driver
 uv sync
 ```
 
