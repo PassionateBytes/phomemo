@@ -39,7 +39,7 @@ Both units point at the same bridge socket, `$XDG_RUNTIME_DIR/phomemo-bridge.soc
 phomemo-printer-app server -o log-level=info
 ```
 
-The server listens on port 8000 for the first user on a machine (the log names the port, `-o server-port=N` pins it) and serves a web interface at `http://localhost:8000/`.
+The server listens on port 8000 for the first user on a machine (the log names the port, `-o server-port=N` pins it) and serves a web interface at `http://localhost:8000/`. It binds all interfaces so other machines can print; `-o listen-hostname=localhost` keeps it local. Queue management through the web interface is limited to localhost by default.
 
 ## Add the printer
 

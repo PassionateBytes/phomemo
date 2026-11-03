@@ -44,6 +44,11 @@ def test_prepare_page_drops_lead_and_clips() -> None:
     assert out.getpixel((5, 1)) == 255
 
 
+def test_prepare_page_rejects_a_page_inside_the_lead() -> None:
+    with pytest.raises(ValueError, match="lead"):
+        prepare_page(_gray(1680, 50), A4, 297.0, ToneMode.THRESHOLD)
+
+
 def test_prepare_page_rotates_a5() -> None:
     img = _gray(1183, 1678)
     img.putpixel((600, 10), 0)
