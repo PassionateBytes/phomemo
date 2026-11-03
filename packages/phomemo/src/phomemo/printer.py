@@ -8,7 +8,7 @@ Typical usage::
 
     from phomemo import Printer, Density
 
-    async with Printer("M08F-A4", "60:6E:41:23:0B:D6") as printer:
+    async with Printer("M08F-A4", "AA:BB:CC:DD:EE:FF") as printer:
         await printer.connect()
 
         # Check device state before printing
@@ -120,7 +120,7 @@ class Printer:
     Args:
         profile: Either a profile name string (e.g. ``"M08F-A4"``) or
             a ``PrinterProfile`` instance.
-        address: BLE MAC address (e.g. ``"60:6E:41:23:0B:D6"``), resolved
+        address: BLE MAC address (e.g. ``"AA:BB:CC:DD:EE:FF"``), resolved
             by a targeted scan at ``connect()`` time, or a ``BLEDevice``
             from ``discover()``, used as is. If omitted, ``connect()``
             auto-discovers a nearby device matching the profile's

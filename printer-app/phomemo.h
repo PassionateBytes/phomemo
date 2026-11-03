@@ -28,7 +28,7 @@
 
 // Registers the phomemo:// device scheme with PAPPL. The URI host part
 // is the printer's BLE address with dashes instead of colons
-// (phomemo://60-6E-41-23-0B-D6), because a URI host cannot hold colons.
+// (phomemo://AA-BB-CC-DD-EE-FF), because a URI host cannot hold colons.
 void phomemo_device_add_scheme(void);
 
 // The bridge connection of an open device, reconnected (connect plus open)

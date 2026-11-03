@@ -105,7 +105,7 @@ async def test_subscribe_failure_is_a_connection_error_even_without_services(
         transport_module, "BleakClient", lambda address, **kw: FlakyClient()
     )
     with pytest.raises(ConnectionError, match="failed to subscribe"):
-        await transport.connect("60:6E:41:23:0B:D6", on_event=lambda data: None)
+        await transport.connect("AA:BB:CC:DD:EE:FF", on_event=lambda data: None)
     assert transport.is_connected is False
 
 
@@ -132,7 +132,7 @@ async def test_unsolicited_disconnect_clears_connected(
 
     transport = BleTransport(replace(get_profile("M08F-A4"), negotiate_mtu=False))
     monkeypatch.setattr(transport_module, "BleakClient", Client)
-    await transport.connect("60:6E:41:23:0B:D6", on_event=lambda data: None)
+    await transport.connect("AA:BB:CC:DD:EE:FF", on_event=lambda data: None)
     assert transport.is_connected is True
     captured["cb"](None)  # type: ignore[operator]
     assert transport.is_connected is False

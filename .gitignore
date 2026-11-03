@@ -9,12 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# Superpowers brainstorming artifacts
+# Local scratch of coding agents and review tooling
 .superpowers/
-
-# Generated review reports and plans
 docs/reports/
 docs/superpowers/
-
-# Claude Code hook sentinel
-.claude/changed

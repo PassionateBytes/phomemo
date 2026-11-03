@@ -175,7 +175,7 @@ async def test_discover_lists_printers(
     bridge: BridgeConfig, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
-        return [BLEDevice(address="60:6E:41:23:0B:D6", name="M08F", details=None)]
+        return [BLEDevice(address="AA:BB:CC:DD:EE:FF", name="M08F", details=None)]
 
     monkeypatch.setattr(server_module, "discover", fake_discover)
     client = await _connect(bridge)
@@ -183,7 +183,7 @@ async def test_discover_lists_printers(
     assert reply == {
         "ok": True,
         "cmd": "discover",
-        "printers": [{"name": "M08F", "address": "60:6E:41:23:0B:D6"}],
+        "printers": [{"name": "M08F", "address": "AA:BB:CC:DD:EE:FF"}],
     }
     await client.close()
 
