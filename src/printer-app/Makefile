@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-printer-app.  If not, see <https://www.gnu.org/licenses/>.
 
-# Build the Phomemo printer application against the system PAPPL.
+# Build the Phomemo printer app against the system PAPPL.
 #
 #   make            build phomemo-printer-app
 #   make test       build and run the C unit tests
@@ -50,7 +50,7 @@ $(APP): $(OBJS) $(VOBJS)
 %.o: %.c phomemo.h bridge.h
 	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
-# The model descriptions, built into the binary.
+# The model manifests, built into the binary.
 models_data.c: embed-models.sh $(wildcard $(MODELS)/*/model.json $(MODELS)/*/*.png)
 	sh embed-models.sh $(MODELS) > $@
 

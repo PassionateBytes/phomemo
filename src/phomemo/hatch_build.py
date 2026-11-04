@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Build hook: ships the shared model descriptions as package data.
+"""Build hook: ships the shared model manifests as package data.
 
-The descriptions live next to this project in the repository (``../models``),
-shared with the printer application. Built from the repository, the wheel
+The manifests live next to this project in the repository (``../models``),
+shared with the printer app. Built from the repository, the wheel
 gets them as ``phomemo/models`` and the sdist as ``src/phomemo/models``, so a
 wheel built from that sdist finds them inside the package.
 """
@@ -29,7 +29,7 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 
 class ModelsBuildHook(BuildHookInterface):
-    """Adds the repository's model descriptions to wheel and sdist."""
+    """Adds the repository's model manifests to wheel and sdist."""
 
     def initialize(self, version: str, build_data: dict[str, Any]) -> None:
         shared = Path(self.root).parent / "models"

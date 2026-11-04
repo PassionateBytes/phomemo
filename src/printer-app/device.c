@@ -114,7 +114,7 @@ open_request(const char *address, const char *model)
   return request;
 }
 
-// Connects a fresh bridge handle to the daemon's socket.
+// Connects a fresh bridge handle to the bridge's socket.
 static bool
 bridge_connect(phomemo_bridge_t *bridge, char *err, size_t errsize)
 {
@@ -180,8 +180,8 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
   return stopped;
 }
 
-// Connects to the daemon and opens the printer. Closes the handle again
-// when the daemon rejects open.
+// Connects to the bridge and opens the printer. Closes the handle again
+// when the bridge rejects open.
 static bool
 open_bridge(phomemo_device_t *dev, char *err, size_t errsize)
 {
@@ -304,7 +304,7 @@ query_status(phomemo_bridge_t *bridge, const char *address,
   cJSON *charge = cJSON_GetObjectItem(reply, "battery");
   if (!charge)
   {
-    // Without a link the bridge reports what it last read from this printer.
+    // Without a connection the bridge reports what it last read from this printer.
     cJSON *seen = cJSON_GetObjectItem(reply, "last_seen");
     charge = cJSON_IsObject(seen) ? cJSON_GetObjectItem(seen, "battery") : NULL;
   }
@@ -324,7 +324,7 @@ query_status(phomemo_bridge_t *bridge, const char *address,
 
 // Idle poll, called by PAPPL while no job holds the device. Uses a
 // connection of its own; a missing or busy bridge leaves the reasons
-// untouched, and a released printer link clears them.
+// untouched, and a dropped printer connection clears them.
 bool
 phomemo_status_cb(pappl_printer_t *printer)
 {

@@ -1,0 +1,108 @@
+/*
+ * This file is part of phomemo-driver.
+ * Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+ *
+ * Licensed under CC BY-SA 4.0, like the rest of the documentation. The fonts
+ * in fonts/ keep their own licence (SIL Open Font License 1.1).
+ */
+
+/* Palette and type of passionate-bytes.com: deep navy, cyan blue, periwinkle;
+   Inter for text, Comfortaa for headings, JetBrains Mono for code. */
+/* Self-hosted (SIL Open Font License 1.1, see fonts/*-LICENSE.txt): no
+   requests to third-party font services. */
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Comfortaa";
+  src: url("fonts/comfortaa.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("fonts/jetbrains-mono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+:root {
+  --pb-navy: #10162d;
+  --pb-navy-deep: #080b17;
+  --pb-cyan: #3fa3d2;
+  --pb-cyan-dark: #1f7fb0;
+  --pb-periwinkle: #95a9e0;
+  --pb-indigo: #201b56;
+
+  --sy-f-text: "Inter", system-ui, sans-serif;
+  --sy-f-heading: "Comfortaa", "Inter", sans-serif;
+  --sy-f-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --sy-c-link: var(--pb-cyan-dark);
+  --sy-c-link-hover: var(--pb-indigo);
+  --sy-c-heading: var(--pb-navy);
+}
+
+html.dark {
+  --sy-c-background: var(--pb-navy);
+  --sy-c-background-dropback: #10162dcc;
+  --sy-c-surface: #ffffff08;
+  --sy-c-overlay: #ffffff0d;
+  --sy-c-border: #ffffff1f;
+  --sy-c-divider: #ffffff1f;
+  --sy-c-text: #ffffffcc;
+  --sy-c-light: #ffffff80;
+  --sy-c-bold: #ffffff;
+  --sy-c-heading: #ffffff;
+  --sy-c-link: var(--pb-cyan);
+  --sy-c-link-hover: var(--pb-periwinkle);
+  --sy-c-foot-background: var(--pb-navy-deep);
+  --sy-c-foot-divider: #ffffff14;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: 0.01em;
+}
+
+html.dark a:hover {
+  filter: drop-shadow(0 0 3px #3fa3d299);
+}
+
+h1,
+h2,
+h3,
+h4,
+.sy-head-brand,
+.sy-lside .caption {
+  font-family: var(--sy-f-heading);
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 700;
+}
+
+/* The title image on the start page. */
+.hero {
+  text-align: center;
+  margin: 1rem 0 0.5rem;
+}
+
+.hero-logo {
+  display: inline-block;
+  width: 9rem;
+  filter: drop-shadow(2px 3px 6px rgba(0, 0, 0, 0.2));
+}
+
+.hero + section > h1,
+.hero ~ h1 {
+  text-align: center;
+}

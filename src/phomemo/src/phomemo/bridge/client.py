@@ -116,10 +116,10 @@ class BridgeClient:
         return (await self.call({"cmd": "discover", "timeout": timeout}))["printers"]
 
     async def open(self, address: str | None = None) -> dict[str, Any]:
-        """Bring the printer link up.
+        """Bring the printer connection up.
 
         Args:
-            address: Printer to link to; ``None`` keeps the bridge's choice
+            address: Printer to connect to; ``None`` keeps the bridge's choice
                 (configured address, the last printer, or a name scan).
 
         Returns:
@@ -132,7 +132,7 @@ class BridgeClient:
         return {k: v for k, v in reply.items() if k not in ("ok", "cmd")}
 
     async def drop_link(self) -> None:
-        """Drop the printer link now instead of after the idle timeout."""
+        """Drop the printer connection now instead of after the idle timeout."""
         await self.call({"cmd": "disconnect"})
 
     async def info(self) -> dict[str, Any]:
@@ -158,7 +158,7 @@ class BridgeClient:
         await self.call({"cmd": "close"})
 
     async def status(self, address: str | None = None) -> dict[str, Any]:
-        """Link state and sensors; ``last_seen`` values without a link.
+        """Connection state and sensors; ``last_seen`` values without a connection.
 
         Args:
             address: Printer to report on; ``None`` means the linked or

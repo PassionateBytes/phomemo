@@ -26,11 +26,11 @@
 # (journalctl -u phomemo-bridge) and keep their default.
 # Apply changes with: sudo systemctl restart phomemo-bridge
 
-# Auto-off set on the printer at each link (5-min steps, 0 = never); unset:
+# Auto-off set on the printer at each connection (5-min steps, 0 = never); unset:
 # the printer keeps its own setting.
 #auto_off_minutes = 5
 
-# Minutes without a command before the link is dropped (0 = until printer off).
+# Minutes without a command before the connection is dropped (0 = until printer off).
 #idle_disconnect_minutes = 30
 
 # Longest wait in seconds for an inserted sheet to settle at the print head.

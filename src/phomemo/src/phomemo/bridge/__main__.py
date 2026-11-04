@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""``phomemo-bridge`` command line: run the daemon or drive it directly.
+"""``phomemo-bridge`` command line: run the bridge or drive it directly.
 
-Sub-command names follow the printer application's where both do the same
+Sub-command names follow the printer app's where both do the same
 thing (``server``, ``devices``, ``status``).
 """
 
@@ -35,7 +35,7 @@ from phomemo.bridge.server import serve
 from phomemo.imaging import ToneMode
 
 _PRINTER_CHOICE = (
-    "Which printer: the one given with --address, else the printer linked or "
+    "Which printer: the one given with --address, else the printer connectioned or "
     "used last since the bridge started, else the only printer of a known model "
     "a scan finds. With several printers in range and none of these, the "
     'command refuses and lists them; pick one with --address (see "devices"). '
@@ -44,9 +44,9 @@ _PRINTER_CHOICE = (
 
 _COMMANDS: dict[str, tuple[str, str]] = {
     "server": (
-        "run the bridge daemon",
-        "Run the bridge daemon in the foreground: listen on the socket, own the "
-        "Bluetooth link to the printer and serve the printer application and "
+        "run the bridge service",
+        "Run the bridge in the foreground: listen on the socket, own the "
+        "Bluetooth connection to the printer and serve the printer app and "
         "this command line. The packaged system service runs this.",
     ),
     "devices": (
@@ -56,25 +56,25 @@ _COMMANDS: dict[str, tuple[str, str]] = {
         "is switched on and not linked to another host.",
     ),
     "connect": (
-        "bring the printer link up",
-        "Bring the Bluetooth link to the printer up. The bridge keeps it until "
+        "connect to the printer",
+        "Connect to the printer over Bluetooth. The bridge keeps the connection until "
         "the printer switches off or leaves range, or until "
         "idle_disconnect_minutes pass without a command (see the "
         "configuration), so later commands and jobs skip the reconnect. At each "
-        "new link the bridge sets the printer's "
+        "new connection the bridge sets the printer's "
         "auto-off timer to auto_off_minutes when that key is set.\n\n"
         + _PRINTER_CHOICE,
     ),
     "disconnect": (
-        "drop the printer link now",
-        "Drop the Bluetooth link right away instead of after the idle time, so "
+        "drop the connection now",
+        "Drop the Bluetooth connection right away instead of after the idle time, so "
         "another host (a phone, another computer) can reach the printer.",
     ),
     "status": (
-        "show link, sensors and device details",
-        "Show whether the bridge holds a link and, when it does, the linked "
+        "show connection, sensors and device details",
+        "Show whether the bridge holds a connection and, when it does, the connected "
         "printer's address, lid and paper sensors, battery, firmware, serial "
-        "number and auto-off timer. Without a link, shows the values last read "
+        "number and auto-off timer. Without a connection, shows the values last read "
         'from that printer under "last_seen", with the time they were read. Does '
         'not connect by itself; run "connect" first. With --address, reports on '
         "that printer.",
@@ -84,8 +84,8 @@ _COMMANDS: dict[str, tuple[str, str]] = {
         "Show the linked printer's auto-off timer, or set it first when MINUTES "
         "is given (a multiple of 5 up to 1275; 0 = never switch off). When "
         "auto_off_minutes is set in the configuration, the bridge writes that "
-        "value again at the next link, so change the key for a lasting "
-        'setting. Needs a link; run "connect" first.',
+        "value again at the next connection, so change the key for a lasting "
+        'setting. Needs a connection; run "connect" first.',
     ),
     "print": (
         "print one image file as a page",
@@ -203,7 +203,7 @@ def _fail(message: str) -> int:
 
 
 async def _linked(client: BridgeClient, address: str | None) -> dict | None:
-    """The bridge's status when it holds a link to ``address`` (or any printer)."""
+    """The bridge's status when connected to ``address`` (or any printer)."""
     status = await client.status(address)
     return status if status["connected"] else None
 

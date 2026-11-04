@@ -14,17 +14,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Built-in profiles, loaded from the model descriptions on import.
+"""Built-in profiles, loaded from the model manifests on import.
 
 Each model is a directory named after its identifier, holding ``model.json``
-and the model's icons. The printer application reads the same directories.
+and the model's icons. The printer app reads the same directories.
 """
 
 import logging
 import os
 from pathlib import Path
 
-from phomemo.registry import load_description, register_profile
+from phomemo.registry import load_manifest, register_profile
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +32,10 @@ MODELS_ENV = "PHOMEMO_MODELS_DIR"
 
 
 def models_dir() -> Path:
-    """Where the model descriptions are read from.
+    """Where the model manifests are read from.
 
     ``PHOMEMO_MODELS_DIR`` when set; otherwise the copy installed with the
-    package, else the descriptions of a source checkout.
+    package, else the manifests of a source checkout.
 
     Returns:
         The first of these that exists, else the installed location.
@@ -51,10 +51,10 @@ def models_dir() -> Path:
 def _register_builtin() -> None:
     root = models_dir()
     if not root.is_dir():
-        logger.warning("No model descriptions at %s", root)
+        logger.warning("No model manifests at %s", root)
         return
     for model_dir in sorted(p for p in root.iterdir() if (p / "model.json").is_file()):
-        register_profile(load_description(model_dir))
+        register_profile(load_manifest(model_dir))
 
 
 _register_builtin()

@@ -27,7 +27,7 @@
 #include <string.h>
 
 static const char *footer_html =
-  "Phomemo printer application. Printing goes through phomemo-bridge.";
+  "Phomemo printer app. Printing goes through phomemo-bridge.";
 
 const char *
 phomemo_autoadd_cb(const char *device_info, const char *device_uri,

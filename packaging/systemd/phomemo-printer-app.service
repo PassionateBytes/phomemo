@@ -18,7 +18,7 @@
 # DNS-SD, web interface on port 8000). Talks to phomemo-bridge over its
 # socket. State in /var/lib, spool in /var/spool, log in the journal.
 [Unit]
-Description=Phomemo printer application (IPP side of the printer driver)
+Description=Phomemo printer app (IPP side of the printer driver)
 Documentation=https://github.com/PassionateBytes/phomemo-driver
 After=network-online.target avahi-daemon.service phomemo-bridge.service
 Wants=network-online.target phomemo-bridge.service

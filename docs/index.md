@@ -1,23 +1,90 @@
+---
+html_theme.sidebar_secondary.remove: true
+---
+
+```{raw} html
+<div class="hero">
+  <img class="hero-logo" src="_static/m08f.png" alt="Phomemo M08F">
+</div>
+```
+
 # phomemo-driver
 
-A driver stack for the Phomemo M08F A4 thermal printer over Bluetooth Low Energy: a Python library, the `phomemo-bridge` daemon that owns the printer, and a PAPPL printer application that presents it to CUPS and every other IPP client as an ordinary printer.
+**Print to a Phomemo thermal printer like to any other printer.** phomemo-driver
+turns the Phomemo M08F, an A4 thermal printer that only speaks Bluetooth Low
+Energy, into an ordinary IPP printer for CUPS, your desktop, phones and every
+other IPP client. And if you would rather drive the printer from Python, the
+library underneath is yours too.
 
-```
-application ──IPP──▶ CUPS ──IPP──▶ phomemo-printer-app ──unix socket──▶ phomemo-bridge ──BLE──▶ M08F
+```text
+your application ──IPP──▶ CUPS ──IPP──▶ printer app
+                                             │ socket
+                                             ▼
+                          M08F ◀──Bluetooth── bridge
 ```
 
-- **Printing from the desktop**: install the two packages, switch the printer on, print. See [Printer application](printer-app.md).
-- **From Python**: the [library](library.md) drives the printer directly, from discovery to raster printing and sensor events.
-- **How the printer works**: the [protocol reference](m08f-protocol-reference.md) documents everything learned about the M08F.
+## Where to start
+
+- **You want to print from your computer.** Follow [Installation](installation.md),
+  then [First steps](first-steps.md): install, register the printer, print a
+  page. That's it.
+- **You want to print from Python.** The [library](library.md) scans for
+  printers, prints images and bitmaps and reports the printer's sensors as
+  events.
+- **You want to know how it works, or help.** [Architecture](architecture.md)
+  explains the parts, the [protocol reference](m08f-protocol-reference.md)
+  documents what is known about the M08F, and [Contributing](contributing.md)
+  shows how to get started. New [printer models](models.md) are especially
+  welcome.
+
+## The parts
+
+| Part | What it does |
+|---|---|
+| **printer app** (`phomemo-printer-app`) | A [PAPPL](https://www.msweet.org/pappl/) printer app: presents each registered printer as an IPP Everywhere printer, with a web interface. |
+| **bridge** (`phomemo-bridge`) | Owns the Bluetooth connection to the printer and prints the pages; also a command line for scanning, status and test pages. |
+| **library** (`phomemo`) | The Python library both are built on: Bluetooth transport, raster printing, events. |
+| **model manifests** | One description per printer model, shared by all of the above. |
 
 ```{toctree}
-:maxdepth: 2
+:caption: Get started
 :hidden:
 
-printer-app
+installation
+first-steps
+```
+
+```{toctree}
+:caption: Using it
+:hidden:
+
+everyday-use
+configuration
+command-line
+troubleshooting
+```
+
+```{toctree}
+:caption: Python library
+:hidden:
+
 library
-m08f-protocol-reference
 api
 ```
 
-Source and issues: [github.com/PassionateBytes/phomemo-driver](https://github.com/PassionateBytes/phomemo-driver).
+```{toctree}
+:caption: Under the hood
+:hidden:
+
+architecture
+models
+m08f-protocol-reference
+glossary
+```
+
+```{toctree}
+:caption: Project
+:hidden:
+
+contributing
+```

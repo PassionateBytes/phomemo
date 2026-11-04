@@ -16,12 +16,12 @@
  * along with phomemo-printer-app.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Shared declarations of the Phomemo printer application.
+// Shared declarations of the Phomemo printer app.
 //
 // The application is a PAPPL printer application: PAPPL provides IPP,
 // DNS-SD, the job queue and the web interface; this code maps PAPPL's
-// driver and device callbacks onto the phomemo-bridge daemon, which owns
-// the printer protocol and the BLE link.
+// driver and device callbacks onto phomemo-bridge, which owns
+// the printer protocol and the Bluetooth connection.
 
 #ifndef PHOMEMO_H
 #define PHOMEMO_H
@@ -39,7 +39,7 @@
 #define PHOMEMO_MAX_MODELS 16
 #define PHOMEMO_MAX_MEDIA 8
 
-// A model description built into the binary by embed-models.sh from the
+// A model manifest built into the binary by embed-models.sh from the
 // repository's src/models/: model.json as a string, the icons as PNG bytes.
 typedef struct
 {
@@ -55,7 +55,7 @@ typedef struct
 extern const phomemo_embedded_model_t phomemo_embedded_models[];
 extern const int phomemo_num_embedded_models;
 
-// A printer model, from an embedded description or a description directory
+// A printer model, from an embedded manifest or a manifest directory
 // (<models dir>/<id>/model.json plus icon-48/128/512.png).
 typedef struct
 {
@@ -71,15 +71,15 @@ typedef struct
   char media[PHOMEMO_MAX_MEDIA][64];  // PWG media names
   int default_media;                  // index into media
   // Icons in 48, 128 and 512 px: embedded PNG data, or files for
-  // descriptions read from a directory.
+  // manifests read from a directory.
   const unsigned char *icon_data[3];
   size_t icon_len[3];
   char icons[3][256];
 } phomemo_model_t;
 
-// Fills the model table, replacing what it held: from the description
+// Fills the model table, replacing what it held: from the manifest
 // directories under dir, or with dir NULL from $PHOMEMO_MODELS_DIR when set
-// and otherwise from the descriptions built into the binary. Returns the
+// and otherwise from the manifests built into the binary. Returns the
 // number of models read; 0 with err set when none could be read.
 int phomemo_models_load(const char *dir, char *err, size_t errsize);
 
@@ -125,7 +125,7 @@ const char *phomemo_testpage_cb(pappl_printer_t *printer, char *buffer,
 void phomemo_device_add_scheme(void);
 
 // The bridge connection of an open device, reconnected (connect plus open)
-// when the daemon dropped it. NULL with err set when the daemon is not
+// when the bridge dropped it. NULL with err set when the bridge is not
 // reachable.
 phomemo_bridge_t *phomemo_device_bridge(pappl_device_t *device, char *err,
                                         size_t errsize);

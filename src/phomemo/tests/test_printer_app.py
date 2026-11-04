@@ -14,11 +14,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""End-to-end tests of the C printer application against a fake bridge.
+"""End-to-end tests of the C printer app against a fake bridge.
 
 The tests start the built ``phomemo-printer-app`` as a private server whose
 state, spool and control socket live under the test's temporary directory,
-and serve it a bridge daemon whose printer is the scripted ``FakePrinter``.
+and serve it a bridge whose printer is the scripted ``FakePrinter``.
 They are skipped when the binary has not been built (``make -C src/printer-app``).
 """
 
@@ -103,7 +103,7 @@ async def fake_bridge(
 ) -> AsyncIterator[FakeBridge]:
     """Serve a fake bridge whose printer is a ScriptedPrinter.
 
-    An indirect parameter ``{"hold_seconds": s}`` keeps the printer link
+    An indirect parameter ``{"hold_seconds": s}`` keeps the printer connection
     open that long after a job.
     """
 
@@ -159,7 +159,7 @@ async def fake_bridge(
 
 
 class AppServer:
-    """A running printer application server.
+    """A running printer app server.
 
     Attributes:
         env: Environment for client subcommands (points at the server's
@@ -186,7 +186,7 @@ def free_port() -> int:
 async def app_server(
     fake_bridge: FakeBridge, tmp_path: Path, request: pytest.FixtureRequest
 ) -> AsyncIterator[AppServer]:
-    """Run the printer application server for the duration of a test.
+    """Run the printer app server for the duration of a test.
 
     PAPPL derives its control socket from ``TMPDIR`` and its state and
     configuration files from ``HOME`` and ``XDG_CONFIG_HOME``, so all three
@@ -245,7 +245,7 @@ async def app_server(
 
 
 async def run_app(env: dict[str, str], *args: str) -> tuple[int, str, str]:
-    """Run a printer application subcommand and return exit code, stdout and stderr."""
+    """Run a printer app subcommand and return exit code, stdout and stderr."""
     proc = await asyncio.to_thread(
         subprocess.run,
         [str(BINARY), *args],
@@ -316,20 +316,20 @@ async def test_devices_lists_fake_printer(app_server: AppServer) -> None:
     assert DEVICE_URI in out
 
 
-async def test_drivers_come_from_the_model_descriptions(app_server: AppServer) -> None:
+async def test_drivers_come_from_the_model_manifests(app_server: AppServer) -> None:
     code, out, err = await run_app(app_server.env, "drivers")
     assert code == 0, err
     assert out.strip() == 'm08f "Phomemo M08F" "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"'
 
 
-async def test_server_without_model_descriptions_does_not_start(
+async def test_server_without_model_manifests_does_not_start(
     tmp_path: Path,
 ) -> None:
     env = {**os.environ, "TMPDIR": str(tmp_path), "HOME": str(tmp_path)}
     env["PHOMEMO_MODELS_DIR"] = str(tmp_path / "nowhere")
     code, _, err = await run_app(env, "server")
     assert code == 1
-    assert f"no model descriptions in {tmp_path / 'nowhere'}" in err
+    assert f"no model manifests in {tmp_path / 'nowhere'}" in err
 
 
 async def test_job_opens_the_printer_with_its_model(

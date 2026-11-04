@@ -69,7 +69,7 @@ class BleTransport:
 
     @property
     def chunk_bytes(self) -> int:
-        """Largest payload a single ``write`` accepts on the current link."""
+        """Largest payload a single ``write`` accepts on the current connection."""
         return self._effective_chunk_bytes
 
     async def connect(
@@ -149,7 +149,7 @@ class BleTransport:
             ) from exc
 
     def _on_disconnected(self, _client: object) -> None:
-        """Mark the link down when the peer drops it (power off, out of range)."""
+        """Mark the connection down when the peer drops it (power off, out of range)."""
         if self._connected:
             logger.info("Printer dropped the connection")
         self._connected = False
@@ -181,7 +181,7 @@ class BleTransport:
         Raises:
             RuntimeError: If never connected.
             ValueError: If data exceeds the maximum chunk size.
-            ConnectionError: If the link is down or the write fails on the
+            ConnectionError: If the connection is down or the write fails on the
                 BLE layer.
         """
         if self._client is None:

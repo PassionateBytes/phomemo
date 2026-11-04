@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Tests for the phomemo-bridge link and device commands against a fake printer."""
+"""Tests for the phomemo-bridge connection and device commands (fake printer)."""
 
 import json
 from collections.abc import AsyncIterator
@@ -130,7 +130,7 @@ async def test_status_for_another_printer_than_the_linked_one(
     assert json.loads(out) == {
         "connected": False,
         "address": "11:22:33:44:55:66",
-        "linked_to": ADDRESS,
+        "connected_to": ADDRESS,
     }
 
 
