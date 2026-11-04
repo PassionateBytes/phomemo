@@ -56,10 +56,10 @@ cd packages/phomemo
 %pyproject_install
 %pyproject_save_files -l phomemo
 cd ../..
-install -D -m 644 packaging/phomemo-bridge.service %{buildroot}%{_unitdir}/phomemo-bridge.service
-install -D -m 644 packaging/phomemo.sysusers.conf %{buildroot}%{_sysusersdir}/phomemo.conf
-install -D -m 644 packaging/90-phomemo-bridge.preset %{buildroot}%{_presetdir}/90-phomemo-bridge.preset
-install -D -m 644 packaging/bridge.toml %{buildroot}%{_sysconfdir}/phomemo/bridge.toml
+install -D -m 644 packaging/systemd/phomemo-bridge.service %{buildroot}%{_unitdir}/phomemo-bridge.service
+install -D -m 644 packaging/systemd/phomemo.sysusers.conf %{buildroot}%{_sysusersdir}/phomemo.conf
+install -D -m 644 packaging/systemd/90-phomemo-bridge.preset %{buildroot}%{_presetdir}/90-phomemo-bridge.preset
+install -D -m 644 packaging/config/bridge.toml %{buildroot}%{_sysconfdir}/phomemo/bridge.toml
 
 %check
 %make_build -C printer-app test CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"

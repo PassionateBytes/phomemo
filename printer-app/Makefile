@@ -49,8 +49,8 @@ tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o icons.o 
 test: $(TESTS)
 	@for t in $(TESTS); do echo "== $$t"; ./$$t || exit 1; done
 
-UNIT     = ../packaging/phomemo-printer-app.service
-PRESET   = ../packaging/90-phomemo-printer-app.preset
+UNIT     = ../packaging/systemd/phomemo-printer-app.service
+PRESET   = ../packaging/systemd/90-phomemo-printer-app.preset
 
 # Installs the binary under PREFIX and the system unit (its ExecStart
 # rewritten to that PREFIX) and preset; DESTDIR for package builds.
