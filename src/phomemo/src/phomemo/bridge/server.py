@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Bridge daemon: socket server, shared printer link, idle timer."""
+"""Bridge service: socket server, shared printer connection, idle timer."""
 
 import asyncio
 import contextlib
@@ -49,15 +49,15 @@ class BridgeConfig:
     """Operational settings of the bridge.
 
     The printer model, and with it everything about the printer's geometry,
-    comes from each printer's model description, not from here.
+    comes from each printer's model manifest, not from here.
 
     Attributes:
         socket_path: Unix socket the bridge listens on.
         idle_disconnect_minutes: Minutes without a command after which the
-            bridge drops the BLE link (it ends earlier when the printer
+            bridge drops the Bluetooth connection (it ends earlier when the printer
             switches off or leaves range); 0 keeps it until then.
         auto_off_minutes: Auto-off timer the bridge sets on the printer at
-            each new link (multiple of 5, 0 = never switch off); ``None``
+            each new connection (multiple of 5, 0 = never switch off); ``None``
             leaves the printer's setting alone.
         settle_seconds: Cap on the wait for the sheet to seat after insertion.
         completion_timeout: Seconds to wait for the motor stop after a page.
@@ -74,12 +74,12 @@ class BridgeConfig:
 
 
 class Bridge:
-    """State shared by all client sessions: the printer link and its idle timer."""
+    """State shared by all sessions: the printer connection and its idle timer."""
 
     def __init__(self, config: BridgeConfig, printer_factory: PrinterFactory) -> None:
         self.config = config
         self._factory = printer_factory
-        # The printer linked or used last, with its model's profile; kept in
+        # The printer connectioned or used last, with its model's profile; kept in
         # memory until the bridge stops.
         self.printer: Printer | None = None
         self.session_active = False
@@ -105,12 +105,12 @@ class Bridge:
 
     @property
     def linked_address(self) -> str | None:
-        """Address of the printer the bridge holds or last held a link to."""
+        """Address of the printer the bridge is or was last connected to."""
         return self.printer.address if self.printer is not None else None
 
     @property
     def connected(self) -> bool:
-        """Whether a live BLE link exists."""
+        """Whether a live Bluetooth connection exists."""
         return self.printer is not None and self.printer.is_connected
 
     async def discover(self, timeout: float) -> list[tuple[BLEDevice, PrinterProfile]]:
@@ -136,12 +136,12 @@ class Bridge:
         address: str | None = None,
         model: str | None = None,
     ) -> None:
-        """Establish the BLE link, reusing a held one.
+        """Establish the Bluetooth connection, reusing a held one.
 
         Args:
             discovery_timeout: Scan budget when the printer must be found.
-            address: Printer to link to; another address than the current
-                printer's drops that link. ``None`` keeps the printer used
+            address: Printer to connect to; another address than the current
+                printer's drops that connection. ``None`` keeps the printer used
                 last, or takes the only known printer a scan finds.
             model: Model of that printer; without it a scan reads the model
                 from the printer's advertised name.
@@ -165,7 +165,7 @@ class Bridge:
         if self.printer is None:
             self.printer = await self._new_printer(address, model, discovery_timeout)
         await self.printer.connect(discovery_timeout=discovery_timeout)
-        logger.info("Printer link up (%s)", self.printer.profile.name)
+        logger.info("Printer connected (%s)", self.printer.profile.name)
         await self._apply_auto_off(self.printer)
 
     async def _new_printer(
@@ -205,18 +205,18 @@ class Bridge:
                 await printer.set_auto_off_timer(wanted)
                 logger.info("Printer auto-off set from %s to %d min", current, wanted)
             self.remember(printer.address, auto_off_minutes=wanted)
-        except Exception as exc:  # noqa: BLE001, a link problem surfaces at the next command
+        except Exception as exc:  # noqa: BLE001, a connection problem surfaces at the next command
             logger.warning("Could not set the printer auto-off: %s", exc)
 
     async def disconnect(self) -> None:
-        """Drop the BLE link."""
+        """Drop the Bluetooth connection."""
         self.cancel_hold()
         if self.printer is not None and self.printer.is_connected:
             await self.printer.disconnect()
-            logger.info("Printer link down")
+            logger.info("Printer disconnected")
 
     def start_hold(self) -> None:
-        """Keep the link for ``idle_disconnect_minutes``, then drop it."""
+        """Keep the connection for ``idle_disconnect_minutes``, then drop it."""
         self.cancel_hold()
         if not self.connected:
             return
@@ -278,7 +278,7 @@ async def serve(
 ) -> None:
     """Run the bridge until cancelled or signalled.
 
-    SIGTERM and SIGINT stop the server. On the way out the printer link is
+    SIGTERM and SIGINT stop the server. On the way out the printer connection is
     dropped (BlueZ would otherwise keep it and the printer would stop
     advertising) and the socket file is removed.
 

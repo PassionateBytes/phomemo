@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-printer-app.  If not, see <https://www.gnu.org/licenses/>.
 
-# Writes C source with every model description under MODELS_DIR embedded:
+# Writes C source with every model manifest under MODELS_DIR embedded:
 # each model's model.json and its three icons as byte arrays, plus the
 # table phomemo_embedded_models[].
 #

@@ -18,7 +18,7 @@
 #
 #   sudo make               build everything and install it as system services
 #                           (PREFIX=/usr/local; services enabled and started)
-#   make build              build only (the printer application)
+#   make build              build only (the printer app)
 #   sudo make uninstall     remove what install put in place
 #
 # Development and release targets:
@@ -73,7 +73,7 @@ ifeq ($(DESTDIR),)
 	systemd-sysusers
 	systemctl daemon-reload
 	systemctl enable --now phomemo-bridge phomemo-printer-app
-	@echo "installed; printer application at http://localhost:8000/"
+	@echo "installed; printer app at http://localhost:8000/"
 endif
 
 uninstall:
@@ -84,7 +84,7 @@ uninstall:
 	rm -f $(PREFIX)/bin/phomemo-bridge $(PREFIX)/bin/phomemo-printer-app
 	rm -rf $(VENV)
 	systemctl daemon-reload
-	@echo "kept: $(SYSCONF)/phomemo/bridge.toml, $(SYSCONF)/phomemo-printer-app.conf and the printer application's state in /var/lib"
+	@echo "kept: $(SYSCONF)/phomemo/bridge.toml, $(SYSCONF)/phomemo-printer-app.conf and the printer app's state in /var/lib"
 
 check:
 	uv run ruff check .

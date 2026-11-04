@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
-# System service owning the printer's Bluetooth link. Runs as the phomemo
+# System service owning the printer's Bluetooth connection. Runs as the phomemo
 # service user (see phomemo.sysusers.conf); listens on
 # /run/phomemo/bridge.sock, which any local user may use. Configuration in
 # /etc/phomemo/bridge.toml.

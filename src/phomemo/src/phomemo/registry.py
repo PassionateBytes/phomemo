@@ -43,7 +43,7 @@ class PrinterProfile:
 
     Attributes:
         name: Lower-case model identifier (e.g. ``"m08f"``), also the name of
-            the model's description directory.
+            the model's manifest directory.
         ble_name_pattern: Regex pattern matched against BLE advertisement
             names during device discovery.
         print_width_px: Print head width in dots/pixels.
@@ -306,17 +306,17 @@ def _media(where: str, entries: list[Any]) -> tuple[tuple[str, ...], str]:
     return tuple(names), defaults[0]
 
 
-def load_description(model_dir: Path) -> PrinterProfile:
-    """Build a profile from a model description directory.
+def load_manifest(model_dir: Path) -> PrinterProfile:
+    """Build a profile from a model manifest directory.
 
     The directory holds ``model.json`` and the model's icons; its name is the
     model identifier.
 
     Args:
-        model_dir: The model's description directory.
+        model_dir: The model's manifest directory.
 
     Returns:
-        The profile the description defines.
+        The profile the manifest defines.
 
     Raises:
         ValueError: If ``model.json`` does not parse, or a field is missing,

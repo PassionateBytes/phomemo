@@ -41,19 +41,19 @@ Provides:       bundled(cjson) = 1.7.18
 
 %description
 Makes the Phomemo M08F A4 thermal printer a printer like any other: a PAPPL
-printer application presents it to CUPS and other IPP clients, and the
-phomemo-bridge service owns its Bluetooth Low Energy link. Both run as
+printer app presents it to CUPS and other IPP clients, and the
+phomemo-bridge service owns its Bluetooth Low Energy connection. Both run as
 system services, enabled on installation.
 
 %package -n python3-phomemo
-Summary:        Python library and bridge daemon for Phomemo thermal printers
+Summary:        Python library and bridge for Phomemo thermal printers
 License:        LGPL-3.0-or-later
 BuildArch:      noarch
 
 %description -n python3-phomemo
 Async Python library for Phomemo thermal printers over Bluetooth Low Energy
 (M08F A4): discovery, raster printing, sensor events. Includes
-phomemo-bridge, the daemon that owns the printer link for the printer
+phomemo-bridge, the service that owns the printer connection for the printer
 application.
 
 %prep

@@ -14,10 +14,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Rendering of the printer application's test page.
+"""Rendering of the printer app's test page.
 
 The page covers the imageable A4 area at the printer's resolution so the
-printer application places it 1:1: device details as text, rulers along
+printer app places it 1:1: device details as text, rulers along
 the top and left edges, a gray ramp for the dithering, line and text size
 samples.
 """
@@ -41,13 +41,13 @@ class PageInfo:
     """What the page says about the printer and the software driving it.
 
     Attributes:
-        printer_name: Queue name the printer application uses.
+        printer_name: Queue name the printer app uses.
         address: BLE address.
         firmware: Printer firmware version, if known.
         serial: Printer serial, if known.
         battery: Charge in percent, if known.
         auto_off_minutes: Printer auto-off timer, if known.
-        chunk_bytes: Bytes per BLE write on the current link.
+        chunk_bytes: Bytes per BLE write on the current connection.
         versions: Component versions by name.
         socket_path: The bridge socket.
     """
@@ -90,7 +90,7 @@ def page_lines(info: PageInfo, profile: PrinterProfile, length_mm: float) -> lis
         f"Profile: {profile.name}, {profile.print_width_px} px at {profile.dpi} dpi, "
         f"sheet {length_mm:g} mm, lead {profile.top_margin_mm:g} mm, "
         f"bottom margin {profile.bottom_margin_mm:g} mm, {rows} printable rows",
-        f"Link: {show(info.chunk_bytes)} bytes per write, "
+        f"Connection: {show(info.chunk_bytes)} bytes per write, "
         f"{'with' if profile.write_with_response else 'without'} response, "
         f"bands of {profile.band_height} rows",
         "Versions: " + ", ".join(f"{k} {v}" for k, v in versions.items()),
@@ -111,13 +111,13 @@ def render_test_page(
         info: Device and software details.
         profile: Printer profile; sets the width and resolution.
         length_mm: Sheet length along the feed.
-        margin_mm: Margin the printer application keeps at both ends.
+        margin_mm: Margin the printer app keeps at both ends.
 
     Returns:
         An 8-bit grayscale image of the imageable area, 255 = white.
     """
     px_per_mm = profile.dpi / _MM_PER_INCH
-    # The printer application's imageable area: A4 width, the sheet minus
+    # The printer app's imageable area: A4 width, the sheet minus
     # its symmetric margin at each end, truncated the way PAPPL does.
     width = int(21000 * profile.dpi / 2540)
     height = int(round((length_mm - 2 * margin_mm) * 100) * profile.dpi / 2540)

@@ -185,7 +185,7 @@ class Printer:
 
     @property
     def chunk_bytes(self) -> int:
-        """Bytes per BLE write on the current link."""
+        """Bytes per BLE write on the current connection."""
         return self._transport.chunk_bytes
 
     @property
@@ -652,7 +652,7 @@ class Printer:
         """Drop and re-establish the BLE connection to the same device.
 
         A printer that ran a raster past the end of the sheet stops
-        answering queries and discards further print data until the link
+        answering queries and discards further print data until the connection
         is re-established.
 
         Args:
@@ -808,7 +808,7 @@ class Printer:
         short_sheet_fraction: float,
         on_progress: ProgressCallback | None,
     ) -> None:
-        """Send the stream in link-sized chunks without pausing at band ends.
+        """Send the stream in connection-sized chunks without pausing at band ends.
 
         An open lid ends the transfer at once: the printer discards data in
         that state. The band in progress is still completed with white rows
@@ -867,7 +867,7 @@ class Printer:
             mode: GS v 0 scaling mode.
             feed_lines: Paper feed lines after printing.
             on_progress: Progress callback ``(chunks_sent, total_chunks)``
-                per link-sized chunk.
+                per connection-sized chunk.
             wait_for_completion: If True, block until the motor-stop signal
                 is received and confirm the printer still answers.
             completion_timeout: Maximum seconds to wait for completion.

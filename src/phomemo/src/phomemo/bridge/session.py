@@ -115,7 +115,7 @@ class Session:
         self._used_link = False
 
     async def run(self) -> None:
-        """Read commands until EOF, then leave the printer link to the idle timer."""
+        """Read commands until EOF, then leave the connection to the idle timer."""
         bridge = self._bridge
         if bridge.session_active:
             await self._send({"ok": False, "error": "busy"})
@@ -230,7 +230,7 @@ class Session:
         }
 
     # ------------------------------------------------------------------
-    # Link and status
+    # Connection and status
     # ------------------------------------------------------------------
 
     async def _cmd_discover(
@@ -246,7 +246,7 @@ class Session:
         }
 
     async def _cmd_open(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
-        """Bring the link up if reachable; ``wait_ready`` keeps retrying otherwise."""
+        """Connect if reachable; ``wait_ready`` keeps retrying otherwise."""
         self._used_link = True
         address = obj.get("address")
         model = obj.get("model")
@@ -268,7 +268,7 @@ class Session:
     async def _cmd_disconnect(
         self, _obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
-        """Drop the link now instead of leaving it to the idle timer."""
+        """Drop the connection now instead of leaving it to the idle timer."""
         self._used_link = False
         await self._bridge.disconnect()
         return {}
@@ -310,7 +310,7 @@ class Session:
 
         With ``address``, reports on that printer: live when it is the
         linked one, otherwise its last-seen values and the printer the
-        bridge is linked to instead. Never brings a link up.
+        bridge is connected to instead. Never brings a connection up.
         """
         bridge = self._bridge
         address = obj.get("address")
@@ -333,7 +333,7 @@ class Session:
         if target is not None:
             reply["address"] = target
         if linked and target != bridge.linked_address:
-            reply["linked_to"] = bridge.linked_address
+            reply["connected_to"] = bridge.linked_address
         seen = bridge.last_seen(target)
         if seen is not None:
             reply["last_seen"] = seen
@@ -412,10 +412,10 @@ class Session:
         return {"ejected": await printer.eject_paper()}
 
     async def _answering_printer(self) -> Any:
-        """The printer, reconnected once if it sits on the link without answering.
+        """The printer, reconnected once if it sits on the connection without answering.
 
-        A link can come up with the printer ignoring queries and commands;
-        a fresh link clears that.
+        A connection can come up with the printer ignoring queries and commands;
+        a fresh connection clears that.
         """
         printer = self._require_printer()
         if await printer.query_paper(timeout=1.0) is None:
@@ -470,7 +470,7 @@ class Session:
             try:
                 ready, reason = await printer.check_ready(timeout=2.0)
             except ConnectionError as exc:
-                logger.info("Link lost while waiting: %s", exc)
+                logger.info("Connection lost while waiting: %s", exc)
                 continue
             if ready:
                 if settle <= 0:
@@ -482,7 +482,7 @@ class Session:
                 except TimeoutError:
                     continue
                 except ConnectionError as exc:
-                    logger.info("Link lost while settling: %s", exc)
+                    logger.info("Connection lost while settling: %s", exc)
                     continue
                 return
             if reason.startswith("Could not query"):
@@ -505,7 +505,7 @@ class Session:
         return _Reporter(self)
 
     async def _connect_once(self, report: _Reporter) -> None:
-        """One attempt to bring the link up, reporting why it is down.
+        """One attempt to bring the connection up, reporting why it is down.
 
         ``connecting`` is pushed before the first attempt of an outage; a
         failed attempt pushes ``adapter-off`` when Bluetooth itself is
@@ -614,7 +614,7 @@ class Session:
             bitmap = await asyncio.to_thread(image_to_bitmap, prepared)
             height = prepared.height
             # An interrupted page is printed again on a fresh sheet; only a
-            # cancel or a lost link ends the attempt loop.
+            # cancel or a lost connection ends the attempt loop.
             while True:
                 try:
                     await self._print_page(printer, bitmap, height, page.density)
@@ -639,7 +639,7 @@ class Session:
                     continue
                 except ConnectionError as exc:
                     logger.warning(
-                        "Link lost mid-page: %s; waiting for the printer", exc
+                        "Connection lost mid-page: %s; waiting for the printer", exc
                     )
                     await self._wait_for_fresh_sheet()
                     continue
@@ -702,7 +702,7 @@ class Session:
             try:
                 lid = await printer.query_lid(timeout=1.0)
             except ConnectionError as exc:
-                logger.info("Link lost while waiting for the lid: %s", exc)
+                logger.info("Connection lost while waiting for the lid: %s", exc)
                 lid = None
             if lid == LidState.CLOSED:
                 break

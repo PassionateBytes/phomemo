@@ -36,7 +36,7 @@ from enum import Enum, IntEnum
 class Density(Enum):
     """Print density levels.
 
-    Each model's description maps the three levels to its own ``ESC N 04``
+    Each model's manifest maps the three levels to its own ``ESC N 04``
     concentration values (``PrinterProfile.density_levels``).
     """
 
@@ -95,7 +95,7 @@ def encode_density(value: int) -> bytes:
     avoid bridge chip interception.
 
     Args:
-        value: Concentration byte, as a model description maps it to a
+        value: Concentration byte, as a model manifest maps it to a
             ``Density`` level.
 
     Returns:

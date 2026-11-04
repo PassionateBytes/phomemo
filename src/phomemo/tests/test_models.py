@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Tests for model descriptions and the profiles built from them."""
+"""Tests for model manifests and the profiles built from them."""
 
 import json
 import shutil
@@ -23,13 +23,13 @@ from pathlib import Path
 import phomemo.profiles  # noqa: F401, registers the built-in profiles
 import pytest
 from phomemo.profiles import models_dir
-from phomemo.registry import get_profile, load_description, profile_for_name
+from phomemo.registry import get_profile, load_manifest, profile_for_name
 
 MODELS = Path(__file__).parents[2] / "models"
 
 
-def test_m08f_description_gives_the_m08f_profile() -> None:
-    profile = load_description(MODELS / "m08f")
+def test_m08f_manifest_gives_the_m08f_profile() -> None:
+    profile = load_manifest(MODELS / "m08f")
     assert profile.name == "m08f"
     assert profile.make == "Phomemo"
     assert profile.model_name == "M08F"
@@ -56,10 +56,10 @@ def test_m08f_description_gives_the_m08f_profile() -> None:
 
 
 def test_m08f_is_registered_under_its_id() -> None:
-    assert get_profile("m08f") == load_description(MODELS / "m08f")
+    assert get_profile("m08f") == load_manifest(MODELS / "m08f")
 
 
-def test_m08f_description_has_the_three_icons() -> None:
+def test_m08f_manifest_has_the_three_icons() -> None:
     for size in (48, 128, 512):
         assert (MODELS / "m08f" / f"icon-{size}.png").is_file()
 
@@ -85,38 +85,38 @@ def _write(target: Path, data: dict) -> None:
 
 
 @pytest.mark.parametrize("field", ["make", "name", "print_width_px", "media"])
-def test_description_without_a_required_field_is_rejected(
+def test_manifest_without_a_required_field_is_rejected(
     tmp_path: Path, field: str
 ) -> None:
     target, data = _copy_model(tmp_path)
     del data[field]
     _write(target, data)
     with pytest.raises(ValueError, match=rf"model\.json: {field}: missing"):
-        load_description(target)
+        load_manifest(target)
 
 
-def test_description_with_a_wrong_type_is_rejected(tmp_path: Path) -> None:
+def test_manifest_with_a_wrong_type_is_rejected(tmp_path: Path) -> None:
     target, data = _copy_model(tmp_path)
     data["dpi"] = "203"
     _write(target, data)
     with pytest.raises(ValueError, match=r"model\.json: dpi: expected"):
-        load_description(target)
+        load_manifest(target)
 
 
-def test_description_id_must_match_its_directory(tmp_path: Path) -> None:
+def test_manifest_id_must_match_its_directory(tmp_path: Path) -> None:
     target, data = _copy_model(tmp_path)
     data["id"] = "m09"
     _write(target, data)
     with pytest.raises(ValueError, match=r"id: 'm09' differs from the directory"):
-        load_description(target)
+        load_manifest(target)
 
 
-def test_description_needs_one_default_medium(tmp_path: Path) -> None:
+def test_manifest_needs_one_default_medium(tmp_path: Path) -> None:
     target, data = _copy_model(tmp_path)
     data["media"] = [{"pwg": "iso_a4_210x297mm"}, {"pwg": "iso_a5_148x210mm"}]
     _write(target, data)
     with pytest.raises(ValueError, match=r"media: exactly one default"):
-        load_description(target)
+        load_manifest(target)
 
 
 def test_models_dir_prefers_the_environment(
@@ -126,23 +126,23 @@ def test_models_dir_prefers_the_environment(
     assert models_dir() == tmp_path
 
 
-def test_models_dir_finds_the_descriptions_in_a_checkout(
+def test_models_dir_finds_the_manifests_in_a_checkout(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("PHOMEMO_MODELS_DIR", raising=False)
     assert (models_dir() / "m08f" / "model.json").is_file()
 
 
-def test_description_without_density_has_no_density_control(tmp_path: Path) -> None:
+def test_manifest_without_density_has_no_density_control(tmp_path: Path) -> None:
     target, data = _copy_model(tmp_path)
     del data["density"]
     _write(target, data)
-    assert load_description(target).density_levels is None
+    assert load_manifest(target).density_levels is None
 
 
-def test_description_density_needs_all_three_levels(tmp_path: Path) -> None:
+def test_manifest_density_needs_all_three_levels(tmp_path: Path) -> None:
     target, data = _copy_model(tmp_path)
     data["density"] = {"low": 1, "high": 6}
     _write(target, data)
     with pytest.raises(ValueError, match=r"density: medium: missing"):
-        load_description(target)
+        load_manifest(target)

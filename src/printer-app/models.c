@@ -16,7 +16,7 @@
  * along with phomemo-printer-app.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Printer models, read from the model descriptions the library shares.
+// Printer models, read from the model manifests the library shares.
 
 #include "phomemo.h"
 
@@ -74,7 +74,7 @@ number_of(const cJSON *object, const char *key, double *value)
 }
 
 // Parses the model.json text of model id into model; path names the
-// description in messages. False with err set when it is unusable.
+// manifest in messages. False with err set when it is unusable.
 static bool
 parse_model(const char *text, const char *id, const char *path,
             phomemo_model_t *model, char *err, size_t errsize)
@@ -150,7 +150,7 @@ parse_model(const char *text, const char *id, const char *path,
 }
 
 // Reads <dir>/<id>/model.json and the icon files next to it into model;
-// false with err set when the description is unusable.
+// false with err set when the manifest is unusable.
 static bool
 load_model(const char *dir, const char *id, phomemo_model_t *model, char *err,
            size_t errsize)
@@ -183,7 +183,7 @@ compare_ids(const void *a, const void *b)
                 ((const phomemo_model_t *)b)->id);
 }
 
-// Fills the table from the descriptions built into the binary.
+// Fills the table from the manifests built into the binary.
 static int
 load_embedded(char *err, size_t errsize)
 {
@@ -211,7 +211,7 @@ load_embedded(char *err, size_t errsize)
   }
   qsort(models, (size_t)num_models, sizeof(models[0]), compare_ids);
   if (!num_models)
-    snprintf(err, errsize, "no usable built-in model descriptions%s%s",
+    snprintf(err, errsize, "no usable built-in model manifests%s%s",
              model_err[0] ? ": " : "", model_err);
   return num_models;
 }
@@ -231,7 +231,7 @@ phomemo_models_load(const char *dir, char *err, size_t errsize)
   DIR *listing = opendir(dir);
   if (!listing)
   {
-    snprintf(err, errsize, "no model descriptions in %s", dir);
+    snprintf(err, errsize, "no model manifests in %s", dir);
     return 0;
   }
 
@@ -257,7 +257,7 @@ phomemo_models_load(const char *dir, char *err, size_t errsize)
 
   qsort(models, (size_t)num_models, sizeof(models[0]), compare_ids);
   if (!num_models)
-    snprintf(err, errsize, "no usable model descriptions in %s%s%s", dir,
+    snprintf(err, errsize, "no usable model manifests in %s%s%s", dir,
              model_err[0] ? ": " : "", model_err);
   return num_models;
 }

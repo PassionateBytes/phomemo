@@ -68,7 +68,7 @@ def test_spec_and_makefile_install_the_conf_file() -> None:
     assert "packaging/config/phomemo-printer-app.conf" in makefile
 
 
-def test_wheel_and_sdist_carry_the_model_descriptions(tmp_path: Path) -> None:
+def test_wheel_and_sdist_carry_the_model_manifests(tmp_path: Path) -> None:
     import subprocess
     import tarfile
     import zipfile

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Tests for the bridge daemon with a scripted fake printer."""
+"""Tests for the bridge with a scripted fake printer."""
 
 import asyncio
 from collections.abc import AsyncIterator, Callable
@@ -412,7 +412,7 @@ async def test_status_keeps_last_seen_values_per_printer(bridge: BridgeConfig) -
     await client.call({"cmd": "status"})
     first = await client.call({"cmd": "status", "address": "AA:BB:CC:00:00:01"})
     assert first["connected"] is False
-    assert first["linked_to"] == "AA:BB:CC:00:00:02"
+    assert first["connected_to"] == "AA:BB:CC:00:00:02"
     assert first["last_seen"]["battery"] == 40
     second = await client.call({"cmd": "status", "address": "AA:BB:CC:00:00:02"})
     assert second["connected"] is True
