@@ -1,9 +1,25 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
 Name:           phomemo-driver
 Version:        0.1.0
 Release:        2%{?dist}
 Summary:        Printer driver for the Phomemo M08F thermal printer
 
-License:        LGPL-3.0-or-later AND MIT
+License:        GPL-3.0-or-later AND MIT
 URL:            https://github.com/PassionateBytes/phomemo-driver
 Source0:        %{url}/archive/v%{version}/phomemo-driver-%{version}.tar.gz
 
@@ -83,7 +99,7 @@ fi
 
 %files
 %doc README.md printer-app/README.md
-%license printer-app/third_party/cJSON.LICENSE
+%license printer-app/COPYING printer-app/third_party/cJSON.LICENSE
 %{_bindir}/phomemo-printer-app
 %{_unitdir}/phomemo-printer-app.service
 %{_unitdir}/phomemo-bridge.service
@@ -95,11 +111,13 @@ fi
 
 %files -n python3-phomemo -f %{pyproject_files}
 %doc packages/phomemo/README.md
+%license packages/phomemo/COPYING packages/phomemo/COPYING.LESSER
 %{_bindir}/phomemo-bridge
 
 %changelog
 * Wed Nov 04 2026 Paul Bütof - 0.1.0-2
 - Start the services on first installation
+- Register printers in range when the system service starts
 
 * Mon Nov 03 2026 Paul Bütof - 0.1.0-1
 - First package

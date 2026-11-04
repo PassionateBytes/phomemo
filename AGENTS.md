@@ -39,6 +39,7 @@ Tests touching the real printer are not automated. Hardware checks are done by h
 - Python: modern typing (`X | None`, built-in generics), Google-style docstrings without types, ruff clean. C: `-Wall -Wextra -Werror`, C99.
 - No device identifiers (printer MAC, serial), personal paths or host names in tracked files. Placeholders: `AA:BB:CC:DD:EE:FF`, `<serial>`.
 - No em-dashes in text.
+- Licences: the library (`packages/phomemo/`) is LGPL-3.0-or-later, the printer application and everything else GPL-3.0-or-later, documentation CC BY-SA 4.0 (see the README). Every new source file starts with the copyright notice and licence statement used in its neighbours.
 - Tests first for behaviour changes; the fake printer in `packages/phomemo/tests/test_bridge_server.py` scripts the device side.
 
 ## Where the knowledge is

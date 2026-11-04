@@ -1,3 +1,19 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
 """Sphinx configuration for the phomemo-driver documentation site."""
 
 import sys
@@ -9,7 +25,10 @@ sys.path.insert(
 
 project = "phomemo-driver"
 author = "Paul Bütof"
-copyright = "2026, Paul Bütof"
+copyright = (
+    "2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under "
+    "CC BY-SA 4.0"
+)
 
 extensions = [
     "myst_parser",

@@ -113,3 +113,9 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
 | `icons/` | Printer icons (48, 128, 512 px PNG), embedded into the binary at build time by `icons/embed.sh`. |
 | `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |
+
+## License
+
+Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
+
+GNU General Public License, version 3 or later: see [COPYING](COPYING). The bundled [cJSON](third_party/cJSON.LICENSE) is MIT-licensed. This README is documentation and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
