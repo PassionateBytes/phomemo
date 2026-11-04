@@ -655,10 +655,10 @@ async def test_server_registers_the_printer_in_range_at_start(
         if "Phomemo M08F" in out:
             break
         await asyncio.sleep(0.5)
-    assert out.startswith("Phomemo M08F (DD:EE:FF) - printer - "), out
+    assert out.startswith("Phomemo M08F (DDEEFF) - printer - "), out
     resource = out.split("/ipp/print/", 1)[1].strip()
     attrs = await printer_attributes(app_server, tmp_path, resource)
-    assert attrs["printer-name"] == "Phomemo M08F (DD:EE:FF)"
+    assert attrs["printer-name"] == "Phomemo M08F (DDEEFF)"
 
 
 async def test_dash_h_alone_prints_help(app_server: AppServer) -> None:

@@ -75,8 +75,15 @@ phomemo_device_info(const char *address, char *buffer, size_t bufsize)
 {
   size_t len = strlen(address);
   const char *tail = len > 8 ? address + len - 8 : address;
+  char suffix[9];
+  size_t n = 0;
 
-  snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, tail);
+  for (; *tail && n < sizeof(suffix) - 1; tail++)
+    if (*tail != ':')
+      suffix[n++] = *tail;
+  suffix[n] = '\0';
+
+  snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, suffix);
 }
 
 // Builds the device URI for a BLE address (colons become dashes).

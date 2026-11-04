@@ -47,8 +47,9 @@
 #define PHOMEMO_LOW_BATTERY 15  // percent
 
 // Device info for a discovered printer: the make and model followed by the
-// last three bytes of its address, e.g. "Phomemo M08F (DD:EE:FF)". PAPPL
-// names auto-added printers after it, so each printer gets a distinct name.
+// last three bytes of its address without colons, e.g.
+// "Phomemo M08F (DDEEFF)". PAPPL names auto-added printers after it, so each
+// printer gets a distinct name.
 void phomemo_device_info(const char *address, char *buffer, size_t bufsize);
 
 // Publishes the battery charge as the printer's supply level.

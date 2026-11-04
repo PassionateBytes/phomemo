@@ -70,9 +70,9 @@ main(void)
 
   char info[64];
   phomemo_device_info("AA:BB:CC:DD:EE:FF", info, sizeof(info));
-  assert(!strcmp(info, "Phomemo M08F (DD:EE:FF)"));
+  assert(!strcmp(info, "Phomemo M08F (DDEEFF)"));
   phomemo_device_info("11:22:33:DD:EE:FF", info, sizeof(info));
-  assert(!strcmp(info, "Phomemo M08F (DD:EE:FF)"));
+  assert(!strcmp(info, "Phomemo M08F (DDEEFF)"));
 
   puts("test_driver: ok");
   return 0;
