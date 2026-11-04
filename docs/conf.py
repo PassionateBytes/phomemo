@@ -42,6 +42,25 @@ exclude_patterns = ["_build", "superpowers", "reports"]
 # The included READMEs link to files by repository path.
 suppress_warnings = ["myst.xref_missing"]
 
-html_theme = "furo"
+html_theme = "shibuya"
 html_title = "phomemo-driver"
-html_static_path: list[str] = []
+html_logo = "_static/m08f.png"
+html_favicon = "_static/m08f.png"
+html_static_path = ["_static"]
+templates_path = ["_templates"]
+html_css_files = ["custom.css"]
+pygments_style = "github-light-default"
+pygments_dark_style = "github-dark"
+html_theme_options = {
+    "accent_color": "cyan",
+    "color_mode": "auto",
+    "dark_code": True,
+    "github_url": "https://github.com/PassionateBytes/phomemo-driver",
+    "nav_links": [
+        {"title": "Install", "url": "installation"},
+        {"title": "First steps", "url": "first-steps"},
+        {"title": "Library", "url": "library"},
+        {"title": "Contributing", "url": "contributing"},
+    ],
+    "show_ai_links": False,
+}
