@@ -1,0 +1,92 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  python:
+    name: Build the phomemo package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Check that the tag matches the package version
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' packages/phomemo/pyproject.toml)
+          test "v$version" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != version $version"; exit 1; }
+      - name: Build wheel and sdist
+        run: uv build packages/phomemo --out-dir dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python
+          path: dist/
+
+  srpm:
+    name: Source RPMs
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Install packaging tools
+        run: dnf install -y --setopt=install_weak_deps=False rpm-build git make
+      - uses: actions/checkout@v4
+      - name: Mark the checkout safe for git archive
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Build source RPMs
+        run: make srpm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: srpm
+          path: |
+            dist/*.src.rpm
+            dist/*.tar.gz
+
+  pypi:
+    name: Publish to PyPI
+    needs: python
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: GitHub release
+    needs: [python, srpm]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+      - name: Create the release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "${GITHUB_REF_NAME}"
+          --title "phomemo-driver ${GITHUB_REF_NAME#v}"
+          --generate-notes
+          artifacts/python/* artifacts/srpm/*

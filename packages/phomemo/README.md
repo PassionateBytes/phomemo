@@ -235,13 +235,13 @@ phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page'
 phomemo-bridge eject
 ```
 
-`packaging/phomemo-bridge.service` is a systemd user unit for it.
+`packaging/systemd/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/systemd/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/systemd/90-phomemo-bridge.preset`); `packaging/rpm/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
 Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOME/phomemo/bridge.toml`; every key is optional. `PHOMEMO_BRIDGE_SOCKET` overrides the socket path.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `socket_path` | `$XDG_RUNTIME_DIR/phomemo-bridge.sock`, else `/run/phomemo/bridge.sock` | Listening socket. |
+| `socket_path` | `/run/phomemo/bridge.sock` when that exists (the system service), else `$XDG_RUNTIME_DIR/phomemo-bridge.sock` | Listening socket; the command line finds the system bridge the same way. |
 | `hold_seconds` | `120` | Keep the BLE link after a job so the next one skips the reconnect. |
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
@@ -289,4 +289,6 @@ phomemo/
 
 ## License
 
-[LGPL-3.0-or-later](LICENSE)
+Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
+
+GNU Lesser General Public License, version 3 or later: see [COPYING.LESSER](COPYING.LESSER) and the GNU General Public License it builds on in [COPYING](COPYING). This README is documentation and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

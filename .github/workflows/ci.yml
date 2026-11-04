@@ -1,0 +1,79 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Tests (Fedora 44)
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Install build and test dependencies
+        run: >
+          dnf install -y --setopt=install_weak_deps=False
+          gcc make pkgconf-pkg-config pappl-devel cups-devel
+          python3 python3-pip git cups-ipptool ghostscript avahi
+      - uses: actions/checkout@v4
+      - name: Install uv
+        run: pip install uv
+      - name: Python environment
+        run: uv sync
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+      - name: Build the printer application
+        run: make -C printer-app
+      - name: C unit tests
+        run: make -C printer-app test
+      - name: Python tests (library, bridge, end-to-end against the built application)
+        run: uv run pytest -q
+
+  rpm:
+    name: RPM build (Fedora 44)
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Install packaging tools
+        run: >
+          dnf install -y --setopt=install_weak_deps=False
+          rpm-build rpmlint git make dnf-plugins-core
+      - name: Enable the project's COPR repository (python3-bleak is not in Fedora)
+        run: dnf copr enable -y passionatebytes/phomemo-driver
+      - uses: actions/checkout@v4
+      - name: Mark the checkout safe for git archive
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Lint the spec file
+        run: rpmlint packaging/rpm/phomemo-driver.spec
+      - name: Build the packages
+        run: |
+          make tarball
+          defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
+                --define "_srcrpmdir $PWD/dist")
+          dnf builddep -y packaging/rpm/phomemo-driver.spec
+          # The spec generates the Python build requirements at build time:
+          # resolve them into a nosrc RPM, install those, then build for real.
+          rpmbuild -br "${defs[@]}" packaging/rpm/phomemo-driver.spec || true
+          dnf builddep -y dist/*.buildreqs.nosrc.rpm
+          rpmbuild -ba "${defs[@]}" packaging/rpm/phomemo-driver.spec
+          ls -R dist
+        shell: bash
