@@ -4,21 +4,7 @@ Two programs read configuration: the bridge (`phomemo-bridge`) and the printer a
 
 ## Bridge
 
-### Quick start
-
-```toml
-# /etc/phomemo/bridge.toml
-auto_off_minutes = 30
-idle_disconnect_minutes = 10
-```
-
-```bash
-sudo systemctl restart phomemo-bridge
-```
-
-That sets the printer's auto-off to 30 minutes at each new connection and drops an idle connection after 10 minutes. The bridge reads the file only at start, so restart it after every change.
-
-### Where the bridge looks
+### File locations
 
 | Order | File | Used by |
 |---|---|---|
@@ -84,21 +70,7 @@ Without `socket_path` and without `PHOMEMO_BRIDGE_SOCKET`, the bridge and its co
 
 ## Printer app
 
-### Quick start
-
-```ini
-# /etc/phomemo-printer-app.conf
-log-level=debug
-server-port=8631
-```
-
-```bash
-sudo systemctl restart phomemo-printer-app
-```
-
-The file uses PAPPL's `name=value` format, one setting per line, `#` for comments. The packaged file sets `log-level=info` and shows the rest commented out.
-
-### Where the printer app looks
+### File locations
 
 Each option comes from the first of these that sets it:
 

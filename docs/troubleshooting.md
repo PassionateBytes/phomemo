@@ -1,6 +1,20 @@
 # Troubleshooting
 
-Something does not work? Start with the logs, then find your symptom below.
+Something does not work? First make sure both services run, then look at the logs, then find your symptom below.
+
+## Check the services are running
+
+The printer driver is consists of two system services: `phomemo-bridge` and `phomemo-printer-app`. Both should start automatically after installation and at every boot. You can check their status with:
+
+```bash
+systemctl is-active phomemo-bridge phomemo-printer-app
+```
+
+Both services should report as `active`. If one or both say `inactive` or `failed`, start and enable the services:
+
+```bash
+sudo systemctl enable --now phomemo-bridge phomemo-printer-app
+```
 
 ## Read the logs
 

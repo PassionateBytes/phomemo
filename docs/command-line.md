@@ -259,18 +259,18 @@ Prints the test page: device details, millimetre scales, a gray ramp, line width
 
 ## phomemo-printer-app
 
-`phomemo-printer-app` is a [PAPPL](https://www.msweet.org/pappl/) printer application, so it has PAPPL's standard sub-commands. Except `server`, each one talks to a running server over IPP.
+`phomemo-printer-app` is a [PAPPL](https://www.msweet.org/pappl/) printer application, so it has PAPPL's standard sub-commands. Except `server`, each one talks to a running server, and which server depends on who runs it: as root the system service, as your own user a private printer app that the sub-command starts if none runs. So use `sudo` for every sub-command meant for the installed service, listing included.
 
 ### First steps
 
 ```bash
-phomemo-printer-app devices                 # scan: what is in range
+sudo phomemo-printer-app devices            # scan: what is in range
 sudo phomemo-printer-app autoadd            # register every M08F in range
-phomemo-printer-app printers                # confirm what is registered
+sudo phomemo-printer-app printers           # confirm what is registered
 ```
 
 :::{note}
-Use `sudo` for anything that changes the system service (`autoadd`, `add`, `delete`, `modify`, `default`). Listing does not need it.
+Without `sudo`, `devices`, `printers` and the other sub-commands reach a private printer app of your user, not the system service; that is useful only for development.
 :::
 
 ### Sub-commands
@@ -313,7 +313,7 @@ At its very first start (no saved state yet) the server registers each M08F in r
 ### devices
 
 ```bash
-phomemo-printer-app devices
+sudo phomemo-printer-app devices
 ```
 
 Scans and lists what is in range, without registering anything.
@@ -352,7 +352,7 @@ A URI host cannot hold colons, which is why the address uses dashes. A URI witho
 ### printers
 
 ```bash
-phomemo-printer-app printers
+sudo phomemo-printer-app printers
 ```
 
 Lists the registered printers.
@@ -360,7 +360,7 @@ Lists the registered printers.
 ### drivers
 
 ```bash
-phomemo-printer-app drivers
+sudo phomemo-printer-app drivers
 ```
 
 Lists the drivers, one per model manifest. The driver name is the model identifier (`m08f`) you pass to `add -m`.

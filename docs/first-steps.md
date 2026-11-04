@@ -2,87 +2,48 @@
 
 You have the driver installed (see [Installation](installation.md)) and both services are running. Now you register the printer with the printer app and print a first page.
 
-## Step 1: switch the printer on
+## Step 1: Power and Bluetooth on
 
-Switch the printer on, close the lid and keep it close to your computer.
+Power the printer on and keep it close to your computer. Ensure Bluetooth is enabled on your computer.
 
 ```{note}
-The printer accepts one connection at a time and does not show up in a scan while another device (a phone, another computer) is connected to it. Bluetooth range is short: keep the printer within about 2 m.
+The printer accepts one connection at a time and does not show up in a scan while another device (a phone or another computer) is connected to it. Bluetooth range is short: keep the printer near your computer.
 ```
 
-## Step 2: register the printer
+## Step 2: Register the printer
 
 ```bash
 sudo phomemo-printer-app autoadd
+sudo phomemo-printer-app printers
 ```
 
-This scans for printers in range and registers every M08F it finds. Registering needs `sudo` because it changes the system service.
+The `autoadd` command automatically scans for printers within range and registers every compatible printer it finds. The `printers` command then lists all registered printers.
 
 ```{tip}
-At its very first start (no saved state yet) the printer app registers every printer in range on its own. If the printer was on during installation, it may already be registered: check with step 3 first.
+At its very first start (no saved state yet) the printer app registers every printer in range automatically. This means you may be able to skip the `autoadd` command, if you have the printer turned on and in range during the first installation of the driver package.
 ```
 
-Each printer is named after its model and the last three bytes of its Bluetooth address, for example **Phomemo M08F (DDEEFF)**. That way several printers never clash.
+### Alternative: Register through the web interface
 
-### Other ways to register
+In addition to the CLI commands you can register a printer through the printer app web interface:
 
-| How | What it does |
-|---|---|
-| Web interface at http://localhost:8000/, *Add Printer* | Scans the same way as `autoadd`; you pick the printer. |
-| `phomemo-printer-app devices` | Only scans and lists what is in range; registers nothing. |
-| `phomemo-printer-app add` | Registers a printer whose address you know (see below). |
+1. Open [http://localhost:8000/](http://localhost:8000/) in your browser
+1. Use the the *Add Printer* button. The printer app then scans for printers in range.
+1. Select the printer and continue the registration through the web interface.
 
-For `add`, give the name, the model and the device URI:
+## Step 3: Print the test page
 
-```bash
-sudo phomemo-printer-app add -d "Phomemo M08F (DDEEFF)" -m m08f \
-  -v "phomemo://AA-BB-CC-DD-EE-FF?model=m08f"
-```
+Ensure the printer is powered on and in range, and load a sheet.  
+Then open the printer app web interface at [http://localhost:8000/](http://localhost:8000/), select your printer in the menu, then use the button *Print test page*.
 
-```{note}
-The device URI writes the Bluetooth address with dashes instead of colons, because a URI host cannot hold colons.
-```
+The test page shows the printer's address, serial number, battery state, firmware and driver versions, and more.
 
-`phomemo-printer-app --help` lists all subcommands.
+## Step 4: Add a permanent CUPS queue (optional)
 
-## Step 3: check the registration
+The queue CUPS creates on first use is temporary: CUPS removes it once the printer idles. GNOME Settings lists only permanent queues, so add one if you want the printer to show up in your system printer GUI.
 
-```bash
-phomemo-printer-app printers
-```
-
-You should see your printer, for example `Phomemo M08F (DDEEFF)`. Listing needs no `sudo`.
-
-## Step 4: print a first page
-
-```bash
-lpstat -e
-lp -d Phomemo_M08F_DDEEFF document.pdf
-```
-
-CUPS discovers the printer through DNS-SD, so there is nothing to set up: `lpstat -e` lists it, and `lp` prints to it. CUPS creates the CUPS queue on first use.
-
-The queue name comes from the printer name: CUPS replaces each run of characters other than letters and digits with one underscore, so "Phomemo M08F (DDEEFF)" becomes `Phomemo_M08F_DDEEFF`.
-
-```{important}
-Close the lid first, then insert a sheet. The job waits until a sheet is seated, prints and ejects it.
-```
-
-## Step 5: print the test page
-
-Open the printer's page in the web interface (http://localhost:8000/, then your printer) and click *Print test page*.
-
-The test page shows the printer's address, firmware, serial number, battery, connection and version details, millimetre rulers, a gray ramp, and line and text samples. It goes through the normal job pipeline, so it also tests the whole setup.
-
-```{tip}
-"Identify printer" in the web interface ejects a loaded sheet and pulses the feed three times, so you can tell which printer is which.
-```
-
-## Step 6: add a permanent CUPS queue (optional)
-
-The queue CUPS creates on first use is temporary: CUPS removes it when idle. GNOME Settings lists only permanent queues, so add one if you want the printer to show up there.
-
-**In GNOME:** Settings → Printers → Add Printer, then pick the printer.
+**In GNOME:**  
+Settings → Printers → Add Printer, then pick the printer.
 
 **On the command line:**
 
@@ -91,11 +52,7 @@ sudo lpadmin -p Phomemo_M08F_DDEEFF -E -m everywhere \
   -v 'ipps://Phomemo%20M08F%20(DDEEFF)._ipps._tcp.local/'
 ```
 
-This queue uses the DNS-SD URI, so it keeps working when the printer app's port changes. `lpinfo --include-schemes dnssd -v` lists the exact URI for your printer.
-
-```{note}
-The battery shows up in GNOME Settings only after the first job through the permanent queue: CUPS reads supply levels only while it runs a job. It then shows the reading from the last job.
-```
+`lpinfo --include-schemes dnssd -v` lists the exact URI for your printer.
 
 ## Next
 

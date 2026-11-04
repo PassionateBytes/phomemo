@@ -1,18 +1,42 @@
 # Installation
 
-The driver has two parts, and both run as system services:
+The driver package delivers two parts, both runnning as system services:
 
-- the **printer app** (`phomemo-printer-app`) presents the printer to CUPS and other IPP clients,
+- the **printer app** (`phomemo-printer-app`) presents the printer to CUPS and other IPP clients, and
 - the **bridge** (`phomemo-bridge`) owns the Bluetooth connection to the printer.
 
-You can install both from source or from a package. If you only want the Python library, get it from PyPI.
+You can install both from source or directly from a package. If you only want the Python library, install it from PyPI (see below).
+
+```{important}
+After installing the driver package you need to follow the [First steps](first-steps.md) for the one-time setup of your printer. This step is required to register your printer with the driver, and is required for your printer to be discovered by your system.
+```
 
 ## Requirements
 
 - Linux with BlueZ (tested on Fedora)
-- CUPS and Avahi (DNS-SD), so applications find the printer
+- CUPS and Avahi (DNS-SD), so applications can discover the printer
 - Python 3.13 or later
-- A Phomemo M08F (see [Printer models](models.md))
+- A Phomemo M08F thermal printer (see [Printer models](models.md))
+
+## Package managers
+
+More package formats are planned.
+
+### DNF (Fedora, COPR)
+
+```bash
+sudo dnf copr enable passionatebytes/phomemo-driver
+sudo dnf install phomemo-driver
+```
+
+The first command adds the COPR repository [passionatebytes/phomemo-driver](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/), the second installs the complete driver package.
+
+| Package | Contents |
+|---|---|
+| `phomemo-driver` | The printer app, both system units, the service user, presets and configuration files. Pulls in `python3-phomemo`, `avahi`, `bluez` and `cups`; recommends `cups-browsed`. |
+| `python3-phomemo` | The Python library and the `phomemo-bridge` command. Install it alone if you only need the library. |
+
+The package enables both services and starts them on first installation. Upgrades restart them and keep your changes to the configuration files.
 
 ## From source
 
@@ -32,7 +56,9 @@ cd phomemo-driver
 sudo make
 ```
 
-`sudo make` builds the printer app and installs everything under `/usr/local`:
+`sudo make` builds the application and installs everything under `/usr/local`. It then creates the service user, then enables and starts the printer driver services.
+
+Installed components:
 
 | What | Where |
 |---|---|
@@ -43,35 +69,13 @@ sudo make
 | Service user `phomemo` for the bridge | `/etc/sysusers.d/phomemo.conf` |
 | Configuration files | `/etc/phomemo/bridge.toml`, `/etc/phomemo-printer-app.conf` |
 
-Then it creates the service user and runs `systemctl enable --now` for both services. They start right away and at every boot.
-
 ```{note}
-pip fetches the library's Python dependencies during the install, so you need a network connection. Existing configuration files are never overwritten.
+pip fetches the library's Python dependencies during the install, so you need a network connection.
 ```
 
 ```{tip}
 `sudo make uninstall` reverses the installation. It keeps the configuration files and the printer app's state in `/var/lib`.
 ```
-
-## Package managers
-
-More package formats are planned.
-
-### DNF (Fedora, COPR)
-
-```bash
-sudo dnf copr enable passionatebytes/phomemo-driver
-sudo dnf install phomemo-driver
-```
-
-The first command adds the COPR repository [passionatebytes/phomemo-driver](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/), the second installs the driver.
-
-| Package | Contents |
-|---|---|
-| `phomemo-driver` | The printer app, both system units, the service user, presets and configuration files. Pulls in `python3-phomemo`, `avahi`, `bluez` and `cups`; recommends `cups-browsed`. |
-| `python3-phomemo` | The Python library and the `phomemo-bridge` command. Install it alone if you only need the library. |
-
-The package enables both services and starts them on first installation. Upgrades restart them and keep your changes to the configuration files.
 
 ## PyPI (library only)
 
@@ -85,14 +89,10 @@ Or with [uv](https://docs.astral.sh/uv/):
 uv add phomemo
 ```
 
-This gives you the library and the `phomemo-bridge` command, without the printer app and without system units.
+This gives you the library and the `phomemo-bridge` command line tool, without the printer app and without system units.
 
 ```{tip}
 You can still run the bridge by hand: `phomemo-bridge server`. Its socket then lives in `$XDG_RUNTIME_DIR`.
-```
-
-```{important}
-After installing the driver, **register the printer** with the printer app before you print. Switch the printer on and follow [First steps](first-steps.md).
 ```
 
 ## Next
