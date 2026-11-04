@@ -289,4 +289,6 @@ phomemo/
 
 ## License
 
-[LGPL-3.0-or-later](LICENSE)
+Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
+
+GNU Lesser General Public License, version 3 or later: see [COPYING.LESSER](COPYING.LESSER) and the GNU General Public License it builds on in [COPYING](COPYING). This README is documentation and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
