@@ -23,7 +23,7 @@ The pytest harness starts the built binary as a private server under the test's 
 
 ## Install
 
-Fedora, from the COPR repository (both parts, services enabled and started by the package presets):
+Fedora, from the COPR repository. The package enables both services and starts them on installation, so the printer works right away:
 
 ```bash
 sudo dnf copr enable passionatebytes/phomemo-driver

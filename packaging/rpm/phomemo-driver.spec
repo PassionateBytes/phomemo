@@ -1,6 +1,6 @@
 Name:           phomemo-driver
 Version:        0.1.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Printer driver for the Phomemo M08F thermal printer
 
 License:        LGPL-3.0-or-later AND MIT
@@ -68,6 +68,12 @@ cd packages/phomemo
 
 %post
 %systemd_post phomemo-bridge.service phomemo-printer-app.service
+# Start the services on first installation so the printer works right
+# away; upgrades restart them in %%postun. Skipped where systemd is not
+# running (image and container builds).
+if [ $1 -eq 1 ] && [ -d /run/systemd/system ]; then
+    systemctl start phomemo-bridge.service phomemo-printer-app.service >/dev/null 2>&1 || :
+fi
 
 %preun
 %systemd_preun phomemo-printer-app.service phomemo-bridge.service
@@ -92,5 +98,8 @@ cd packages/phomemo
 %{_bindir}/phomemo-bridge
 
 %changelog
+* Wed Nov 04 2026 Paul Bütof - 0.1.0-2
+- Start the services on first installation
+
 * Mon Nov 03 2026 Paul Bütof - 0.1.0-1
 - First package
