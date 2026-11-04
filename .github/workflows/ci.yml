@@ -47,17 +47,17 @@ jobs:
       - name: Mark the checkout safe for git archive
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Lint the spec file
-        run: rpmlint packaging/phomemo-driver.spec
+        run: rpmlint packaging/rpm/phomemo-driver.spec
       - name: Build the packages
         run: |
           make tarball
           defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
                 --define "_srcrpmdir $PWD/dist")
-          dnf builddep -y packaging/phomemo-driver.spec
+          dnf builddep -y packaging/rpm/phomemo-driver.spec
           # The spec generates the Python build requirements at build time:
           # resolve them into a nosrc RPM, install those, then build for real.
-          rpmbuild -br "${defs[@]}" packaging/phomemo-driver.spec || true
+          rpmbuild -br "${defs[@]}" packaging/rpm/phomemo-driver.spec || true
           dnf builddep -y dist/*.buildreqs.nosrc.rpm
-          rpmbuild -ba "${defs[@]}" packaging/phomemo-driver.spec
+          rpmbuild -ba "${defs[@]}" packaging/rpm/phomemo-driver.spec
           ls -R dist
         shell: bash

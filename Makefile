@@ -46,11 +46,11 @@ install: build
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(PRESETDIR) \
 	  $(DESTDIR)$(SYSCONF)/phomemo $(DESTDIR)$(SYSCONF)/sysusers.d
 	sed 's|/usr/bin/phomemo-bridge|$(PREFIX)/bin/phomemo-bridge|' \
-	  packaging/phomemo-bridge.service > $(DESTDIR)$(UNITDIR)/phomemo-bridge.service
-	install -m 644 packaging/90-phomemo-bridge.preset $(DESTDIR)$(PRESETDIR)/
-	install -m 644 packaging/phomemo.sysusers.conf $(DESTDIR)$(SYSCONF)/sysusers.d/phomemo.conf
+	  packaging/systemd/phomemo-bridge.service > $(DESTDIR)$(UNITDIR)/phomemo-bridge.service
+	install -m 644 packaging/systemd/90-phomemo-bridge.preset $(DESTDIR)$(PRESETDIR)/
+	install -m 644 packaging/systemd/phomemo.sysusers.conf $(DESTDIR)$(SYSCONF)/sysusers.d/phomemo.conf
 	test -e $(DESTDIR)$(SYSCONF)/phomemo/bridge.toml || \
-	  install -m 644 packaging/bridge.toml $(DESTDIR)$(SYSCONF)/phomemo/bridge.toml
+	  install -m 644 packaging/config/bridge.toml $(DESTDIR)$(SYSCONF)/phomemo/bridge.toml
 ifeq ($(DESTDIR),)
 	systemd-sysusers
 	systemctl daemon-reload
@@ -84,15 +84,15 @@ tarball:
 
 srpm: tarball
 	rpmbuild -bs --define "_sourcedir $(CURDIR)/$(DIST)" \
-	  --define "_srcrpmdir $(CURDIR)/$(DIST)" packaging/phomemo-driver.spec
+	  --define "_srcrpmdir $(CURDIR)/$(DIST)" packaging/rpm/phomemo-driver.spec
 
 bump:
 	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
 	sed -i 's/^version = ".*"/version = "$(VERSION)"/' packages/phomemo/pyproject.toml
-	sed -i 's/^Version:        .*/Version:        $(VERSION)/' packaging/phomemo-driver.spec
+	sed -i 's/^Version:        .*/Version:        $(VERSION)/' packaging/rpm/phomemo-driver.spec
 	sed -i 's/^#define PHOMEMO_VERSION ".*"/#define PHOMEMO_VERSION "$(VERSION)"/' printer-app/phomemo.h
 	uv lock
-	git add packages/phomemo/pyproject.toml packaging/phomemo-driver.spec printer-app/phomemo.h uv.lock
+	git add packages/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec printer-app/phomemo.h uv.lock
 	git commit -m "chore: version $(VERSION)"
 
 tag:

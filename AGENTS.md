@@ -8,7 +8,7 @@ A driver stack for the Phomemo M08F A4 thermal printer over Bluetooth Low Energy
 
 - `packages/phomemo/`: the Python library (BLE transport, printing protocol, image preparation, printer profiles) and the `phomemo-bridge` daemon that owns the printer for other programs over a unix socket.
 - `printer-app/`: a PAPPL printer application in C that presents the printer as an IPP Everywhere printer and drives the bridge.
-- `packaging/`: systemd user units.
+- `packaging/`: system units and presets (`systemd/`), default configuration (`config/`), RPM spec files (`rpm/`); one directory per package format, see `packaging/README.md`.
 - `docs/m08f-protocol-reference.md`: the reverse-engineered protocol; the source of truth for printer behaviour.
 
 ## Setup and commands
@@ -25,7 +25,7 @@ make dist | tarball | srpm                # release artefacts into dist/
 make bump VERSION=x.y.z && make tag       # release: version everywhere, commit, tag
 ```
 
-CI (`.github/workflows/ci.yml`) runs the checks and both RPM builds in a Fedora container; a `v*` tag runs `release.yml` (PyPI via trusted publishing, the source RPM and a GitHub release; COPR builds from the tag through its webhook). Spec files and systemd units live in `packaging/`. Fedora has no bleak, so the COPR project also builds `packaging/python-bleak.spec`, at the bleak version locked in `uv.lock`; update it with `uv lock --upgrade-package bleak` (the requirement in `packages/phomemo/pyproject.toml` caps it below 4).
+CI (`.github/workflows/ci.yml`) runs the checks and the RPM build in a Fedora container; a `v*` tag runs `release.yml` (PyPI via trusted publishing, the source RPM and a GitHub release; COPR builds from the tag through its webhook). Spec files and systemd units live in `packaging/`. Fedora has no bleak, so the COPR project also builds `packaging/rpm/python-bleak.spec`, at the bleak version locked in `uv.lock`; update it with `uv lock --upgrade-package bleak` (the requirement in `packages/phomemo/pyproject.toml` caps it below 4).
 
 The printer-app pytest module starts the built binary as a private server under the test's temporary directory. Never run `phomemo-printer-app devices` or `server` from a test or script outside that harness: it starts a long-lived server and writes state under the user's config directory.
 
