@@ -237,7 +237,7 @@ phomemo-bridge eject
 
 `packaging/systemd/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/systemd/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/systemd/90-phomemo-bridge.preset`); `packaging/rpm/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
-Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOME/phomemo/bridge.toml`; every key is optional. `PHOMEMO_BRIDGE_SOCKET` overrides the socket path.
+Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOME/phomemo/bridge.toml`; every key is optional. `PHOMEMO_BRIDGE_SOCKET` overrides the socket path. Unknown keys, values of the wrong type or range and files that do not parse are logged as warnings; the affected setting keeps its default.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
@@ -249,7 +249,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
 | `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
 | `[printer] profile` | `M08F-A4` | Profile name. |
-| `[printer] auto_off_minutes` | unset (the packaged file sets `5`) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off. Unset leaves the printer's own setting alone; an invalid value is logged and replaced by `5`. |
+| `[printer] auto_off_minutes` | unset (the packaged file sets `5`) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
 
 The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only M08F a scan finds; with several in range they refuse and list them.
 

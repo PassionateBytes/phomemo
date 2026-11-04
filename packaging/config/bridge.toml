@@ -15,7 +15,8 @@
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 # phomemo-bridge configuration. Every key is optional; the commented values
-# are the defaults. A user's own file at $XDG_CONFIG_HOME/phomemo/bridge.toml
+# are the defaults. A key with an unusable value is logged to the journal and
+# keeps its default. A user's own file at $XDG_CONFIG_HOME/phomemo/bridge.toml
 # overrides this one for a user-run bridge.
 
 # Seconds the printer link stays up after a job so the next one skips the
@@ -35,7 +36,7 @@
 #profile = "M08F-A4"
 
 # Auto-off timer the bridge sets on the printer at each new link, in minutes:
-# a multiple of 5 up to 1275, 0 = never switch off. An invalid value is logged
-# and replaced by 5. Comment the line out to leave the printer's own setting
-# alone.
+# a multiple of 5 up to 1275, 0 = never switch off. Another number is rounded
+# to the nearest 5-minute step (at least 5); anything else is logged and the
+# printer's setting is left alone, as when the line is commented out.
 auto_off_minutes = 5
