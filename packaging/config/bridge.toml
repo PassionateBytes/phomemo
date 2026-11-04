@@ -1,3 +1,4 @@
+# ===========================================================================
 # This file is part of phomemo-driver.
 # Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
 #
@@ -13,30 +14,32 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+# ===========================================================================
 
-# phomemo-bridge configuration. Every key is optional; the commented values
-# are the defaults. A key with an unusable value is logged to the journal and
-# keeps its default. A user's own file at $XDG_CONFIG_HOME/phomemo/bridge.toml
-# overrides this one for a user-run bridge.
 
-# Seconds the printer link stays up after a job so the next one skips the
-# reconnect.
-#hold_seconds = 300
+# Configuration for phomemo-bridge
+# --------------------------------
+# One setting per line as name = value; lines starting with # are comments.
+# Every setting is optional; a commented-out line shows the default.
+# Read from this file, then $XDG_CONFIG_HOME/phomemo/bridge.toml for a bridge
+# run by that user; the later file wins. Unusable settings are logged
+# (journalctl -u phomemo-bridge) and keep their default.
+# Apply changes with: sudo systemctl restart phomemo-bridge
 
-# Cap on the wait for an inserted sheet to seat at the head.
-#settle_seconds = 3
+# Printer auto-off enforced on connect: 0 = never
+#auto_off_minutes = 5
 
-# Seconds to wait for the motor to stop after a page.
-#completion_timeout = 300
+# Minutes without a command before the link is dropped (0 = until printer off).
+#idle_disconnect_minutes = 30
 
-# Pause after a cancelled transfer before ejecting.
-#drain_seconds = 1
-
-[printer]
+# Printer model profile; M08F-A4 is the only one so far.
 #profile = "M08F-A4"
 
-# Auto-off timer the bridge sets on the printer at each new link, in minutes:
-# a multiple of 5 up to 1275, 0 = never switch off. Another number is rounded
-# to the nearest 5-minute step (at least 5); anything else is logged and the
-# printer's setting is left alone, as when the line is commented out.
-auto_off_minutes = 5
+# Longest wait in seconds for an inserted sheet to settle at the print head.
+#settle_seconds = 3
+
+# Longest wait in seconds for the motor to stop after a page.
+#completion_timeout = 300
+
+# Pause in seconds after a cancelled page before the sheet is ejected.
+#drain_seconds = 1
