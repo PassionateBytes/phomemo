@@ -53,7 +53,7 @@ pygments_style = "github-light-default"
 pygments_dark_style = "github-dark"
 html_theme_options = {
     "accent_color": "cyan",
-    "color_mode": "auto",
+    "color_mode": "dark",
     "dark_code": True,
     "github_url": "https://github.com/PassionateBytes/phomemo-driver",
     "nav_links": [
