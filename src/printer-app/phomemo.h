@@ -31,7 +31,7 @@
 
 #include "bridge.h"
 
-#define PHOMEMO_VERSION "0.1.0"
+#define PHOMEMO_VERSION "0.3.0"
 #define PHOMEMO_URI_SCHEME "phomemo"
 #define PHOMEMO_TONE_OPTION "phomemo-tone"
 #define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printers take

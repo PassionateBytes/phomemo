@@ -15,8 +15,8 @@
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 Name:           phomemo-driver
-Version:        0.1.0
-Release:        2%{?dist}
+Version:        0.3.0
+Release:        1%{?dist}
 Summary:        Printer driver for the Phomemo M08F thermal printer
 
 License:        GPL-3.0-or-later AND MIT
@@ -119,6 +119,14 @@ fi
 %{_bindir}/phomemo-bridge
 
 %changelog
+* Wed Nov 04 2026 Paul Bütof - 0.3.0-1
+- First beta release
+- Printer models described once in model manifests, built into the printer app
+- Bridge: per-printer model profiles, connect, disconnect, auto-off, -V commands
+- Bridge: auto_off_minutes and idle_disconnect_minutes settings, logged config errors
+- Printer names carry the last three address bytes; battery shown as supply level
+- Configuration files documented, documentation site rewritten
+
 * Wed Nov 04 2026 Paul Bütof - 0.1.0-2
 - Start the services on first installation
 - Register printers in range when the system service starts
