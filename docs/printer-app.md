@@ -1,2 +1,2 @@
-```{include} ../printer-app/README.md
+```{include} ../src/printer-app/README.md
 ```

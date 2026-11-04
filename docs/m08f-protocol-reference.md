@@ -794,7 +794,7 @@ spontaneous events during print instead:
 
 ### Printer Application
 
-The repository's [printer application](../printer-app/README.md) splits the
+The repository's [printer application](../src/printer-app/README.md) splits the
 driver in two: a PAPPL application in C speaks IPP and raster to the
 network and hands each page as 8-bit grayscale rows to `phomemo-bridge`
 over a unix socket; the bridge (Python, `phomemo.bridge`) owns the BLE link

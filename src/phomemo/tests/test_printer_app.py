@@ -19,7 +19,7 @@
 The tests start the built ``phomemo-printer-app`` as a private server whose
 state, spool and control socket live under the test's temporary directory,
 and serve it a bridge daemon whose printer is the scripted ``FakePrinter``.
-They are skipped when the binary has not been built (``make -C printer-app``).
+They are skipped when the binary has not been built (``make -C src/printer-app``).
 """
 
 import asyncio
@@ -46,7 +46,7 @@ from phomemo.registry import PrinterProfile, get_profile
 from tests.test_bridge_server import FakePrinter
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-BINARY = REPO_ROOT / "printer-app" / "phomemo-printer-app"
+BINARY = REPO_ROOT / "src" / "printer-app" / "phomemo-printer-app"
 ADDRESS = "AA:BB:CC:DD:EE:FF"
 DEVICE_URI = "phomemo://" + ADDRESS.replace(":", "-")
 PRINTER = "phomemo"

@@ -33,7 +33,7 @@ uv add phomemo
 >
 > ```bash
 > git clone <repo-url> && cd phonemo-printer
-> uv pip install -e packages/phomemo
+> uv pip install -e src/phomemo
 > ```
 
 ## Requirements
@@ -222,7 +222,7 @@ Profile fields beyond the BLE UUIDs:
 
 ## Bridge Daemon
 
-`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../../printer-app/README.md) (PAPPL based) or the bundled CLI drives it.
+`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../printer-app/README.md) (PAPPL based) or the bundled CLI drives it.
 
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock

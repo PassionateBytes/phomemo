@@ -58,17 +58,17 @@ application.
 %autosetup -n phomemo-driver-%{version}
 
 %generate_buildrequires
-cd packages/phomemo
+cd src/phomemo
 %pyproject_buildrequires
 
 %build
-%make_build -C printer-app CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
-cd packages/phomemo
+%make_build -C src/printer-app CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
+cd src/phomemo
 %pyproject_wheel
 
 %install
-%make_install -C printer-app PREFIX=%{_prefix} UNITDIR=%{_unitdir} PRESETDIR=%{_presetdir}
-cd packages/phomemo
+%make_install -C src/printer-app PREFIX=%{_prefix} UNITDIR=%{_unitdir} PRESETDIR=%{_presetdir}
+cd src/phomemo
 %pyproject_install
 %pyproject_save_files -l phomemo
 cd ../..
@@ -79,8 +79,8 @@ install -D -m 644 packaging/config/bridge.toml %{buildroot}%{_sysconfdir}/phomem
 install -D -m 644 packaging/config/phomemo-printer-app.conf %{buildroot}%{_sysconfdir}/phomemo-printer-app.conf
 
 %check
-%make_build -C printer-app test CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
-cd packages/phomemo
+%make_build -C src/printer-app test CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
+cd src/phomemo
 %pyproject_check_import
 
 %post
@@ -99,8 +99,8 @@ fi
 %systemd_postun_with_restart phomemo-bridge.service phomemo-printer-app.service
 
 %files
-%doc README.md printer-app/README.md
-%license printer-app/COPYING printer-app/third_party/cJSON.LICENSE
+%doc README.md src/printer-app/README.md
+%license src/printer-app/COPYING src/printer-app/third_party/cJSON.LICENSE
 %{_bindir}/phomemo-printer-app
 %{_unitdir}/phomemo-printer-app.service
 %{_unitdir}/phomemo-bridge.service
@@ -112,8 +112,8 @@ fi
 %config(noreplace) %{_sysconfdir}/phomemo-printer-app.conf
 
 %files -n python3-phomemo -f %{pyproject_files}
-%doc packages/phomemo/README.md
-%license packages/phomemo/COPYING packages/phomemo/COPYING.LESSER
+%doc src/phomemo/README.md
+%license src/phomemo/COPYING src/phomemo/COPYING.LESSER
 %{_bindir}/phomemo-bridge
 
 %changelog
