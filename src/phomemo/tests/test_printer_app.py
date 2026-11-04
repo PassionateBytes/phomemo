@@ -198,7 +198,6 @@ async def app_server(
         "TMPDIR": str(tmp_path),
         "HOME": str(tmp_path),
         "XDG_CONFIG_HOME": str(tmp_path / "config"),
-        "PHOMEMO_MODELS_DIR": str(MODELS_DIR),
     }
     param = getattr(request, "param", {})
     if "bridge_socket" in param:

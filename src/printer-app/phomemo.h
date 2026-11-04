@@ -39,13 +39,23 @@
 #define PHOMEMO_MAX_MODELS 16
 #define PHOMEMO_MAX_MEDIA 8
 
-// Where the model descriptions are installed; PHOMEMO_MODELS_DIR in the
-// environment overrides it.
-#ifndef PHOMEMO_MODELS_DIR
-#  define PHOMEMO_MODELS_DIR "/usr/share/phomemo/models"
-#endif
+// A model description built into the binary by embed-models.sh from the
+// repository's src/models/: model.json as a string, the icons as PNG bytes.
+typedef struct
+{
+  const char *id;
+  const char *json;
+  struct
+  {
+    const unsigned char *data;
+    size_t len;
+  } icons[3];  // 48, 128 and 512 px; NULL when the model has none
+} phomemo_embedded_model_t;
 
-// A printer model, read from its description directory
+extern const phomemo_embedded_model_t phomemo_embedded_models[];
+extern const int phomemo_num_embedded_models;
+
+// A printer model, from an embedded description or a description directory
 // (<models dir>/<id>/model.json plus icon-48/128/512.png).
 typedef struct
 {
@@ -60,12 +70,17 @@ typedef struct
   int num_media;
   char media[PHOMEMO_MAX_MEDIA][64];  // PWG media names
   int default_media;                  // index into media
-  char icons[3][256];                 // 48, 128 and 512 px PNG files
+  // Icons in 48, 128 and 512 px: embedded PNG data, or files for
+  // descriptions read from a directory.
+  const unsigned char *icon_data[3];
+  size_t icon_len[3];
+  char icons[3][256];
 } phomemo_model_t;
 
-// Reads every model description under dir (NULL: $PHOMEMO_MODELS_DIR, else
-// PHOMEMO_MODELS_DIR) into the model table, replacing what it held. Returns
-// the number of models read; 0 with err set when none could be read.
+// Fills the model table, replacing what it held: from the description
+// directories under dir, or with dir NULL from $PHOMEMO_MODELS_DIR when set
+// and otherwise from the descriptions built into the binary. Returns the
+// number of models read; 0 with err set when none could be read.
 int phomemo_models_load(const char *dir, char *err, size_t errsize);
 
 // The models read by phomemo_models_load, in identifier order.

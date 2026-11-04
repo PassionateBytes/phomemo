@@ -73,22 +73,13 @@ number_of(const cJSON *object, const char *key, double *value)
   return true;
 }
 
-// Reads <dir>/<id>/model.json into model; false with err set when the
-// description is unusable.
+// Parses the model.json text of model id into model; path names the
+// description in messages. False with err set when it is unusable.
 static bool
-load_model(const char *dir, const char *id, phomemo_model_t *model, char *err,
-           size_t errsize)
+parse_model(const char *text, const char *id, const char *path,
+            phomemo_model_t *model, char *err, size_t errsize)
 {
-  char path[1024];
-  snprintf(path, sizeof(path), "%s/%s/model.json", dir, id);
-  char *text = read_file(path);
-  if (!text)
-  {
-    snprintf(err, errsize, "%s: cannot be read", path);
-    return false;
-  }
   cJSON *json = cJSON_Parse(text);
-  free(text);
   if (!json)
   {
     snprintf(err, errsize, "%s: not valid JSON", path);
@@ -152,18 +143,38 @@ load_model(const char *dir, const char *id, phomemo_model_t *model, char *err,
       snprintf(err, errsize, "%s: one medium must be the default", path);
       ok = false;
     }
-    for (int i = 0; ok && i < 3; i++)
-    {
-      snprintf(model->icons[i], sizeof(model->icons[i]), "%s/%s/icon-%d.png",
-               dir, id, icon_sizes[i]);
-      if (access(model->icons[i], R_OK))
-        model->icons[i][0] = '\0';
-    }
   }
 
   cJSON_Delete(json);
   return ok;
 }
+
+// Reads <dir>/<id>/model.json and the icon files next to it into model;
+// false with err set when the description is unusable.
+static bool
+load_model(const char *dir, const char *id, phomemo_model_t *model, char *err,
+           size_t errsize)
+{
+  char path[1024];
+  snprintf(path, sizeof(path), "%s/%s/model.json", dir, id);
+  char *text = read_file(path);
+  if (!text)
+  {
+    snprintf(err, errsize, "%s: cannot be read", path);
+    return false;
+  }
+  bool ok = parse_model(text, id, path, model, err, errsize);
+  free(text);
+  for (int i = 0; ok && i < 3; i++)
+  {
+    snprintf(model->icons[i], sizeof(model->icons[i]), "%s/%s/icon-%d.png",
+             dir, id, icon_sizes[i]);
+    if (access(model->icons[i], R_OK))
+      model->icons[i][0] = '\0';
+  }
+  return ok;
+}
+
 
 static int
 compare_ids(const void *a, const void *b)
@@ -172,13 +183,48 @@ compare_ids(const void *a, const void *b)
                 ((const phomemo_model_t *)b)->id);
 }
 
+// Fills the table from the descriptions built into the binary.
+static int
+load_embedded(char *err, size_t errsize)
+{
+  char model_err[512] = "";
+  num_models = 0;
+  for (int i = 0;
+       i < phomemo_num_embedded_models && num_models < PHOMEMO_MAX_MODELS; i++)
+  {
+    const phomemo_embedded_model_t *e = &phomemo_embedded_models[i];
+    char where[64];
+    snprintf(where, sizeof(where), "built-in %.32s model.json", e->id);
+    phomemo_model_t *model = &models[num_models];
+    if (!parse_model(e->json, e->id, where, model, model_err,
+                     sizeof(model_err)))
+    {
+      fprintf(stderr, "phomemo-printer-app: %s\n", model_err);
+      continue;
+    }
+    for (int j = 0; j < 3; j++)
+    {
+      model->icon_data[j] = e->icons[j].data;
+      model->icon_len[j] = e->icons[j].len;
+    }
+    num_models++;
+  }
+  qsort(models, (size_t)num_models, sizeof(models[0]), compare_ids);
+  if (!num_models)
+    snprintf(err, errsize, "no usable built-in model descriptions%s%s",
+             model_err[0] ? ": " : "", model_err);
+  return num_models;
+}
+
 int
 phomemo_models_load(const char *dir, char *err, size_t errsize)
 {
   if (!dir)
   {
     const char *env = getenv("PHOMEMO_MODELS_DIR");
-    dir = env && *env ? env : PHOMEMO_MODELS_DIR;
+    if (!env || !*env)
+      return load_embedded(err, errsize);
+    dir = env;
   }
 
   num_models = 0;

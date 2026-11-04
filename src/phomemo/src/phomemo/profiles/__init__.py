@@ -29,28 +29,23 @@ from phomemo.registry import load_description, register_profile
 logger = logging.getLogger(__name__)
 
 MODELS_ENV = "PHOMEMO_MODELS_DIR"
-SYSTEM_MODELS = Path("/usr/share/phomemo/models")
 
 
 def models_dir() -> Path:
     """Where the model descriptions are read from.
 
     ``PHOMEMO_MODELS_DIR`` when set; otherwise the copy installed with the
-    package, then the descriptions of a source checkout, then the system
-    directory the printer application uses.
+    package, else the descriptions of a source checkout.
 
     Returns:
-        The first of these that exists, else the system directory.
+        The first of these that exists, else the installed location.
     """
     if env := os.environ.get(MODELS_ENV):
         return Path(env)
     here = Path(__file__).resolve()
-    candidates = [
-        here.parents[1] / "models",  # installed: phomemo/models
-        here.parents[4] / "models",  # checkout: src/models
-        SYSTEM_MODELS,
-    ]
-    return next((path for path in candidates if path.is_dir()), SYSTEM_MODELS)
+    installed = here.parents[1] / "models"  # phomemo/models in the package
+    checkout = here.parents[4] / "models"  # src/models next to the project
+    return next((p for p in (installed, checkout) if p.is_dir()), installed)
 
 
 def _register_builtin() -> None:
