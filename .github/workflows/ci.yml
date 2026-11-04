@@ -40,9 +40,9 @@ jobs:
       - name: Install packaging tools
         run: >
           dnf install -y --setopt=install_weak_deps=False
-          rpm-build rpmlint git python3-devel pyproject-rpm-macros dnf-plugins-core
-          python3-hatchling python3-bleak python3-pillow
-          systemd-rpm-macros gcc make pkgconf-pkg-config pappl-devel cups-devel
+          rpm-build rpmlint git make dnf-plugins-core
+      - name: Enable the project's COPR repository (python3-bleak is not in Fedora)
+        run: dnf copr enable -y passionatebytes/phomemo-driver
       - uses: actions/checkout@v4
       - name: Mark the checkout safe for git archive
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -51,7 +51,13 @@ jobs:
       - name: Build the packages
         run: |
           make tarball
+          defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
+                --define "_srcrpmdir $PWD/dist")
           dnf builddep -y packaging/phomemo-driver.spec
-          rpmbuild -ba --define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist" \
-            --define "_srcrpmdir $PWD/dist" packaging/phomemo-driver.spec
+          # The spec generates the Python build requirements at build time:
+          # resolve them into a nosrc RPM, install those, then build for real.
+          rpmbuild -br "${defs[@]}" packaging/phomemo-driver.spec || true
+          dnf builddep -y dist/*.buildreqs.nosrc.rpm
+          rpmbuild -ba "${defs[@]}" packaging/phomemo-driver.spec
           ls -R dist
+        shell: bash
