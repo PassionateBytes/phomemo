@@ -32,7 +32,7 @@ def test_config_defaults_without_files(
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
     assert config.auto_off_minutes is None
     assert config.profile == "M08F-A4"
-    assert config.hold_seconds == 300.0
+    assert config.idle_disconnect_minutes == 30.0
     assert config.settle_seconds == 3.0
     assert config.completion_timeout == 300.0
     assert config.band_height is None
@@ -47,11 +47,12 @@ def test_config_user_file_overrides_system_file(tmp_path: Path) -> None:
     system = tmp_path / "system.toml"
     user = tmp_path / "user.toml"
     system.write_text(
-        "hold_seconds = 10\nband_height = 64\n[printer]\nauto_off_minutes = 10\n"
+        "idle_disconnect_minutes = 10\nband_height = 64\n"
+        "[printer]\nauto_off_minutes = 10\n"
     )
-    user.write_text("hold_seconds = 20\n")
+    user.write_text("idle_disconnect_minutes = 20\n")
     config = load_config(paths=[system, user], env={})
-    assert config.hold_seconds == 20.0
+    assert config.idle_disconnect_minutes == 20.0
     assert config.band_height == 64
     assert config.auto_off_minutes == 10
 
@@ -70,7 +71,11 @@ def test_config_env_socket_override(tmp_path: Path) -> None:
     [
         ("hold_secs = 5\n", "hold_secs", "unknown key"),
         ('completion_timeout = "soon"\n', "completion_timeout", "expected a number"),
-        ("hold_seconds = -1\n", "hold_seconds", "must not be negative"),
+        (
+            "idle_disconnect_minutes = -1\n",
+            "idle_disconnect_minutes",
+            "must not be negative",
+        ),
         ("band_height = 0\n", "band_height", "must be positive"),
         ('[printer]\nprofile = "nope"\n', "printer.profile", "unknown profile"),
         (
@@ -95,7 +100,7 @@ def test_config_logs_an_invalid_entry_and_ignores_it(
     assert f"user.toml: {key}: {problem}" in caplog.text
     assert "ignored" in caplog.text
     assert config.settle_seconds == 9.0
-    assert config.hold_seconds == 300.0
+    assert config.idle_disconnect_minutes == 30.0
     assert config.profile == "M08F-A4"
     assert config.band_height is None
 
@@ -104,7 +109,7 @@ def test_config_unreadable_file_is_logged_and_skipped(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     broken = tmp_path / "broken.toml"
-    broken.write_text("hold_seconds = = 5\n")
+    broken.write_text("idle_disconnect_minutes = = 5\n")
     good = tmp_path / "good.toml"
     good.write_text("settle_seconds = 9\n")
     with caplog.at_level("WARNING"):
@@ -115,7 +120,7 @@ def test_config_unreadable_file_is_logged_and_skipped(
 
 def test_config_missing_file_is_skipped(tmp_path: Path) -> None:
     config = load_config(paths=[tmp_path / "absent.toml"], env={})
-    assert config.hold_seconds == 300.0
+    assert config.idle_disconnect_minutes == 30.0
 
 
 def test_config_explicit_missing_file_is_an_error(tmp_path: Path) -> None:
@@ -178,3 +183,13 @@ def test_config_auto_off_that_is_no_timer_is_logged_and_not_enforced(
     assert config.auto_off_minutes is None
     assert "printer.auto_off_minutes" in caplog.text
     assert "ignored" in caplog.text
+
+
+def test_config_hold_seconds_is_gone(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text("hold_seconds = 300\n")
+    with caplog.at_level("WARNING"):
+        load_config(paths=[path], env={})
+    assert "hold_seconds: unknown key; ignored" in caplog.text

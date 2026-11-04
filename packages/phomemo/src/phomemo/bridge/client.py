@@ -132,7 +132,7 @@ class BridgeClient:
         return {k: v for k, v in reply.items() if k not in ("ok", "cmd")}
 
     async def drop_link(self) -> None:
-        """Drop the printer link now instead of after the hold time."""
+        """Drop the printer link now instead of after the idle timeout."""
         await self.call({"cmd": "disconnect"})
 
     async def info(self) -> dict[str, Any]:

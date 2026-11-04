@@ -130,7 +130,9 @@ async def fake_bridge(
     ScriptedPrinter.reachable_default = True
     hold = param.get("hold_seconds", 0.2)
     config = BridgeConfig(
-        socket_path=tmp_path / "bridge.sock", hold_seconds=hold, drain_seconds=0.0
+        socket_path=tmp_path / "bridge.sock",
+        idle_disconnect_minutes=hold / 60,
+        drain_seconds=0.0,
     )
     server = await start_server(config, printer_factory=ScriptedPrinter)
     env = {**os.environ, "PHOMEMO_BRIDGE_SOCKET": str(config.socket_path)}
@@ -591,7 +593,9 @@ async def test_bridge_down_pauses_queue_until_bridge_returns(
     assert str(tmp_path / "late.sock") in (tmp_path / "app.log").read_text()
 
     config = BridgeConfig(
-        socket_path=tmp_path / "late.sock", hold_seconds=0.2, drain_seconds=0.0
+        socket_path=tmp_path / "late.sock",
+        idle_disconnect_minutes=0.2 / 60,
+        drain_seconds=0.0,
     )
     late = await start_server(config, printer_factory=ScriptedPrinter)
     try:

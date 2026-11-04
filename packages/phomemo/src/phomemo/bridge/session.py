@@ -115,7 +115,7 @@ class Session:
         self._used_link = False
 
     async def run(self) -> None:
-        """Read commands until EOF, then release the printer link to the hold timer."""
+        """Read commands until EOF, then leave the printer link to the idle timer."""
         bridge = self._bridge
         if bridge.session_active:
             await self._send({"ok": False, "error": "busy"})
@@ -260,7 +260,7 @@ class Session:
     async def _cmd_disconnect(
         self, _obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
-        """Drop the link now instead of leaving it to the hold timer."""
+        """Drop the link now instead of leaving it to the idle timer."""
         self._used_link = False
         await self._bridge.disconnect()
         return {}

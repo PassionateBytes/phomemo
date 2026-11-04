@@ -227,7 +227,7 @@ Profile fields beyond the BLE UUIDs:
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
 phomemo-bridge devices                    # list printers in range
-phomemo-bridge connect                    # bring the link up (held for hold_seconds)
+phomemo-bridge connect                    # bring the link up (dropped after idle_disconnect_minutes)
 phomemo-bridge status                     # link, sensors, battery, firmware, serial, auto-off
 phomemo-bridge auto-off                   # show the auto-off timer
 phomemo-bridge auto-off 15                # set it (5-minute steps, 0 = never)
@@ -249,7 +249,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `socket_path` | `/run/phomemo/bridge.sock` when that exists (the system service), else `$XDG_RUNTIME_DIR/phomemo-bridge.sock` | Listening socket; the command line finds the system bridge the same way. |
-| `hold_seconds` | `300` | Keep the BLE link after a job so the next one skips the reconnect. While the link is held the printer does not advertise, so other devices cannot connect to it. |
+| `idle_disconnect_minutes` | `30` | Minutes without a command after which the bridge drops the BLE link; it ends earlier when the printer switches off or leaves range, and `0` keeps it until then. While the link is held the printer does not advertise, so other devices cannot connect to it. |
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
@@ -266,8 +266,8 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 |---------|-----------|-------|
 | `discover` | `timeout` | `printers: [{name, address}]` |
 | `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
-| `close` | | ends the session's use of the link; the bridge holds it for `hold_seconds` |
-| `disconnect` | | drops the link now, without the hold |
+| `close` | | ends the session's use of the link; the bridge drops it after `idle_disconnect_minutes` without a command |
+| `disconnect` | | drops the link now instead of after `idle_disconnect_minutes` |
 | `status` | `address` (optional) | linked: `connected: true`, `address`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
 | `info` | | linked printer's `address`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
 | `auto_off` | `minutes` (optional) | sets the timer when `minutes` is given, then `auto_off_minutes` as the printer reports it; error `not connected` without a link |
@@ -279,7 +279,7 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | `test_page` | `printer_name`, `versions` (name to version) | connects if needed, queries the device and writes a test page PNG to `$XDG_RUNTIME_DIR/phomemo-testpage.png` (else the temp dir); `path` |
 | `eject` | | `ejected` |
 | `abort` | | stops a pending `wait_ready` or transfer (the band in progress is padded white, then drain and eject); ok even when idle |
-| `close` | | starts the hold timer |
+| `close` | | starts the idle timer (`idle_disconnect_minutes`) |
 
 ## Supported Printers
 

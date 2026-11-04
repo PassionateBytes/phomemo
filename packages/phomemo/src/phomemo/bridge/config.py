@@ -37,7 +37,7 @@ SOCKET_NAME = "phomemo-bridge.sock"
 SOCKET_ENV = "PHOMEMO_BRIDGE_SOCKET"
 
 _NUMERIC = {
-    "hold_seconds",
+    "idle_disconnect_minutes",
     "settle_seconds",
     "completion_timeout",
     "drain_seconds",

@@ -198,7 +198,7 @@ class Client:
 def config(tmp_path: Path) -> BridgeConfig:
     return BridgeConfig(
         socket_path=tmp_path / "bridge.sock",
-        hold_seconds=0.2,
+        idle_disconnect_minutes=0.2 / 60,
         drain_seconds=0.0,
         auto_off_minutes=5,
     )
@@ -256,7 +256,9 @@ async def test_open_connects_once_within_hold_window(bridge: BridgeConfig) -> No
 @pytest.mark.asyncio
 async def test_status_session_does_not_rearm_hold(tmp_path: Path) -> None:
     FakePrinter.instances.clear()
-    config = BridgeConfig(socket_path=tmp_path / "bridge.sock", hold_seconds=0.4)
+    config = BridgeConfig(
+        socket_path=tmp_path / "bridge.sock", idle_disconnect_minutes=0.4 / 60
+    )
     server = await start_server(config, printer_factory=FakePrinter)
     try:
         client = await _connect(config)
@@ -275,7 +277,9 @@ async def test_status_session_does_not_rearm_hold(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_hold_timer_disconnects_after_hold_seconds(bridge: BridgeConfig) -> None:
+async def test_idle_link_is_dropped_after_idle_disconnect_minutes(
+    bridge: BridgeConfig,
+) -> None:
     client = await _connect(bridge)
     await client.call({"cmd": "open"})
     await client.call({"cmd": "close"})
@@ -585,7 +589,9 @@ async def test_open_with_printer_off_is_ok_and_not_connected(tmp_path: Path) -> 
         printer.reachable = False
         return printer
 
-    config = BridgeConfig(socket_path=tmp_path / "off.sock", hold_seconds=0.2)
+    config = BridgeConfig(
+        socket_path=tmp_path / "off.sock", idle_disconnect_minutes=0.2 / 60
+    )
     server = await start_server(config, printer_factory=unreachable)
     try:
         client = await _connect(config)
@@ -703,7 +709,9 @@ async def test_serve_disconnects_the_printer_when_cancelled(tmp_path: Path) -> N
     from phomemo.bridge.server import serve
 
     FakePrinter.instances.clear()
-    config = BridgeConfig(socket_path=tmp_path / "serve.sock", hold_seconds=60.0)
+    config = BridgeConfig(
+        socket_path=tmp_path / "serve.sock", idle_disconnect_minutes=60.0 / 60
+    )
     task = asyncio.create_task(serve(config, printer_factory=FakePrinter))
     for _ in range(50):
         if config.socket_path.exists():
@@ -1119,6 +1127,22 @@ async def test_connect_without_an_auto_off_setting_leaves_the_timer(
         await client.call({"cmd": "open"})
         assert _printer().auto_off_writes == []
         await client.close()
+    finally:
+        server.close()
+        server.close_clients()
+
+
+@pytest.mark.asyncio
+async def test_idle_disconnect_zero_keeps_the_link(tmp_path: Path) -> None:
+    FakePrinter.instances.clear()
+    config = BridgeConfig(socket_path=tmp_path / "k.sock", idle_disconnect_minutes=0)
+    server = await start_server(config, printer_factory=FakePrinter)
+    try:
+        client = await _connect(config)
+        await client.call({"cmd": "open"})
+        await client.close()
+        await asyncio.sleep(0.1)
+        assert _printer().connected
     finally:
         server.close()
         server.close_clients()

@@ -55,15 +55,17 @@ _COMMANDS: dict[str, tuple[str, str]] = {
     ),
     "connect": (
         "bring the printer link up",
-        "Bring the Bluetooth link to the printer up. The bridge keeps it for "
-        "hold_seconds afterwards (see the configuration), so later commands and "
-        "jobs skip the reconnect. At each new link the bridge sets the printer's "
+        "Bring the Bluetooth link to the printer up. The bridge keeps it until "
+        "the printer switches off or leaves range, or until "
+        "idle_disconnect_minutes pass without a command (see the "
+        "configuration), so later commands and jobs skip the reconnect. At each "
+        "new link the bridge sets the printer's "
         "auto-off timer to auto_off_minutes when that key is set.\n\n"
         + _PRINTER_CHOICE,
     ),
     "disconnect": (
         "drop the printer link now",
-        "Drop the Bluetooth link right away instead of after the hold time, so "
+        "Drop the Bluetooth link right away instead of after the idle time, so "
         "another host (a phone, another computer) can reach the printer.",
     ),
     "status": (

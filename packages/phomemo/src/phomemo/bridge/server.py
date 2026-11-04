@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Bridge daemon: socket server, shared printer link, hold timer."""
+"""Bridge daemon: socket server, shared printer link, idle timer."""
 
 import asyncio
 import contextlib
@@ -48,7 +48,9 @@ class BridgeConfig:
     Attributes:
         socket_path: Unix socket the bridge listens on.
         profile: Printer profile name.
-        hold_seconds: Seconds the BLE link stays up after ``close``.
+        idle_disconnect_minutes: Minutes without a command after which the
+            bridge drops the BLE link (it ends earlier when the printer
+            switches off or leaves range); 0 keeps it until then.
         auto_off_minutes: Auto-off timer the bridge sets on the printer at
             each new link (multiple of 5, 0 = never switch off); ``None``
             leaves the printer's setting alone.
@@ -65,7 +67,7 @@ class BridgeConfig:
 
     socket_path: Path
     profile: str = "M08F-A4"
-    hold_seconds: float = 300.0
+    idle_disconnect_minutes: float = 30.0
     auto_off_minutes: int | None = None
     settle_seconds: float = 3.0
     completion_timeout: float = 300.0
@@ -93,7 +95,7 @@ _PROFILE_FIELDS = frozenset(
 
 
 class Bridge:
-    """State shared by all client sessions: the printer link and its hold timer."""
+    """State shared by all client sessions: the printer link and its idle timer."""
 
     def __init__(self, config: BridgeConfig, printer_factory: PrinterFactory) -> None:
         self.config = config
@@ -193,12 +195,14 @@ class Bridge:
             logger.info("Printer link down")
 
     def start_hold(self) -> None:
-        """Keep the link for ``hold_seconds``, then drop it."""
+        """Keep the link for ``idle_disconnect_minutes``, then drop it."""
         self.cancel_hold()
         if not self.connected:
             return
         loop = asyncio.get_running_loop()
-        self._hold_handle = loop.call_later(self.config.hold_seconds, self._expire_hold)
+        minutes = self.config.idle_disconnect_minutes
+        if minutes > 0:
+            self._hold_handle = loop.call_later(minutes * 60, self._expire_hold)
 
     def _expire_hold(self) -> None:
         self._hold_task = asyncio.ensure_future(self.disconnect())
