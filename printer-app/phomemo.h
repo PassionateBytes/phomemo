@@ -46,6 +46,11 @@
 #define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printer takes
 #define PHOMEMO_LOW_BATTERY 15  // percent
 
+// Printer location for a phomemo:// device URI: "Bluetooth: <address>".
+// Returns false for any other URI.
+bool phomemo_device_location(const char *device_uri, char *buffer,
+                             size_t bufsize);
+
 // Device info for a discovered printer: the make and model followed by the
 // last three bytes of its address without colons, e.g.
 // "Phomemo M08F (DDEEFF)". PAPPL names auto-added printers after it, so each

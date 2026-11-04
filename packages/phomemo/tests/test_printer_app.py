@@ -659,6 +659,7 @@ async def test_server_registers_the_printer_in_range_at_start(
     resource = out.split("/ipp/print/", 1)[1].strip()
     attrs = await printer_attributes(app_server, tmp_path, resource)
     assert attrs["printer-name"] == "Phomemo M08F (DDEEFF)"
+    assert attrs["printer-location"] == "Bluetooth: AA:BB:CC:DD:EE:FF"
 
 
 async def test_dash_h_alone_prints_help(app_server: AppServer) -> None:
@@ -699,3 +700,6 @@ async def test_idle_status_reports_the_battery_as_a_supply(
     attrs = await printer_attributes(printer, tmp_path)
     assert "Battery" in attrs["printer-supply-description"]
     assert "level=77" in attrs["printer-supply"]
+    # GNOME Settings draws supply levels only for ink and toner.
+    assert "type=ink" in attrs["printer-supply"]
+    assert attrs["marker-types"] == "ink"
