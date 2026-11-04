@@ -54,25 +54,54 @@ main(void)
                  "graphic"));
   assert(!strcmp(phomemo_content_name(PAPPL_CONTENT_PHOTO), "photo"));
 
+  char err[256] = "";
+  assert(phomemo_models_load("../models", err, sizeof(err)) == 1);
+  const phomemo_model_t *m08f = phomemo_model_find("m08f");
+  assert(m08f);
+  assert(!phomemo_model_find("q30"));
+  assert(!strcmp(m08f->make_and_model, "Phomemo M08F"));
+  assert(!strcmp(m08f->device_id, "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"));
+  assert(m08f->dpi == 203 && m08f->width_px == 1680);
+  assert(m08f->top_margin == 1000 && m08f->bottom_margin == 500);
+  assert(m08f->head_width == 21020);
+  assert(m08f->num_media == 2 && m08f->default_media == 0);
+  assert(!strcmp(m08f->media[0], "iso_a4_210x297mm"));
+  assert(!strcmp(m08f->media[1], "iso_a5_148x210mm"));
+  assert(strstr(m08f->icons[2], "/m08f/icon-512.png"));
+  assert(phomemo_model_for_device_id("MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;") ==
+         m08f);
+  assert(!phomemo_model_for_device_id("MFG:Phomemo;MDL:Q30;"));
+  assert(phomemo_models_load("/nonexistent", err, sizeof(err)) == 0);
+  assert(strstr(err, "/nonexistent"));
+  assert(phomemo_models_load("../models", err, sizeof(err)) == 1);
+
   pappl_pr_options_t a5_portrait =
     options_for("iso_a5_148x210mm", 14800, 21000, 1182, 1678);
   pappl_pr_options_t a5_landscape =
     options_for("iso_a5_148x210mm", 14800, 21000, 1678, 1182);
   pappl_pr_options_t a4 =
     options_for("iso_a4_210x297mm", 21000, 29700, 1678, 2374);
-  assert(phomemo_should_rotate(&a5_portrait));
-  assert(!phomemo_should_rotate(&a5_landscape));
-  assert(!phomemo_should_rotate(&a4));
+  int head = m08f->head_width;
+  assert(phomemo_should_rotate(&a5_portrait, head));
+  assert(!phomemo_should_rotate(&a5_landscape, head));
+  assert(!phomemo_should_rotate(&a4, head));
 
-  assert(phomemo_media_length_mm(&a4) == 297.0);
-  assert(phomemo_media_length_mm(&a5_portrait) == 148.0);
-  assert(phomemo_media_length_mm(&a5_landscape) == 148.0);
+  assert(phomemo_media_length_mm(&a4, head) == 297.0);
+  assert(phomemo_media_length_mm(&a5_portrait, head) == 148.0);
+  assert(phomemo_media_length_mm(&a5_landscape, head) == 148.0);
 
   char info[64];
-  phomemo_device_info("AA:BB:CC:DD:EE:FF", info, sizeof(info));
+  phomemo_device_info(m08f, "AA:BB:CC:DD:EE:FF", info, sizeof(info));
   assert(!strcmp(info, "Phomemo M08F (DDEEFF)"));
-  phomemo_device_info("11:22:33:DD:EE:FF", info, sizeof(info));
+  phomemo_device_info(m08f, "11:22:33:DD:EE:FF", info, sizeof(info));
   assert(!strcmp(info, "Phomemo M08F (DDEEFF)"));
+
+  char model[32];
+  assert(phomemo_uri_model("phomemo://AA-BB-CC-DD-EE-FF?model=m08f", model,
+                           sizeof(model)));
+  assert(!strcmp(model, "m08f"));
+  assert(!phomemo_uri_model("phomemo://AA-BB-CC-DD-EE-FF", model,
+                            sizeof(model)));
 
   puts("test_driver: ok");
   return 0;

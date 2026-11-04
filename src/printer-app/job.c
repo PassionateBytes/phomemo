@@ -253,9 +253,13 @@ phomemo_rstartpage_cb(pappl_job_t *job, pappl_pr_options_t *options,
                           phomemo_content_name(options->print_content_optimize));
   cJSON_AddStringToObject(request, "density",
                           phomemo_density_for_quality(options->print_quality));
+  const phomemo_model_t *model = phomemo_model_find(
+    papplPrinterGetDriverName(papplJobGetPrinter(job)));
+  int head_width = model ? model->head_width : options->media.size_width;
   cJSON_AddNumberToObject(request, "media_length_mm",
-                          phomemo_media_length_mm(options));
-  cJSON_AddBoolToObject(request, "rotate", phomemo_should_rotate(options));
+                          phomemo_media_length_mm(options, head_width));
+  cJSON_AddBoolToObject(request, "rotate",
+                        phomemo_should_rotate(options, head_width));
   reply = phomemo_bridge_call(pj->bridge, request, NULL, 0, NULL, NULL, err,
                               sizeof(err));
   cJSON_Delete(request);

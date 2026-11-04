@@ -32,25 +32,62 @@
 #include "bridge.h"
 
 #define PHOMEMO_VERSION "0.1.0"
-#define PHOMEMO_DRIVER_NAME "m08f"
-#define PHOMEMO_MAKE_AND_MODEL "Phomemo M08F"
-#define PHOMEMO_DEVICE_ID "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"
 #define PHOMEMO_URI_SCHEME "phomemo"
-#define PHOMEMO_DPI 203
-#define PHOMEMO_HEAD_WIDTH 21000  // print head width in hundredths of a millimetre
-// Top and bottom margin in hundredths of a millimetre. PAPPL only models
-// symmetric margins, so the 10 mm the printer cannot reach at the top of
-// a sheet applies to both ends.
-#define PHOMEMO_MARGIN 1000
 #define PHOMEMO_TONE_OPTION "phomemo-tone"
-#define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printer takes
+#define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printers take
 #define PHOMEMO_LOW_BATTERY 15  // percent
+#define PHOMEMO_MAX_MODELS 16
+#define PHOMEMO_MAX_MEDIA 8
 
-// Device info for a discovered printer: the make and model followed by the
-// last three bytes of its address without colons, e.g.
+// Where the model descriptions are installed; PHOMEMO_MODELS_DIR in the
+// environment overrides it.
+#ifndef PHOMEMO_MODELS_DIR
+#  define PHOMEMO_MODELS_DIR "/usr/share/phomemo/models"
+#endif
+
+// A printer model, read from its description directory
+// (<models dir>/<id>/model.json plus icon-48/128/512.png).
+typedef struct
+{
+  char id[32];               // lower-case identifier, also the driver name
+  char make_and_model[128];  // "Phomemo M08F"
+  char device_id[128];       // "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"
+  int dpi;
+  int width_px;
+  int head_width;     // print head width in hundredths of a millimetre
+  int top_margin;     // hundredths of a millimetre
+  int bottom_margin;  // hundredths of a millimetre
+  int num_media;
+  char media[PHOMEMO_MAX_MEDIA][64];  // PWG media names
+  int default_media;                  // index into media
+  char icons[3][256];                 // 48, 128 and 512 px PNG files
+} phomemo_model_t;
+
+// Reads every model description under dir (NULL: $PHOMEMO_MODELS_DIR, else
+// PHOMEMO_MODELS_DIR) into the model table, replacing what it held. Returns
+// the number of models read; 0 with err set when none could be read.
+int phomemo_models_load(const char *dir, char *err, size_t errsize);
+
+// The models read by phomemo_models_load, in identifier order.
+int phomemo_models_count(void);
+const phomemo_model_t *phomemo_model_at(int index);
+
+// The model with this identifier, or NULL.
+const phomemo_model_t *phomemo_model_find(const char *id);
+
+// The model whose device ID equals device_id, or NULL.
+const phomemo_model_t *phomemo_model_for_device_id(const char *device_id);
+
+// Copies the model of a phomemo:// URI (its "model" query parameter) into
+// buffer; false when the URI names none.
+bool phomemo_uri_model(const char *device_uri, char *buffer, size_t bufsize);
+
+// Device info for a discovered printer: the model's make and model followed
+// by the last three bytes of its address without colons, e.g.
 // "Phomemo M08F (DDEEFF)". PAPPL names auto-added printers after it, so each
 // printer gets a distinct name.
-void phomemo_device_info(const char *address, char *buffer, size_t bufsize);
+void phomemo_device_info(const phomemo_model_t *model, const char *address,
+                         char *buffer, size_t bufsize);
 
 // Publishes the battery charge as the printer's supply level.
 void phomemo_set_battery(pappl_printer_t *printer, int percent);
@@ -61,22 +98,15 @@ void phomemo_identify_cb(pappl_printer_t *printer,
                          pappl_identify_actions_t actions,
                          const char *message);
 
-// Printer icons (PNG, 48, 128 and 512 px), embedded from icons/ at build time.
-extern const unsigned char phomemo_icon_icon_48[];
-extern const size_t phomemo_icon_icon_48_len;
-extern const unsigned char phomemo_icon_icon_128[];
-extern const size_t phomemo_icon_icon_128_len;
-extern const unsigned char phomemo_icon_icon_512[];
-extern const size_t phomemo_icon_icon_512_len;
-
 // Test page callback: the bridge renders a PNG with the device details;
 // returns its path in buffer, or NULL when the bridge is unreachable.
 const char *phomemo_testpage_cb(pappl_printer_t *printer, char *buffer,
                                 size_t bufsize);
 
 // Registers the phomemo:// device scheme with PAPPL. The URI host part
-// is the printer's BLE address with dashes instead of colons
-// (phomemo://AA-BB-CC-DD-EE-FF), because a URI host cannot hold colons.
+// is the printer's BLE address with dashes instead of colons, because a URI
+// host cannot hold colons; the query names the model
+// (phomemo://AA-BB-CC-DD-EE-FF?model=m08f).
 void phomemo_device_add_scheme(void);
 
 // The bridge connection of an open device, reconnected (connect plus open)
@@ -89,7 +119,7 @@ phomemo_bridge_t *phomemo_device_bridge(pappl_device_t *device, char *err,
 // $XDG_RUNTIME_DIR/phomemo-bridge.sock, else /run/phomemo/bridge.sock.
 const char *phomemo_socket_path(char *buffer, size_t bufsize);
 
-// Driver callback registered with PAPPL for the "m08f" driver.
+// Driver callback registered with PAPPL; the driver name is a model ID.
 bool phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
                        const char *device_uri, const char *device_id,
                        pappl_pr_driver_data_t *data, ipp_t **attrs,
@@ -101,12 +131,15 @@ const char *phomemo_density_for_quality(ipp_quality_t quality);
 // Bridge content keyword for a print-content-optimize value.
 const char *phomemo_content_name(pappl_content_t content);
 
-// True when the page must be rotated to feed A5 long edge first.
-bool phomemo_should_rotate(const pappl_pr_options_t *options);
+// True when the page must be rotated: the medium lies with its length
+// across the head (as A5 does on an A4 printer) and the page is portrait.
+// head_width is in hundredths of a millimetre.
+bool phomemo_should_rotate(const pappl_pr_options_t *options, int head_width);
 
-// Media length along the feed direction in millimetres (A5 feeds its
-// 210 mm edge across the head, so its feed length is 148 mm).
-double phomemo_media_length_mm(const pappl_pr_options_t *options);
+// Media length along the feed direction in millimetres: the dimension that
+// does not lie across the head (A5 on an A4 printer feeds 148 mm).
+double phomemo_media_length_mm(const pappl_pr_options_t *options,
+                               int head_width);
 
 // Raster job callbacks registered in the driver data.
 bool phomemo_rstartjob_cb(pappl_job_t *job, pappl_pr_options_t *options,

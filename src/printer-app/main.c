@@ -23,11 +23,8 @@
 
 #include "phomemo.h"
 
+#include <stdio.h>
 #include <string.h>
-
-static pappl_pr_driver_t drivers[] = {
-  {PHOMEMO_DRIVER_NAME, PHOMEMO_MAKE_AND_MODEL, PHOMEMO_DEVICE_ID, NULL},
-};
 
 static const char *footer_html =
   "Phomemo printer application. Printing goes through phomemo-bridge.";
@@ -36,19 +33,39 @@ const char *
 phomemo_autoadd_cb(const char *device_info, const char *device_uri,
                    const char *device_id, void *data)
 {
-  if (device_uri && !strncmp(device_uri, PHOMEMO_URI_SCHEME "://",
+  if (!device_uri || strncmp(device_uri, PHOMEMO_URI_SCHEME "://",
                              sizeof(PHOMEMO_URI_SCHEME) + 2))
-    return PHOMEMO_DRIVER_NAME;
-  return NULL;
+    return NULL;
+  const phomemo_model_t *model = phomemo_model_for_device_id(device_id);
+  return model ? model->id : NULL;
 }
 
 int
 main(int argc, char *argv[])
 {
+  static pappl_pr_driver_t drivers[PHOMEMO_MAX_MODELS];
+  char err[1024];
+  bool info_only = argc == 2 && (!strcmp(argv[1], "--help") ||
+                                 !strcmp(argv[1], "--version"));
+
+  int num_drivers = phomemo_models_load(NULL, err, sizeof(err));
+  if (!num_drivers && !info_only)
+  {
+    fprintf(stderr, "phomemo-printer-app: %s\n", err);
+    return 1;
+  }
+  for (int i = 0; i < num_drivers; i++)
+  {
+    const phomemo_model_t *model = phomemo_model_at(i);
+    drivers[i].name = model->id;
+    drivers[i].description = model->make_and_model;
+    drivers[i].device_id = model->device_id;
+    drivers[i].extension = NULL;
+  }
+
   phomemo_device_add_scheme();
 
-  return papplMainloop(argc, argv, PHOMEMO_VERSION, footer_html,
-                       (int)(sizeof(drivers) / sizeof(drivers[0])), drivers,
-                       phomemo_autoadd_cb, phomemo_driver_cb, NULL, NULL,
-                       NULL, NULL, NULL);
+  return papplMainloop(argc, argv, PHOMEMO_VERSION, footer_html, num_drivers,
+                       drivers, phomemo_autoadd_cb, phomemo_driver_cb, NULL,
+                       NULL, NULL, NULL, NULL);
 }
