@@ -54,7 +54,7 @@ async def test_client_print_image_streams_rows_and_returns_impressions(
         impressions = await client.print_image(image, media="a4", quality="high")
     assert impressions == 1
     printer = FakePrinter.instances[-1]
-    rows = get_profile("M08F-A4").rows_for(297.0)
+    rows = get_profile("m08f").rows_for(297.0)
     assert printer.printed == [(210 * rows, rows, "HIGH")]
     assert printer.ejects == 1
     assert [e["percent"] for e in events if e["event"] == "progress"][-1] == 100

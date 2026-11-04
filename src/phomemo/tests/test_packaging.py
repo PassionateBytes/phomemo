@@ -66,3 +66,46 @@ def test_spec_and_makefile_install_the_conf_file() -> None:
     assert "%config(noreplace) %{_sysconfdir}/phomemo-printer-app.conf" in spec
     makefile = (REPO / "Makefile").read_text()
     assert "packaging/config/phomemo-printer-app.conf" in makefile
+
+
+def test_wheel_and_sdist_carry_the_model_descriptions(tmp_path: Path) -> None:
+    import subprocess
+    import tarfile
+    import zipfile
+
+    subprocess.run(
+        ["uv", "build", str(REPO / "src" / "phomemo"), "--out-dir", str(tmp_path)],
+        check=True,
+        capture_output=True,
+    )
+    wheel = next(tmp_path.glob("phomemo-*.whl"))
+    names = set(zipfile.ZipFile(wheel).namelist())
+    for name in ("model.json", "icon-48.png", "icon-128.png", "icon-512.png"):
+        assert f"phomemo/models/m08f/{name}" in names
+    sdist = next(tmp_path.glob("phomemo-*.tar.gz"))
+    with tarfile.open(sdist) as archive:
+        members = archive.getnames()
+    assert any(m.endswith("src/phomemo/models/m08f/model.json") for m in members)
+
+
+def test_spec_builds_for_and_ships_the_system_model_directory() -> None:
+    spec = (REPO / "packaging" / "rpm" / "phomemo-driver.spec").read_text()
+    assert "%make_build -C src/printer-app PREFIX=%{_prefix}" in spec
+    assert "cp -a src/models/. %{buildroot}%{_datadir}/phomemo/models/" in spec
+    assert "%{_datadir}/phomemo/" in spec.split("%files -n python3-phomemo")[1]
+
+
+def test_spec_declares_the_bundled_cjson() -> None:
+    spec = (REPO / "packaging" / "rpm" / "phomemo-driver.spec").read_text()
+    header = (REPO / "src" / "printer-app" / "third_party" / "cJSON.h").read_text()
+    version = ".".join(
+        re.search(rf"#define CJSON_VERSION_{part} (\d+)", header).group(1)
+        for part in ("MAJOR", "MINOR", "PATCH")
+    )
+    assert f"Provides:       bundled(cjson) = {version}" in spec
+
+
+def test_make_install_installs_the_model_directory() -> None:
+    makefile = (REPO / "Makefile").read_text()
+    assert "$(MAKE) -C src/printer-app PREFIX=$(PREFIX)" in makefile
+    assert "cp -a src/models/. $(DESTDIR)$(PREFIX)/share/phomemo/models/" in makefile

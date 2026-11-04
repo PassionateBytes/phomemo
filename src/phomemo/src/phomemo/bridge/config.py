@@ -24,10 +24,8 @@ from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
-import phomemo.profiles  # noqa: F401, registers the built-in profiles
 from phomemo.bridge.server import BridgeConfig
 from phomemo.printer import AUTO_OFF_MAX_MINUTES
-from phomemo.registry import list_profiles
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +39,8 @@ _NUMERIC = {
     "settle_seconds",
     "completion_timeout",
     "drain_seconds",
-    "top_margin_mm",
-    "bottom_margin_mm",
 }
-_INTEGER = {"band_height", "dpi", "print_width_px"}
 _STRING = {"socket_path"}
-_PRINTER_TABLE = {"profile", "auto_off_minutes"}
 
 
 class _Invalid(ValueError):
@@ -121,36 +115,11 @@ def _check(key: str, value: Any) -> tuple[Any, str | None]:
         if value < 0:
             raise _Invalid(f"must not be negative, got {value!r}")
         return float(value), None
-    if key in _INTEGER:
-        if isinstance(value, bool) or not isinstance(value, int):
-            raise _Invalid(f"expected an integer, got {value!r}")
-        if value <= 0:
-            raise _Invalid(f"must be positive, got {value!r}")
-        return value, None
-    if key in _STRING or key == "profile":
+    if key in _STRING:
         if not isinstance(value, str):
             raise _Invalid(f"expected a string, got {value!r}")
-        if key == "profile" and value not in list_profiles():
-            raise _Invalid(
-                f"unknown profile {value!r}, known: {', '.join(list_profiles())}"
-            )
         return value, None
     raise _Invalid("unknown key")
-
-
-def _entries(data: dict[str, Any]) -> list[tuple[str, str, Any]]:
-    """Flatten the file into (shown name, key, value), tables included."""
-    entries: list[tuple[str, str, Any]] = []
-    for key, value in data.items():
-        if key != "printer":
-            entries.append((key, key, value))
-        elif not isinstance(value, dict):
-            entries.append(("printer", "printer", value))
-        else:
-            for sub, subvalue in value.items():
-                known = sub if sub in _PRINTER_TABLE else f"printer.{sub}"
-                entries.append((f"printer.{sub}", known, subvalue))
-    return entries
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -161,16 +130,14 @@ def _read(path: Path) -> dict[str, Any]:
         logger.warning("%s: cannot read the file (%s); ignored", path, exc)
         return {}
     values: dict[str, Any] = {}
-    for shown, key, value in _entries(data):
+    for key, value in data.items():
         try:
-            if key == "printer":
-                raise _Invalid("expected a table")
             values[key], note = _check(key, value)
         except _Invalid as exc:
-            logger.warning("%s: %s: %s; ignored", path, shown, exc)
+            logger.warning("%s: %s: %s; ignored", path, key, exc)
             continue
         if note is not None:
-            logger.warning("%s: %s: %s", path, shown, note)
+            logger.warning("%s: %s: %s", path, key, note)
     return values
 
 

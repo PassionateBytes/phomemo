@@ -24,7 +24,7 @@ Typical usage::
 
     from phomemo import Printer, Density
 
-    async with Printer("M08F-A4", "AA:BB:CC:DD:EE:FF") as printer:
+    async with Printer("m08f", "AA:BB:CC:DD:EE:FF") as printer:
         await printer.connect()
 
         # Check device state before printing
@@ -136,7 +136,7 @@ class Printer:
     used as an async context manager.
 
     Args:
-        profile: Either a profile name string (e.g. ``"M08F-A4"``) or
+        profile: Either a profile name string (e.g. ``"m08f"``) or
             a ``PrinterProfile`` instance.
         address: BLE MAC address (e.g. ``"AA:BB:CC:DD:EE:FF"``), resolved
             by a targeted scan at ``connect()`` time, or a ``BLEDevice``
@@ -147,7 +147,7 @@ class Printer:
 
     def __init__(
         self,
-        profile: str | PrinterProfile = "M08F-A4",
+        profile: str | PrinterProfile = "m08f",
         address: str | BLEDevice | None = None,
     ) -> None:
         if isinstance(profile, str):
@@ -325,13 +325,18 @@ class Printer:
     async def set_density(self, level: Density) -> None:
         """Set print concentration via ``ESC N 04``.
 
-        Persists until the next ``ESC @`` reset.
+        Persists until the next ``ESC @`` reset. A model without density
+        control ignores the call.
 
         Args:
             level: Desired concentration level.
         """
-        logger.debug("Setting density: %s", level)
-        await self._transport.write(encode_density(level))
+        value = self._profile.density_value(level)
+        if value is None:
+            logger.debug("Density %s ignored: no density control", level)
+            return
+        logger.debug("Setting density: %s (%d)", level, value)
+        await self._transport.write(encode_density(value))
 
     async def feed(self, lines: int = 20) -> None:
         """Feed paper by the given number of lines via ``ESC d``.
@@ -740,8 +745,9 @@ class Printer:
         width_bytes = self._profile.width_bytes
         band_height = self._profile.band_height
         parts: list[bytes] = [encode_init()]
-        if density is not None and self._profile.supports_density:
-            parts.append(encode_density(density))
+        value = self._profile.density_value(density) if density is not None else None
+        if value is not None:
+            parts.append(encode_density(value))
         offset = sum(len(part) for part in parts)
         bands: list[tuple[int, int, int, int]] = []
         row = 0

@@ -31,11 +31,9 @@ def test_config_defaults_without_files(
     config = load_config(paths=[], env={"XDG_RUNTIME_DIR": "/run/user/1000"})
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
     assert config.auto_off_minutes is None
-    assert config.profile == "M08F-A4"
     assert config.idle_disconnect_minutes == 30.0
     assert config.settle_seconds == 3.0
     assert config.completion_timeout == 300.0
-    assert config.band_height is None
 
 
 def test_config_system_socket_without_runtime_dir() -> None:
@@ -47,13 +45,12 @@ def test_config_user_file_overrides_system_file(tmp_path: Path) -> None:
     system = tmp_path / "system.toml"
     user = tmp_path / "user.toml"
     system.write_text(
-        "idle_disconnect_minutes = 10\nband_height = 64\n"
-        "[printer]\nauto_off_minutes = 10\n"
+        "idle_disconnect_minutes = 10\nsettle_seconds = 7\nauto_off_minutes = 10\n"
     )
     user.write_text("idle_disconnect_minutes = 20\n")
     config = load_config(paths=[system, user], env={})
     assert config.idle_disconnect_minutes == 20.0
-    assert config.band_height == 64
+    assert config.settle_seconds == 7.0
     assert config.auto_off_minutes == 10
 
 
@@ -76,14 +73,14 @@ def test_config_env_socket_override(tmp_path: Path) -> None:
             "idle_disconnect_minutes",
             "must not be negative",
         ),
-        ("band_height = 0\n", "band_height", "must be positive"),
-        ('[printer]\nprofile = "nope"\n', "printer.profile", "unknown profile"),
+        ("band_height = 256\n", "band_height", "unknown key"),
+        ('profile = "m08f"\n', "profile", "unknown key"),
         (
-            '[printer]\naddress = "AA:BB:CC:DD:EE:FF"\n',
-            "printer.address",
+            'address = "AA:BB:CC:DD:EE:FF"\n',
+            "address",
             "unknown key",
         ),
-        ("printer = 3\n", "printer", "expected a table"),
+        ('[printer]\nprofile = "m08f"\n', "printer", "unknown key"),
     ],
 )
 def test_config_logs_an_invalid_entry_and_ignores_it(
@@ -101,8 +98,6 @@ def test_config_logs_an_invalid_entry_and_ignores_it(
     assert "ignored" in caplog.text
     assert config.settle_seconds == 9.0
     assert config.idle_disconnect_minutes == 30.0
-    assert config.profile == "M08F-A4"
-    assert config.band_height is None
 
 
 def test_config_unreadable_file_is_logged_and_skipped(
@@ -142,9 +137,9 @@ def test_config_without_auto_off_leaves_the_printer_alone() -> None:
     assert load_config(paths=[], env={}).auto_off_minutes is None
 
 
-def test_packaged_config_enforces_five_minutes() -> None:
+def test_packaged_config_leaves_the_printer_auto_off_alone() -> None:
     packaged = Path(__file__).parents[3] / "packaging" / "config" / "bridge.toml"
-    assert load_config(paths=[packaged], env={}).auto_off_minutes == 5
+    assert load_config(paths=[packaged], env={}).auto_off_minutes is None
 
 
 @pytest.mark.parametrize("minutes", [0, 15, 60, 1275])
@@ -152,7 +147,7 @@ def test_config_accepts_auto_off_in_five_minute_steps(
     tmp_path: Path, minutes: int
 ) -> None:
     path = tmp_path / "bridge.toml"
-    path.write_text(f"[printer]\nauto_off_minutes = {minutes}\n")
+    path.write_text(f"auto_off_minutes = {minutes}\n")
     assert load_config(paths=[path], env={}).auto_off_minutes == minutes
 
 
@@ -164,11 +159,11 @@ def test_config_auto_off_number_snaps_to_the_nearest_step(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, value: str, expected: int
 ) -> None:
     path = tmp_path / "bridge.toml"
-    path.write_text(f"[printer]\nauto_off_minutes = {value}\n")
+    path.write_text(f"auto_off_minutes = {value}\n")
     with caplog.at_level("WARNING"):
         config = load_config(paths=[path], env={})
     assert config.auto_off_minutes == expected
-    assert f"printer.auto_off_minutes: {value} is not a valid timer" in caplog.text
+    assert f"auto_off_minutes: {value} is not a valid timer" in caplog.text
     assert f"using {expected}" in caplog.text
 
 
@@ -177,11 +172,11 @@ def test_config_auto_off_that_is_no_timer_is_logged_and_not_enforced(
     tmp_path: Path, caplog: pytest.LogCaptureFixture, value: str
 ) -> None:
     path = tmp_path / "bridge.toml"
-    path.write_text(f"[printer]\nauto_off_minutes = {value}\n")
+    path.write_text(f"auto_off_minutes = {value}\n")
     with caplog.at_level("WARNING"):
         config = load_config(paths=[path], env={})
     assert config.auto_off_minutes is None
-    assert "printer.auto_off_minutes" in caplog.text
+    assert "auto_off_minutes:" in caplog.text
     assert "ignored" in caplog.text
 
 

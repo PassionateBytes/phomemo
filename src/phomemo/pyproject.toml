@@ -37,6 +37,8 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/phomemo"]
 
+[tool.hatch.build.hooks.custom]
+
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",

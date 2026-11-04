@@ -1,0 +1,30 @@
+{
+  "id": "m08f",
+  "make": "Phomemo",
+  "name": "M08F",
+  "ble_name_pattern": "^M08F",
+  "print_width_px": 1680,
+  "dpi": 203,
+  "band_height": 256,
+  "sheet_length_mm": 297.0,
+  "top_margin_mm": 10.0,
+  "bottom_margin_mm": 5.0,
+  "density": {"low": 1, "medium": 5, "high": 6},
+  "media": [
+    {"pwg": "iso_a4_210x297mm", "default": true},
+    {"pwg": "iso_a5_148x210mm"}
+  ],
+  "ble": {
+    "max_chunk_bytes": 244,
+    "negotiate_mtu": true,
+    "write_with_response": true,
+    "chunk_delay_s": 0.0,
+    "service_uuid": "0000ff00-0000-1000-8000-00805f9b34fb",
+    "write_uuid": "00000000-0000-0000-0000-00000000ff02",
+    "notify_uuid": "00000000-0000-0000-0000-00000000ff01",
+    "status_uuid": "00000000-0000-0000-0000-00000000ff03"
+  },
+  "features": {
+    "escpos_queries": false
+  }
+}

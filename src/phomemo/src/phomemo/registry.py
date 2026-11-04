@@ -23,8 +23,13 @@ add new models by registering a ``PrinterProfile`` instance via
 ``register_profile``.
 """
 
+import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from phomemo.protocol import Density
 
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -37,7 +42,8 @@ class PrinterProfile:
     """Hardware and protocol parameters for a Phomemo printer model.
 
     Attributes:
-        name: Human-readable model identifier (e.g. ``"M08F-A4"``).
+        name: Lower-case model identifier (e.g. ``"m08f"``), also the name of
+            the model's description directory.
         ble_name_pattern: Regex pattern matched against BLE advertisement
             names during device discovery.
         print_width_px: Print head width in dots/pixels.
@@ -74,9 +80,16 @@ class PrinterProfile:
             (``ff03``). Echoes ``01 01`` for most writes and sends a fixed
             connect greeting on startup. Does not carry query responses or
             actionable device state; useful only for low-level debugging.
-        supports_density: Whether ESC N 04 concentration is functional.
+        density_levels: ``ESC N 04`` concentration values for the low,
+            medium and high ``Density`` levels, or ``None`` when the model
+            has no density control.
         supports_escpos_queries: Whether standard ESC/POS queries return
             meaningful data (False for M08F — use Phomemo queries instead).
+        make: Manufacturer as shown to users.
+        model_name: Model as the vendor writes it (``"M08F"``); ``name`` is
+            the lower-case identifier.
+        media: PWG names of the sheet sizes the model takes.
+        default_media: The medium jobs get when they name none.
     """
 
     name: str
@@ -95,8 +108,12 @@ class PrinterProfile:
     write_uuid: str = "0000ff02-0000-1000-8000-00805f9b34fb"
     notify_uuid: str = "0000ff01-0000-1000-8000-00805f9b34fb"
     status_uuid: str = "0000ff03-0000-1000-8000-00805f9b34fb"
-    supports_density: bool = True
+    density_levels: tuple[int, int, int] | None = None
     supports_escpos_queries: bool = False
+    make: str = "Phomemo"
+    model_name: str = ""
+    media: tuple[str, ...] = ()
+    default_media: str | None = None
 
     def __post_init__(self) -> None:
         """Validate profile fields on construction.
@@ -161,6 +178,19 @@ class PrinterProfile:
         """Print width in bytes (8 pixels per byte, MSB-first)."""
         return self.print_width_px // 8
 
+    def density_value(self, level: Density) -> int | None:
+        """The model's concentration value for a density level.
+
+        Args:
+            level: The requested density.
+
+        Returns:
+            The ``ESC N 04`` value, or ``None`` without density control.
+        """
+        if self.density_levels is None:
+            return None
+        return self.density_levels[list(Density).index(level)]
+
 
 _REGISTRY: dict[str, PrinterProfile] = {}
 
@@ -169,7 +199,7 @@ def get_profile(name: str) -> PrinterProfile:
     """Look up a registered printer profile by name.
 
     Args:
-        name: Profile key (e.g. ``"M08F-A4"``).
+        name: Profile key (e.g. ``"m08f"``).
 
     Returns:
         The matching ``PrinterProfile``.
@@ -204,3 +234,145 @@ def register_profile(profile: PrinterProfile) -> None:
             profile with the same name.
     """
     _REGISTRY[profile.name] = profile
+
+
+def profile_for_name(ble_name: str | None) -> PrinterProfile | None:
+    """The registered profile whose name pattern matches an advertised name.
+
+    Args:
+        ble_name: Name the printer advertises over Bluetooth.
+
+    Returns:
+        The first matching profile in identifier order, or ``None``.
+    """
+    if not ble_name:
+        return None
+    for key in sorted(_REGISTRY):
+        if re.search(_REGISTRY[key].ble_name_pattern, ble_name):
+            return _REGISTRY[key]
+    return None
+
+
+Kind = type | tuple[type, ...]
+
+_FIELDS: dict[str, Kind] = {
+    "id": str,
+    "make": str,
+    "name": str,
+    "ble_name_pattern": str,
+    "print_width_px": int,
+    "dpi": int,
+    "band_height": int,
+    "sheet_length_mm": (int, float),
+    "top_margin_mm": (int, float),
+    "bottom_margin_mm": (int, float),
+    "media": list,
+    "ble": dict,
+}
+_BLE_FIELDS: dict[str, Kind] = {
+    "max_chunk_bytes": int,
+    "negotiate_mtu": bool,
+    "write_with_response": bool,
+    "chunk_delay_s": (int, float),
+    "service_uuid": str,
+    "write_uuid": str,
+    "notify_uuid": str,
+    "status_uuid": str,
+}
+
+
+def _field(where: str, data: dict[str, Any], key: str, kind: Kind) -> Any:
+    if key not in data:
+        raise ValueError(f"{where}: {key}: missing")
+    value = data[key]
+    kinds = kind if isinstance(kind, tuple) else (kind,)
+    if (isinstance(value, bool) and bool not in kinds) or not isinstance(value, kinds):
+        expected = " or ".join(k.__name__ for k in kinds)
+        raise ValueError(f"{where}: {key}: expected {expected}, got {value!r}")
+    return value
+
+
+def _media(where: str, entries: list[Any]) -> tuple[tuple[str, ...], str]:
+    names: list[str] = []
+    defaults: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("pwg"), str):
+            raise ValueError(f"{where}: media: expected objects with a pwg name")
+        names.append(entry["pwg"])
+        if entry.get("default") is True:
+            defaults.append(entry["pwg"])
+    if len(defaults) != 1:
+        raise ValueError(f"{where}: media: exactly one default medium needed")
+    return tuple(names), defaults[0]
+
+
+def load_description(model_dir: Path) -> PrinterProfile:
+    """Build a profile from a model description directory.
+
+    The directory holds ``model.json`` and the model's icons; its name is the
+    model identifier.
+
+    Args:
+        model_dir: The model's description directory.
+
+    Returns:
+        The profile the description defines.
+
+    Raises:
+        ValueError: If ``model.json`` does not parse, or a field is missing,
+            of the wrong type or inconsistent; the message names file and
+            field.
+        OSError: If ``model.json`` cannot be read.
+    """
+    path = model_dir / "model.json"
+    where = str(path)
+    try:
+        data = json.loads(path.read_text())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{where}: {exc}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"{where}: expected an object")
+    values = {key: _field(where, data, key, kind) for key, kind in _FIELDS.items()}
+    if values["id"] != model_dir.name:
+        raise ValueError(
+            f"{where}: id: {values['id']!r} differs from the directory "
+            f"{model_dir.name!r}"
+        )
+    ble = {
+        key: _field(f"{where}: ble", values["ble"], key, kind)
+        for key, kind in _BLE_FIELDS.items()
+    }
+    features = data.get("features", {})
+    if not isinstance(features, dict):
+        raise ValueError(f"{where}: features: expected an object")
+    media, default_media = _media(where, values["media"])
+    density_levels = None
+    if "density" in data:
+        density = _field(where, data, "density", dict)
+        density_levels = tuple(
+            _field(f"{where}: density", density, level.value, int) for level in Density
+        )
+    return PrinterProfile(
+        name=values["id"],
+        ble_name_pattern=values["ble_name_pattern"],
+        print_width_px=values["print_width_px"],
+        dpi=values["dpi"],
+        band_height=values["band_height"],
+        sheet_length_mm=float(values["sheet_length_mm"]),
+        top_margin_mm=float(values["top_margin_mm"]),
+        bottom_margin_mm=float(values["bottom_margin_mm"]),
+        max_chunk_bytes=ble["max_chunk_bytes"],
+        negotiate_mtu=ble["negotiate_mtu"],
+        write_with_response=ble["write_with_response"],
+        chunk_delay_s=float(ble["chunk_delay_s"]),
+        service_uuid=ble["service_uuid"],
+        write_uuid=ble["write_uuid"],
+        notify_uuid=ble["notify_uuid"],
+        status_uuid=ble["status_uuid"],
+        density_levels=density_levels,
+        supports_escpos_queries=bool(features.get("escpos_queries", False)),
+        make=values["make"],
+        model_name=values["name"],
+        media=media,
+        default_media=default_media,
+    )

@@ -26,17 +26,19 @@ PREFIX    ?= /usr/local
 DESTDIR   ?=
 UNITDIR   ?= /etc/systemd/system
 PRESETDIR ?= /usr/lib/systemd/system-preset
+DATADIR   ?= $(PREFIX)/share
+MODELSDIR ?= $(DATADIR)/phomemo/models
 CC        ?= cc
 CFLAGS    ?= -O2 -g
 ALL_CFLAGS = $(CFLAGS) -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror \
              -Wno-unused-parameter -I. -Ithird_party \
              $(shell pkg-config --cflags pappl) \
-             -DPAPPL_VERSION_STR='"$(shell pkg-config --modversion pappl)"'
+             -DPAPPL_VERSION_STR='"$(shell pkg-config --modversion pappl)"' \
+             -DPHOMEMO_MODELS_DIR='"$(MODELSDIR)"'
 ALL_LDLIBS = $(LDLIBS) $(shell pkg-config --libs pappl) -pthread
 
 APP      = phomemo-printer-app
-SRCS     = main.c bridge.c device.c driver.c job.c icons.c
-ICONS    = icons/m08f-48.png icons/m08f-128.png icons/m08f-512.png
+SRCS     = main.c bridge.c device.c driver.c job.c models.c
 VENDOR   = third_party/cJSON.c
 VOBJS    = $(VENDOR:.c=.o)
 OBJS     = $(SRCS:.c=.o)
@@ -50,16 +52,13 @@ $(APP): $(OBJS) $(VOBJS)
 %.o: %.c phomemo.h bridge.h
 	$(CC) $(ALL_CFLAGS) -c -o $@ $<
 
-icons.c: $(ICONS) icons/embed.sh
-	sh icons/embed.sh $(ICONS) > $@
-
 third_party/%.o: third_party/%.c
 	$(CC) $(ALL_CFLAGS) -Wno-error -c -o $@ $<
 
 tests/test_bridge: tests/test_bridge.o bridge.o $(VOBJS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^
 
-tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o icons.o $(VOBJS)
+tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o models.o $(VOBJS)
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^ $(ALL_LDLIBS)
 
 test: $(TESTS)
@@ -78,6 +77,6 @@ install: $(APP)
 	install -m 644 $(PRESET) $(DESTDIR)$(PRESETDIR)/90-phomemo-printer-app.preset
 
 clean:
-	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o third_party/*.o icons.c
+	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o third_party/*.o
 
 .PHONY: all test install clean

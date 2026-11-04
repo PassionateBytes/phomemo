@@ -14,13 +14,52 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Built-In Profiles
+"""Built-in profiles, loaded from the model descriptions on import.
 
-Collection of built-in profiles, easily extendable for more devices.
+Each model is a directory named after its identifier, holding ``model.json``
+and the model's icons. The printer application reads the same directories.
 """
 
-from phomemo.registry import register_profile
+import logging
+import os
+from pathlib import Path
 
-from .m08f import M08F_A4
+from phomemo.registry import load_description, register_profile
 
-register_profile(M08F_A4)
+logger = logging.getLogger(__name__)
+
+MODELS_ENV = "PHOMEMO_MODELS_DIR"
+SYSTEM_MODELS = Path("/usr/share/phomemo/models")
+
+
+def models_dir() -> Path:
+    """Where the model descriptions are read from.
+
+    ``PHOMEMO_MODELS_DIR`` when set; otherwise the copy installed with the
+    package, then the descriptions of a source checkout, then the system
+    directory the printer application uses.
+
+    Returns:
+        The first of these that exists, else the system directory.
+    """
+    if env := os.environ.get(MODELS_ENV):
+        return Path(env)
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[1] / "models",  # installed: phomemo/models
+        here.parents[4] / "models",  # checkout: src/models
+        SYSTEM_MODELS,
+    ]
+    return next((path for path in candidates if path.is_dir()), SYSTEM_MODELS)
+
+
+def _register_builtin() -> None:
+    root = models_dir()
+    if not root.is_dir():
+        logger.warning("No model descriptions at %s", root)
+        return
+    for model_dir in sorted(p for p in root.iterdir() if (p / "model.json").is_file()):
+        register_profile(load_description(model_dir))
+
+
+_register_builtin()

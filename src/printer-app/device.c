@@ -33,6 +33,7 @@ typedef struct
 {
   phomemo_bridge_t bridge;
   char address[64];  // BLE address sent with open
+  char model[32];    // model ID sent with open; empty when the URI names none
 } phomemo_device_t;
 
 const char *
@@ -71,7 +72,8 @@ parse_address(const char *device_uri, char *address, size_t size)
 }
 
 void
-phomemo_device_info(const char *address, char *buffer, size_t bufsize)
+phomemo_device_info(const phomemo_model_t *model, const char *address,
+                    char *buffer, size_t bufsize)
 {
   size_t len = strlen(address);
   const char *tail = len > 8 ? address + len - 8 : address;
@@ -83,18 +85,33 @@ phomemo_device_info(const char *address, char *buffer, size_t bufsize)
       suffix[n++] = *tail;
   suffix[n] = '\0';
 
-  snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, suffix);
+  snprintf(buffer, bufsize, "%s (%s)", model->make_and_model, suffix);
 }
 
-// Builds the device URI for a BLE address (colons become dashes).
+// Builds the device URI for a BLE address and model (colons become dashes).
 static void
-format_uri(const char *address, char *uri, size_t size)
+format_uri(const char *address, const char *model, char *uri, size_t size)
 {
   size_t prefix = strlen(URI_PREFIX);
   snprintf(uri, size, "%s%s", URI_PREFIX, address);
   for (char *p = uri + prefix; *p; p++)
     if (*p == ':')
       *p = '-';
+  size_t len = strlen(uri);
+  snprintf(uri + len, size - len, "?model=%s", model);
+}
+
+// An open request for the printer at address; model may be NULL or empty
+// when unknown, and the bridge then reads it from the advertised name.
+static cJSON *
+open_request(const char *address, const char *model)
+{
+  cJSON *request = cJSON_CreateObject();
+  cJSON_AddStringToObject(request, "cmd", "open");
+  cJSON_AddStringToObject(request, "address", address);
+  if (model && *model)
+    cJSON_AddStringToObject(request, "model", model);
+  return request;
 }
 
 // Connects a fresh bridge handle to the daemon's socket.
@@ -141,14 +158,18 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
   cJSON_ArrayForEach(printer, printers)
   {
     cJSON *address = cJSON_GetObjectItem(printer, "address");
-    if (!cJSON_IsString(address))
+    cJSON *model_id = cJSON_GetObjectItem(printer, "model");
+    const phomemo_model_t *model =
+      cJSON_IsString(model_id) ? phomemo_model_find(model_id->valuestring)
+                               : NULL;
+    if (!cJSON_IsString(address) || !model)
       continue;
 
-    char info[64];
-    char uri[128];
-    phomemo_device_info(address->valuestring, info, sizeof(info));
-    format_uri(address->valuestring, uri, sizeof(uri));
-    if (cb(info, uri, PHOMEMO_DEVICE_ID, data))
+    char info[192];
+    char uri[160];
+    phomemo_device_info(model, address->valuestring, info, sizeof(info));
+    format_uri(address->valuestring, model->id, uri, sizeof(uri));
+    if (cb(info, uri, model->device_id, data))
     {
       stopped = true;
       break;
@@ -167,9 +188,7 @@ open_bridge(phomemo_device_t *dev, char *err, size_t errsize)
   if (!bridge_connect(&dev->bridge, err, errsize))
     return false;
 
-  cJSON *request = cJSON_CreateObject();
-  cJSON_AddStringToObject(request, "cmd", "open");
-  cJSON_AddStringToObject(request, "address", dev->address);
+  cJSON *request = open_request(dev->address, dev->model);
   cJSON *reply = phomemo_bridge_call(&dev->bridge, request, NULL, 0, NULL, NULL,
                                      err, errsize);
   cJSON_Delete(request);
@@ -199,6 +218,7 @@ phomemo_open_cb(pappl_device_t *device, const char *device_uri,
     free(dev);
     return false;
   }
+  phomemo_uri_model(device_uri, dev->model, sizeof(dev->model));
 
   if (!open_bridge(dev, err, sizeof(err)))
   {
@@ -365,9 +385,8 @@ phomemo_identify_cb(pappl_printer_t *printer, pappl_identify_actions_t actions,
     return;
   }
 
-  cJSON *request = cJSON_CreateObject();
-  cJSON_AddStringToObject(request, "cmd", "open");
-  cJSON_AddStringToObject(request, "address", address);
+  cJSON *request =
+    open_request(address, papplPrinterGetDriverName(printer));
   cJSON *reply = phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL,
                                      err, sizeof(err));
   cJSON_Delete(request);
@@ -395,7 +414,10 @@ phomemo_identify_cb(pappl_printer_t *printer, pappl_identify_actions_t actions,
 static char *
 phomemo_id_cb(pappl_device_t *device, char *buffer, size_t bufsize)
 {
-  snprintf(buffer, bufsize, "%s", PHOMEMO_DEVICE_ID);
+  phomemo_device_t *dev = papplDeviceGetData(device);
+  const phomemo_model_t *model = dev ? phomemo_model_find(dev->model) : NULL;
+  snprintf(buffer, bufsize, "%s",
+           model ? model->device_id : "MFG:Phomemo;CMD:PHOMEMO;");
   return buffer;
 }
 
@@ -416,9 +438,8 @@ phomemo_testpage_cb(pappl_printer_t *printer, char *buffer, size_t bufsize)
     return NULL;
   }
 
-  cJSON *request = cJSON_CreateObject();
-  cJSON_AddStringToObject(request, "cmd", "open");
-  cJSON_AddStringToObject(request, "address", address);
+  cJSON *request =
+    open_request(address, papplPrinterGetDriverName(printer));
   cJSON *reply = phomemo_bridge_call(&bridge, request, NULL, 0, NULL, NULL,
                                      err, sizeof(err));
   cJSON_Delete(request);

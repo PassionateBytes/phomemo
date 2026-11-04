@@ -36,6 +36,8 @@ Requires:       avahi
 Requires:       bluez
 Requires:       cups
 Recommends:     cups-browsed
+# cJSON, copied into src/printer-app/third_party/
+Provides:       bundled(cjson) = 1.7.18
 
 %description
 Makes the Phomemo M08F A4 thermal printer a printer like any other: a PAPPL
@@ -62,7 +64,7 @@ cd src/phomemo
 %pyproject_buildrequires
 
 %build
-%make_build -C src/printer-app CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
+%make_build -C src/printer-app PREFIX=%{_prefix} CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
 cd src/phomemo
 %pyproject_wheel
 
@@ -72,6 +74,8 @@ cd src/phomemo
 %pyproject_install
 %pyproject_save_files -l phomemo
 cd ../..
+install -d %{buildroot}%{_datadir}/phomemo/models
+cp -a src/models/. %{buildroot}%{_datadir}/phomemo/models/
 install -D -m 644 packaging/systemd/phomemo-bridge.service %{buildroot}%{_unitdir}/phomemo-bridge.service
 install -D -m 644 packaging/systemd/phomemo.sysusers.conf %{buildroot}%{_sysusersdir}/phomemo.conf
 install -D -m 644 packaging/systemd/90-phomemo-bridge.preset %{buildroot}%{_presetdir}/90-phomemo-bridge.preset
@@ -115,6 +119,7 @@ fi
 %doc src/phomemo/README.md
 %license src/phomemo/COPYING src/phomemo/COPYING.LESSER
 %{_bindir}/phomemo-bridge
+%{_datadir}/phomemo/
 
 %changelog
 * Wed Nov 04 2026 Paul Bütof - 0.1.0-2

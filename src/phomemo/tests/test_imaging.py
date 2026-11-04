@@ -44,7 +44,7 @@ import phomemo.profiles  # noqa: E402, F401, registers built-in profiles
 from phomemo.imaging import ToneMode, prepare_page  # noqa: E402
 from phomemo.registry import get_profile  # noqa: E402
 
-A4 = get_profile("M08F-A4")
+A4 = get_profile("m08f")
 
 
 def _gray(w: int, h: int, value: int = 255) -> Image.Image:

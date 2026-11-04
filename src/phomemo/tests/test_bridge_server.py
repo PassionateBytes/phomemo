@@ -21,7 +21,6 @@ from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Any
 
-import phomemo.bridge.server as server_module
 import phomemo.profiles  # noqa: F401, registers built-in profiles
 import pytest
 from bleak.backends.device import BLEDevice
@@ -31,7 +30,7 @@ from phomemo.events import LidState, PaperState
 from phomemo.printer import DeviceInfo, PrintAborted, SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
-A4 = get_profile("M08F-A4")
+A4 = get_profile("m08f")
 
 
 class FakePrinter:
@@ -41,7 +40,8 @@ class FakePrinter:
 
     def __init__(self, profile: PrinterProfile, address: object = None) -> None:
         self.profile = profile
-        self.address = address
+        # Like Printer.address: a device found by a scan stands for its address.
+        self.address = getattr(address, "address", address)
         self.reachable = True
         self.connect_error = "Device not found"
         self.connected = False
@@ -226,20 +226,92 @@ def _printer() -> FakePrinter:
 
 
 @pytest.mark.asyncio
-async def test_discover_lists_printers(
-    bridge: BridgeConfig, monkeypatch: pytest.MonkeyPatch
+async def test_discover_lists_known_models_only(
+    bridge: BridgeConfig, one_m08f_in_range: list[BLEDevice]
 ) -> None:
-    async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
-        return [BLEDevice(address="AA:BB:CC:DD:EE:FF", name="M08F", details=None)]
-
-    monkeypatch.setattr(server_module, "discover", fake_discover)
+    one_m08f_in_range.append(
+        BLEDevice(address="11:22:33:44:55:66", name="Q30", details=None)
+    )
     client = await _connect(bridge)
     reply = await client.call({"cmd": "discover", "timeout": 1})
     assert reply == {
         "ok": True,
         "cmd": "discover",
-        "printers": [{"name": "M08F", "address": "AA:BB:CC:DD:EE:FF"}],
+        "printers": [{"name": "M08F", "address": "AA:BB:CC:DD:EE:FF", "model": "m08f"}],
     }
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_with_a_model_uses_its_profile_without_scanning(
+    bridge: BridgeConfig, one_m08f_in_range: list[BLEDevice]
+) -> None:
+    one_m08f_in_range.clear()
+    client = await _connect(bridge)
+    reply = await client.call(
+        {"cmd": "open", "address": "AA:BB:CC:00:00:01", "model": "m08f"}
+    )
+    assert reply["connected"] is True
+    assert _printer().profile.name == "m08f"
+    assert _printer().address == "AA:BB:CC:00:00:01"
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_with_an_unknown_model_fails_with_a_reason(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "model": "q30"})
+    assert reply["connected"] is False
+    assert "unknown printer model 'q30'" in reply["reason"]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_without_a_model_takes_it_from_the_advertised_name(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    assert reply["connected"] is True
+    assert _printer().profile.name == "m08f"
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_without_a_model_for_a_printer_not_in_range(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "address": "11:22:33:44:55:66"})
+    assert reply["connected"] is False
+    assert "11:22:33:44:55:66" in reply["reason"]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_without_address_refuses_several_printers(
+    bridge: BridgeConfig, one_m08f_in_range: list[BLEDevice]
+) -> None:
+    one_m08f_in_range.append(
+        BLEDevice(address="AA:BB:CC:00:00:02", name="M08F", details=None)
+    )
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open"})
+    assert reply["connected"] is False
+    assert "AA:BB:CC:00:00:02, AA:BB:CC:DD:EE:FF" in reply["reason"]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_status_and_info_report_the_model(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    assert (await client.call({"cmd": "status"}))["model"] == "m08f"
+    assert (await client.call({"cmd": "info"}))["model"] == "m08f"
+    _printer().connected = False
+    assert (await client.call({"cmd": "status"}))["last_seen"]["model"] == "m08f"
     await client.close()
 
 
@@ -307,6 +379,7 @@ async def test_status_without_a_link_reports_the_last_seen_values(
     }
     assert seen.pop("at")
     assert seen == {
+        "model": "m08f",
         "battery": 77,
         "lid": "closed",
         "paper": "present",
@@ -331,10 +404,10 @@ async def test_status_never_linked_has_nothing_last_seen(bridge: BridgeConfig) -
 @pytest.mark.asyncio
 async def test_status_keeps_last_seen_values_per_printer(bridge: BridgeConfig) -> None:
     client = await _connect(bridge)
-    await client.call({"cmd": "open", "address": "AA:BB:CC:00:00:01"})
+    await client.call({"cmd": "open", "address": "AA:BB:CC:00:00:01", "model": "m08f"})
     _printer().battery = 40
     await client.call({"cmd": "status"})
-    await client.call({"cmd": "open", "address": "AA:BB:CC:00:00:02"})
+    await client.call({"cmd": "open", "address": "AA:BB:CC:00:00:02", "model": "m08f"})
     _printer().battery = 90
     await client.call({"cmd": "status"})
     first = await client.call({"cmd": "status", "address": "AA:BB:CC:00:00:01"})
@@ -358,7 +431,8 @@ async def test_status_reports_sensors_and_connected_flag(bridge: BridgeConfig) -
         "ok": True,
         "cmd": "status",
         "connected": True,
-        "address": None,
+        "address": "AA:BB:CC:DD:EE:FF",
+        "model": "m08f",
         "lid": "closed",
         "paper": "present",
         "battery": 77,
@@ -697,7 +771,9 @@ async def test_open_with_address_targets_that_printer(bridge: BridgeConfig) -> N
     reply = await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
     assert reply["connected"] is True
     assert _printer().address == "AA:BB:CC:DD:EE:FF"
-    reply = await client.call({"cmd": "open", "address": "11:22:33:44:55:66"})
+    reply = await client.call(
+        {"cmd": "open", "address": "11:22:33:44:55:66", "model": "m08f"}
+    )
     assert reply["connected"] is True
     assert _printer().address == "11:22:33:44:55:66"
     assert len(FakePrinter.instances) == 2

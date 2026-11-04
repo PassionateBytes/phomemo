@@ -15,6 +15,7 @@
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+from dataclasses import replace
 
 import phomemo.printer as printer_module
 import phomemo.profiles  # noqa: F401, registers built-in profiles
@@ -32,7 +33,7 @@ from phomemo.events import (
     TimerEvent,
 )
 from phomemo.printer import PrintAborted, Printer, SheetRanOut
-from phomemo.protocol import QueryCommand
+from phomemo.protocol import Density, QueryCommand
 
 
 class FakeTransport:
@@ -59,7 +60,7 @@ class FakeTransport:
 
 def _make_printer() -> Printer:
     """Create a Printer with a fake transport for testing."""
-    printer = Printer("M08F-A4")
+    printer = Printer("m08f")
     printer._transport = FakeTransport()  # type: ignore[assignment]
     return printer
 
@@ -144,7 +145,7 @@ async def test_connect_resolves_mac_string_via_scanner(
     monkeypatch.setattr(
         printer_module.BleakScanner, "find_device_by_address", fake_find
     )
-    printer = Printer("M08F-A4", _MAC)
+    printer = Printer("m08f", _MAC)
     printer._transport = FakeTransport()  # type: ignore[assignment]
     await printer.connect(discovery_timeout=3.0)
     assert seen == [(_MAC, 3.0)]
@@ -161,7 +162,7 @@ async def test_connect_unresolvable_mac_raises_connection_error(
     monkeypatch.setattr(
         printer_module.BleakScanner, "find_device_by_address", fake_find
     )
-    printer = Printer("M08F-A4", _MAC)
+    printer = Printer("m08f", _MAC)
     printer._transport = FakeTransport()  # type: ignore[assignment]
     with pytest.raises(ConnectionError, match=_MAC):
         await printer.connect()
@@ -178,7 +179,7 @@ async def test_connect_bledevice_instance_passes_through(
         printer_module.BleakScanner, "find_device_by_address", fail_find
     )
     device = _fake_device()
-    printer = Printer("M08F-A4", device)
+    printer = Printer("m08f", device)
     printer._transport = FakeTransport()  # type: ignore[assignment]
     await printer.connect()
     assert printer._transport.connect_address is device  # type: ignore[attr-defined]
@@ -318,9 +319,7 @@ async def test_print_bitmap_never_warns_without_max_rows(
 ) -> None:
     from dataclasses import replace
 
-    printer = Printer(
-        replace(printer_module.get_profile("M08F-A4"), sheet_length_mm=None)
-    )
+    printer = Printer(replace(printer_module.get_profile("m08f"), sheet_length_mm=None))
     printer._transport = FakeTransport()  # type: ignore[assignment]
     width_bytes = printer.profile.width_bytes
     with caplog.at_level("WARNING", logger="phomemo.printer"):
@@ -362,7 +361,7 @@ async def test_wait_for_ready_settle_is_capped(monkeypatch: pytest.MonkeyPatch) 
 async def test_wait_for_ready_reconnects_when_queries_go_mute(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    printer = Printer("M08F-A4", _fake_device())
+    printer = Printer("m08f", _fake_device())
     printer._transport = FakeTransport()  # type: ignore[assignment]
     await printer.connect()
     mute = (False, "Could not query lid state")
@@ -557,7 +556,7 @@ async def test_connect_wraps_scanner_bleak_error(
         raise BleakError("org.bluez.Error.InProgress")
 
     monkeypatch.setattr(printer_module.BleakScanner, "find_device_by_address", failing)
-    printer = Printer("M08F-A4", _MAC)
+    printer = Printer("m08f", _MAC)
     printer._transport = FakeTransport()  # type: ignore[assignment]
     with pytest.raises(ConnectionError, match="InProgress"):
         await printer.connect()
@@ -697,3 +696,37 @@ async def test_connect_by_name_refuses_when_several_printers_answer(
     with pytest.raises(ConnectionError, match="AA:BB:CC:00:00:01, AA:BB:CC:00:00:02"):
         await printer.connect()
     assert printer.address is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("level", "value"), [(Density.LOW, 1), (Density.MEDIUM, 5), (Density.HIGH, 6)]
+)
+async def test_print_bitmap_sends_the_models_density_value(
+    level: Density, value: int
+) -> None:
+    printer, rec = _chunked_printer()
+    await printer.print_bitmap(
+        bytes(_ROW * 8), height=8, density=level, wait_for_completion=False
+    )
+    assert rec.stream.startswith(b"\x1b\x40\x1b\x4e\x04" + bytes([value]))
+
+
+@pytest.mark.asyncio
+async def test_print_bitmap_uses_density_values_from_the_profile() -> None:
+    printer, rec = _chunked_printer()
+    printer._profile = replace(printer._profile, density_levels=(2, 3, 4))
+    await printer.print_bitmap(
+        bytes(_ROW * 8), height=8, density=Density.HIGH, wait_for_completion=False
+    )
+    assert rec.stream.startswith(b"\x1b\x40\x1b\x4e\x04\x04")
+
+
+@pytest.mark.asyncio
+async def test_print_bitmap_without_density_control_sends_no_density() -> None:
+    printer, rec = _chunked_printer()
+    printer._profile = replace(printer._profile, density_levels=None)
+    await printer.print_bitmap(
+        bytes(_ROW * 8), height=8, density=Density.HIGH, wait_for_completion=False
+    )
+    assert b"\x1b\x4e\x04" not in rec.stream[:8]

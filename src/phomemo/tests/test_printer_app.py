@@ -48,12 +48,14 @@ from tests.test_bridge_server import FakePrinter
 REPO_ROOT = Path(__file__).resolve().parents[3]
 BINARY = REPO_ROOT / "src" / "printer-app" / "phomemo-printer-app"
 ADDRESS = "AA:BB:CC:DD:EE:FF"
-DEVICE_URI = "phomemo://" + ADDRESS.replace(":", "-")
+LEGACY_URI = "phomemo://" + ADDRESS.replace(":", "-")  # registered before models
+DEVICE_URI = LEGACY_URI + "?model=m08f"
+MODELS_DIR = REPO_ROOT / "src" / "models"
 PRINTER = "phomemo"
 
 SOURCE_PDF = Path("/usr/share/cups/ipptool/onepage-a4.pdf.gz")
 MULTIPAGE_PDF = Path("/usr/share/cups/ipptool/document-a4.pdf.gz")
-A4_ROWS = get_profile("M08F-A4").rows_for(297.0)
+A4_ROWS = get_profile("m08f").rows_for(297.0)
 
 if not BINARY.exists():
     pytest.skip(f"{BINARY} not built", allow_module_level=True)
@@ -80,11 +82,13 @@ class FakeBridge:
     Attributes:
         env: Environment pointing clients at the bridge socket.
         page_begins: Every ``page_begin`` request the bridge received.
+        opens: Every ``open`` request the bridge received.
     """
 
     env: dict[str, str]
     server: Any
     page_begins: list[dict[str, Any]] = field(default_factory=list)
+    opens: list[dict[str, Any]] = field(default_factory=list)
     in_range: list[BLEDevice] = field(default_factory=list)
 
     @property
@@ -122,8 +126,18 @@ async def fake_bridge(
         page_begins.append(obj)
         return await original_page_begin(self, obj, payload)
 
+    opens: list[dict[str, Any]] = []
+    original_open = Session._cmd_open
+
+    async def recording_open(
+        self: Session, obj: dict[str, Any], payload: bytes
+    ) -> dict[str, Any]:
+        opens.append(obj)
+        return await original_open(self, obj, payload)
+
     monkeypatch.setattr(server_module, "discover", fake_discover)
     monkeypatch.setattr(Session, "_cmd_page_begin", recording_page_begin)
+    monkeypatch.setattr(Session, "_cmd_open", recording_open)
     FakePrinter.instances.clear()
     ScriptedPrinter.paper_default = PaperState.PRESENT
     ScriptedPrinter.print_error_default = None
@@ -136,7 +150,7 @@ async def fake_bridge(
     )
     server = await start_server(config, printer_factory=ScriptedPrinter)
     env = {**os.environ, "PHOMEMO_BRIDGE_SOCKET": str(config.socket_path)}
-    bridge = FakeBridge(env, server, page_begins, in_range)
+    bridge = FakeBridge(env, server, page_begins, opens, in_range)
     try:
         yield bridge
     finally:
@@ -184,6 +198,7 @@ async def app_server(
         "TMPDIR": str(tmp_path),
         "HOME": str(tmp_path),
         "XDG_CONFIG_HOME": str(tmp_path / "config"),
+        "PHOMEMO_MODELS_DIR": str(MODELS_DIR),
     }
     param = getattr(request, "param", {})
     if "bridge_socket" in param:
@@ -300,6 +315,48 @@ async def test_devices_lists_fake_printer(app_server: AppServer) -> None:
     code, out, err = await run_app(app_server.env, "devices")
     assert code == 0, err
     assert DEVICE_URI in out
+
+
+async def test_drivers_come_from_the_model_descriptions(app_server: AppServer) -> None:
+    code, out, err = await run_app(app_server.env, "drivers")
+    assert code == 0, err
+    assert out.strip() == 'm08f "Phomemo M08F" "MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;"'
+
+
+async def test_server_without_model_descriptions_does_not_start(
+    tmp_path: Path,
+) -> None:
+    env = {**os.environ, "TMPDIR": str(tmp_path), "HOME": str(tmp_path)}
+    env["PHOMEMO_MODELS_DIR"] = str(tmp_path / "nowhere")
+    code, _, err = await run_app(env, "server")
+    assert code == 1
+    assert f"no model descriptions in {tmp_path / 'nowhere'}" in err
+
+
+async def test_job_opens_the_printer_with_its_model(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    assert printer.bridge.opens[0] == {
+        "cmd": "open",
+        "address": ADDRESS,
+        "model": "m08f",
+    }
+
+
+async def test_printer_registered_without_a_model_still_prints(
+    app_server: AppServer, tmp_path: Path
+) -> None:
+    code, _, err = await run_app(
+        app_server.env, "add", "-d", PRINTER, "-m", "m08f", "-v", LEGACY_URI
+    )
+    assert code == 0, err
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    attrs = await finish_job(start_job(app_server, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    assert "model" not in app_server.bridge.opens[0]
 
 
 async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None:
@@ -517,9 +574,7 @@ async def test_a5_portrait_raster_is_rotated(
     page = printer.bridge.page_begins[0]
     assert page["rotate"] is True
     assert page["media_length_mm"] == 148.0
-    assert printer.bridge.printer.printed[0][1] == get_profile("M08F-A4").rows_for(
-        148.0
-    )
+    assert printer.bridge.printer.printed[0][1] == get_profile("m08f").rows_for(148.0)
 
 
 async def test_a5_landscape_raster_is_not_rotated_twice(

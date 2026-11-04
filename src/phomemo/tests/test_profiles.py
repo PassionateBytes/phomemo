@@ -68,7 +68,7 @@ def test_a4_profile_printable_area() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
-    profile = get_profile("M08F-A4")
+    profile = get_profile("m08f")
     assert profile.sheet_length_mm == 297.0
     assert profile.top_margin_mm == 10.0
     assert profile.bottom_margin_mm == 5.0
@@ -94,7 +94,7 @@ def test_rows_for_a4_matches_max_rows() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
-    profile = get_profile("M08F-A4")
+    profile = get_profile("m08f")
     assert profile.rows_for(297.0) == 2253 == profile.max_rows
 
 
@@ -102,21 +102,21 @@ def test_rows_for_a5_turned() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
-    assert get_profile("M08F-A4").rows_for(148.0) == 1062
+    assert get_profile("m08f").rows_for(148.0) == 1062
 
 
 def test_rows_for_none_is_roll() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
-    assert get_profile("M08F-A4").rows_for(None) is None
+    assert get_profile("m08f").rows_for(None) is None
 
 
 def test_lead_rows_a4() -> None:
     import phomemo.profiles  # noqa: F401, registers built-in profiles
     from phomemo.registry import get_profile
 
-    assert get_profile("M08F-A4").lead_rows == 80
+    assert get_profile("m08f").lead_rows == 80
 
 
 def test_rows_for_rejects_length_inside_margins() -> None:
@@ -124,4 +124,4 @@ def test_rows_for_rejects_length_inside_margins() -> None:
     from phomemo.registry import get_profile
 
     with pytest.raises(ValueError, match="margin"):
-        get_profile("M08F-A4").rows_for(10.0)
+        get_profile("m08f").rows_for(10.0)

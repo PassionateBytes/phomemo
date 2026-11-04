@@ -23,7 +23,7 @@ Basic usage::
 
     from phomemo import Printer
 
-    async with Printer("M08F-A4", "AA:BB:CC:DD:EE:FF") as printer:
+    async with Printer("m08f", "AA:BB:CC:DD:EE:FF") as printer:
         # connect() must be called after entering the context
         await printer.connect()
         await printer.wait_for_ready()

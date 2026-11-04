@@ -33,20 +33,16 @@ handles chunking and BLE writes.
 from enum import Enum, IntEnum
 
 
-class Density(IntEnum):
-    """Print density (concentration) levels for ESC N 04.
+class Density(Enum):
+    """Print density levels.
 
-    Values map directly to the ESC N 04 concentration byte. The M08F
-    saturates at level 6 — higher values produce no further darkening.
-
-    From the reference doc:
-        0-4 = light (default), 5 = medium, 6+ = dark (saturated).
-    Tested mappings: low=1, medium=5, high=6.
+    Each model's description maps the three levels to its own ``ESC N 04``
+    concentration values (``PrinterProfile.density_levels``).
     """
 
-    LOW = 1
-    MEDIUM = 5
-    HIGH = 6
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 class ScaleMode(IntEnum):
@@ -89,7 +85,7 @@ def encode_init() -> bytes:
 # ---------------------------------------------------------------------------
 
 
-def encode_density(level: Density) -> bytes:
+def encode_density(value: int) -> bytes:
     """Encode ``ESC N 04 <n>`` — set print concentration.
 
     This is the **only working density command** on the M08F. Persists
@@ -99,12 +95,13 @@ def encode_density(level: Density) -> bytes:
     avoid bridge chip interception.
 
     Args:
-        level: Concentration value (see ``Density`` enum).
+        value: Concentration byte, as a model description maps it to a
+            ``Density`` level.
 
     Returns:
         The 4-byte ESC N 04 command.
     """
-    return b"\x1b\x4e\x04" + bytes([int(level)])
+    return b"\x1b\x4e\x04" + bytes([value])
 
 
 # ---------------------------------------------------------------------------

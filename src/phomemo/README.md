@@ -39,7 +39,7 @@ uv add phomemo
 ## Requirements
 
 - Python 3.13+
-- A Phomemo thermal printer (M08F tested, others via custom profiles)
+- A Phomemo thermal printer (M08F tested; others through a model description or a custom profile)
 - Platform with BLE support — Linux/BlueZ (tested), macOS, Windows
 
 ## Quick Start
@@ -55,7 +55,7 @@ async def main():
         print("No printers found")
         return
 
-    async with Printer("M08F-A4", devices[0]) as printer:
+    async with Printer("m08f", devices[0]) as printer:
         await printer.connect()
 
         # Block until lid closed and a sheet is loaded
@@ -93,7 +93,7 @@ The `Printer` class manages the BLE connection lifecycle. Pass a profile name or
 ```python
 from phomemo import Printer
 
-async with Printer("M08F-A4", "AA:BB:CC:DD:EE:FF") as printer:
+async with Printer("m08f", "AA:BB:CC:DD:EE:FF") as printer:
     await printer.connect()
     # ... use the printer ...
 # automatically disconnects on exit
@@ -188,9 +188,9 @@ def on_event(event: DeviceEvent):
 printer.on_event(on_event)
 ```
 
-### Custom Profiles
+### Profiles and Model Descriptions
 
-Add support for other Phomemo models by registering a profile:
+A profile holds everything model-specific. The built-in profiles come from the model descriptions in [`src/models/`](../models/README.md), which the printer application reads as well; a new model belongs there. A program can also register a profile in code:
 
 ```python
 from phomemo.profiles import PrinterProfile, register_profile
@@ -218,11 +218,16 @@ Profile fields beyond the BLE UUIDs:
 | `sheet_length_mm` | `None` | Sheet length in the feed direction (`None` for roll media). |
 | `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet (sensor-to-head distance). |
 | `bottom_margin_mm` | `0.0` | Kept free at the sheet end (M08F profiles: 5 mm). |
+| `density_levels` | `None` | `ESC N 04` values for `Density.LOW`, `MEDIUM`, `HIGH`; `None` means no density control. M08F: 1, 5, 6. |
+| `make`, `model_name` | `"Phomemo"`, `""` | Names as users see them. |
+| `media`, `default_media` | `()`, `None` | PWG names of the sheet sizes, and the default. |
 | `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2253. |
+
+`load_description(path)` builds a profile from a model directory; `profile_for_name(name)` returns the profile whose `ble_name_pattern` matches an advertised Bluetooth name.
 
 ## Bridge Daemon
 
-`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../printer-app/README.md) (PAPPL based) or the bundled CLI drives it.
+`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../printer-app/README.md) (PAPPL based) or the bundled CLI drives it. Each printer brings its own profile: the printer application names the model in every `open`, otherwise the bridge reads it from the printer's advertised name.
 
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
@@ -240,7 +245,7 @@ phomemo-bridge eject
 phomemo-bridge connect -a AA:BB:CC:DD:EE:FF   # pick a printer when several are in range
 ```
 
-`phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only M08F a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.
+`phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only printer of a known model a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.
 
 `packaging/systemd/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/systemd/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/systemd/90-phomemo-bridge.preset`); `packaging/rpm/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
@@ -253,23 +258,20 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
-| `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
-| `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
-| `[printer] profile` | `M08F-A4` | Profile name. |
-| `[printer] auto_off_minutes` | unset (the packaged file sets `5`) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
+| `auto_off_minutes` | unset (also in the packaged file) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
 
-The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only M08F a scan finds; with several in range they refuse and list them.
+The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only printer of a known model a scan finds; with several in range they refuse and list them.
 
 Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": R}` lines with `R` one of `connecting` (link being brought up), `printer-off` (printer off, out of range or in use elsewhere), `adapter-off` (Bluetooth unavailable), `lid-open`, `no-sheet`, `short-sheet` (the last sheet ran out, a longer one is needed). One client at a time; `abort` is the only command accepted while another is pending.
 
 | Command | Arguments | Reply |
 |---------|-----------|-------|
-| `discover` | `timeout` | `printers: [{name, address}]` |
-| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
+| `discover` | `timeout` | `printers: [{name, address, model}]`: printers of every known model in range, with the model their advertised name matches |
+| `open` | `address`, `model` (both optional) | connects (or reuses the held link) with the profile of `model`, or of the model the printer's advertised name matches; a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
 | `close` | | ends the session's use of the link; the bridge drops it after `idle_disconnect_minutes` without a command |
 | `disconnect` | | drops the link now instead of after `idle_disconnect_minutes` |
-| `status` | `address` (optional) | linked: `connected: true`, `address`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
-| `info` | | linked printer's `address`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
+| `status` | `address` (optional) | linked: `connected: true`, `address`, `model`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
+| `info` | | linked printer's `address`, `model`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
 | `auto_off` | `minutes` (optional) | sets the timer when `minutes` is given, then `auto_off_minutes` as the printer reports it; error `not connected` without a link |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
@@ -285,7 +287,9 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 
 | Model | Profile | Print Width | Status |
 |-------|---------|-------------|--------|
-| M08F (A4) | `M08F-A4` | 1680 px (210 bytes/row) | Tested |
+| M08F (A4) | `m08f` | 1680 px (210 bytes/row) | Tested |
+
+New models are welcome; see [`src/models/`](../models/README.md).
 
 ## Architecture
 

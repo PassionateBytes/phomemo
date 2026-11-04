@@ -28,9 +28,6 @@
 static const char *const tone_keywords[] = {"auto", "threshold", "ordered",
                                             "diffusion"};
 
-static const char *const media_sizes[] = {"iso_a4_210x297mm",
-                                          "iso_a5_148x210mm"};
-
 const char *
 phomemo_density_for_quality(ipp_quality_t quality)
 {
@@ -62,36 +59,52 @@ phomemo_content_name(pappl_content_t content)
   }
 }
 
-bool
-phomemo_should_rotate(const pappl_pr_options_t *options)
+// The dimension closest to the head width lies across the head; the other
+// one runs along the feed.
+static bool
+width_across(const pappl_pr_options_t *options, int head_width)
 {
-  return !strncmp(options->media.size_name, "iso_a5", 6) &&
+  return abs(options->media.size_width - head_width) <=
+         abs(options->media.size_length - head_width);
+}
+
+bool
+phomemo_should_rotate(const pappl_pr_options_t *options, int head_width)
+{
+  return !width_across(options, head_width) &&
          options->header.cupsHeight > options->header.cupsWidth;
 }
 
 double
-phomemo_media_length_mm(const pappl_pr_options_t *options)
+phomemo_media_length_mm(const pappl_pr_options_t *options, int head_width)
 {
-  int width = options->media.size_width;
-  int length = options->media.size_length;
-  // The dimension closest to the head width lies across the head; the
-  // other one runs along the feed.
-  bool width_across =
-    abs(width - PHOMEMO_HEAD_WIDTH) <= abs(length - PHOMEMO_HEAD_WIDTH);
-  return (width_across ? length : width) / 100.0;
+  return (width_across(options, head_width) ? options->media.size_length
+                                            : options->media.size_width) /
+         100.0;
 }
 
-// Fills a media-col for a supported size with the printer's margins.
-static void
-set_media(pappl_media_col_t *media, const char *size_name, int width,
-          int length)
+// PAPPL only models symmetric margins, so the larger of the model's top and
+// bottom margin applies to both ends; the bridge lays pages out with the
+// real ones.
+static int
+symmetric_margin(const phomemo_model_t *model)
 {
+  return model->top_margin > model->bottom_margin ? model->top_margin
+                                                  : model->bottom_margin;
+}
+
+// Fills a media-col for a supported size with the model's margins.
+static void
+set_media(pappl_media_col_t *media, const phomemo_model_t *model,
+          const char *size_name)
+{
+  pwg_media_t *pwg = pwgMediaForPWG(size_name);
   memset(media, 0, sizeof(*media));
   snprintf(media->size_name, sizeof(media->size_name), "%s", size_name);
-  media->size_width = width;
-  media->size_length = length;
-  media->top_margin = PHOMEMO_MARGIN;
-  media->bottom_margin = PHOMEMO_MARGIN;
+  media->size_width = pwg ? pwg->width : 0;
+  media->size_length = pwg ? pwg->length : 0;
+  media->top_margin = symmetric_margin(model);
+  media->bottom_margin = symmetric_margin(model);
   media->left_margin = 0;
   media->right_margin = 0;
   snprintf(media->source, sizeof(media->source), "main");
@@ -130,15 +143,13 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
                   const char *device_uri, const char *device_id,
                   pappl_pr_driver_data_t *data, ipp_t **attrs, void *cbdata)
 {
-  if (strcmp(driver_name, PHOMEMO_DRIVER_NAME))
+  const phomemo_model_t *model = phomemo_model_find(driver_name);
+  if (!model)
     return false;
 
-  data->icons[0].data = phomemo_icon_m08f_48;
-  data->icons[0].datalen = phomemo_icon_m08f_48_len;
-  data->icons[1].data = phomemo_icon_m08f_128;
-  data->icons[1].datalen = phomemo_icon_m08f_128_len;
-  data->icons[2].data = phomemo_icon_m08f_512;
-  data->icons[2].datalen = phomemo_icon_m08f_512_len;
+  for (int i = 0; i < 3; i++)
+    snprintf(data->icons[i].filename, sizeof(data->icons[i].filename), "%s",
+             model->icons[i]);
 
   data->testpage_cb = phomemo_testpage_cb;
   data->identify_cb = phomemo_identify_cb;
@@ -153,7 +164,7 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   data->status_cb = phomemo_status_cb;
 
   snprintf(data->make_and_model, sizeof(data->make_and_model), "%s",
-           PHOMEMO_MAKE_AND_MODEL);
+           model->make_and_model);
   data->kind = PAPPL_KIND_DOCUMENT;
   data->ppm = 1;
   // sgray_8 only: PAPPL hands a black_1 document to the driver as packed
@@ -161,10 +172,10 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   // garbage for clients that choose it. The bridge dithers 8-bit pages.
   data->raster_types = PAPPL_PWG_RASTER_TYPE_SGRAY_8;
   data->num_resolution = 1;
-  data->x_resolution[0] = PHOMEMO_DPI;
-  data->y_resolution[0] = PHOMEMO_DPI;
-  data->x_default = PHOMEMO_DPI;
-  data->y_default = PHOMEMO_DPI;
+  data->x_resolution[0] = model->dpi;
+  data->y_resolution[0] = model->dpi;
+  data->x_default = model->dpi;
+  data->y_default = model->dpi;
   data->color_supported = PAPPL_COLOR_MODE_MONOCHROME;
   data->color_default = PAPPL_COLOR_MODE_MONOCHROME;
   data->quality_default = IPP_QUALITY_NORMAL;
@@ -178,13 +189,13 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   data->source[0] = "main";
   data->num_type = 1;
   data->type[0] = PHOMEMO_MEDIA_TYPE;
-  data->num_media = (int)(sizeof(media_sizes) / sizeof(media_sizes[0]));
+  data->num_media = model->num_media;
   for (int i = 0; i < data->num_media; i++)
-    data->media[i] = media_sizes[i];
+    data->media[i] = model->media[i];
 
   data->left_right = 0;
-  data->bottom_top = PHOMEMO_MARGIN;
-  set_media(&data->media_default, "iso_a4_210x297mm", 21000, 29700);
+  data->bottom_top = symmetric_margin(model);
+  set_media(&data->media_default, model, model->media[model->default_media]);
   data->media_ready[0] = data->media_default;
 
   data->num_vendor = 1;
