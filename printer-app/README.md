@@ -70,7 +70,14 @@ lpstat -e                       # lists Phomemo_M08F_DDEEFF
 lp -d Phomemo_M08F_DDEEFF document.pdf
 ```
 
-A queue with a name of your choosing: `lpadmin -p <name> -E -v 'ipp://localhost:8000/ipp/print/Phomemo_M08F_(DDEEFF)' -m everywhere`.
+That queue is temporary: CUPS removes it when idle, and GNOME Settings lists only permanent queues. A permanent queue comes from GNOME Settings → Printers → Add Printer, or from `lpadmin` with the DNS-SD URI (it keeps working when the app's port changes):
+
+```bash
+sudo lpadmin -p Phomemo_M08F_DDEEFF -E -m everywhere \
+  -v 'ipps://Phomemo%20M08F%20(DDEEFF)._ipps._tcp.local/'
+```
+
+`lpinfo --include-schemes dnssd -v` lists the exact URI. The app sets each printer's location to `Bluetooth: <address>` unless one is set, so print dialogs show which printer is which. CUPS reads supply levels only while it runs a job, so the battery (reported as an ink level, the only kind GNOME draws) appears in GNOME Settings after the first job through the permanent queue and shows the reading from the last job.
 
 ## Options
 
@@ -98,8 +105,8 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 
 ## Troubleshooting
 
-- **No devices listed / jobs pause**: the bridge is not reachable. Check `systemctl --user status phomemo-bridge` and that `PHOMEMO_BRIDGE_SOCKET` (or `$XDG_RUNTIME_DIR/phomemo-bridge.sock`) is the same for both programs; `phomemo-bridge status` talks to the daemon directly.
-- **Printer not found although it is on**: BlueZ may still hold a stale link after a killed daemon; `bluetoothctl disconnect <address>` frees it. The printer does not advertise while connected, and switches off after ten minutes idle.
+- **No devices listed / jobs pause**: the bridge is not reachable. Check `systemctl status phomemo-bridge` and that both programs use the same socket (`/run/phomemo/bridge.sock` for the system services, else `PHOMEMO_BRIDGE_SOCKET` or `$XDG_RUNTIME_DIR/phomemo-bridge.sock`); `phomemo-bridge status` talks to the daemon directly.
+- **Printer not found although it is on**: BlueZ may still hold a stale link after a killed daemon; `bluetoothctl disconnect <address>` frees it. The printer does not advertise while connected (`phomemo-bridge disconnect` releases it), and switches itself off after its auto-off time (`phomemo-bridge auto-off`; the bridge sets `auto_off_minutes` from its configuration).
 - **Logs**: with the units, `journalctl -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge server -v`.
 
 ## Sources

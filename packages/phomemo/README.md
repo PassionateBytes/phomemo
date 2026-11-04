@@ -227,13 +227,20 @@ Profile fields beyond the BLE UUIDs:
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
 phomemo-bridge devices                    # list printers in range
+phomemo-bridge connect                    # bring the link up (held for hold_seconds)
+phomemo-bridge status                     # link, sensors, battery, firmware, serial, auto-off
+phomemo-bridge auto-off                   # show the auto-off timer
+phomemo-bridge auto-off 15                # set it (5-minute steps, 0 = never)
+phomemo-bridge disconnect                 # drop the link now
 phomemo-bridge identify                   # eject a loaded sheet, pulse the feed three times
 phomemo-bridge testpage                   # print the test page
-phomemo-bridge status                     # link and sensor state
 phomemo-bridge print page.png --media a4 --quality high --tone diffusion
 phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page's right edge leads
 phomemo-bridge eject
+phomemo-bridge -a AA:BB:CC:DD:EE:FF connect   # pick a printer when several are in range
 ```
+
+`phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only M08F a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.
 
 `packaging/systemd/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/systemd/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/systemd/90-phomemo-bridge.preset`); `packaging/rpm/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
