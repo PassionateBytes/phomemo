@@ -518,9 +518,22 @@ from last activity.
 
 An open BLE connection without traffic does not count as activity. With the
 timer at 10 minutes, a link left idle after connecting was dropped by the
-printer switching itself off about 9.5 minutes later (measured 2026-11-04).
-Holding a connection open therefore does not keep the printer awake; a host
-that keeps the link between jobs sees it end at the auto-off.
+printer switching itself off about 9.5 minutes later; with the timer at 5
+minutes, after 5.1 minutes. Holding a connection open therefore does not keep
+the printer awake; a host that keeps the link between jobs sees it end at the
+auto-off.
+
+Queries do count as activity, each of them on its own: with the timer at 5
+minutes, a link carrying only the battery query (`1f 11 08`), only the lid
+query (`1f 11 12`) or only the paper query (`1f 11 11`) every 30 seconds was
+still up after 8 minutes, and periodic lid, paper and battery queries held a
+link for 14.6 minutes against a 10-minute timer. A host that polls the
+printer keeps it on for as long as it polls.
+
+The timer setting survives a power cycle: set to 5 minutes, read back as 5
+after the printer was switched off and on again.
+
+(Measured 2026-11-04.)
 
 ---
 
