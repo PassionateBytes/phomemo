@@ -74,13 +74,6 @@ main(void)
   phomemo_device_info("11:22:33:DD:EE:FF", info, sizeof(info));
   assert(!strcmp(info, "Phomemo M08F (DDEEFF)"));
 
-  char location[64];
-  assert(phomemo_device_location("phomemo://AA-BB-CC-DD-EE-FF", location,
-                                 sizeof(location)));
-  assert(!strcmp(location, "Bluetooth: AA:BB:CC:DD:EE:FF"));
-  assert(!phomemo_device_location("file:///dev/null", location,
-                                  sizeof(location)));
-
   puts("test_driver: ok");
   return 0;
 }

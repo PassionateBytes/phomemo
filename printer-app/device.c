@@ -70,16 +70,6 @@ parse_address(const char *device_uri, char *address, size_t size)
   return true;
 }
 
-bool
-phomemo_device_location(const char *device_uri, char *buffer, size_t bufsize)
-{
-  char address[32];
-  if (!parse_address(device_uri, address, sizeof(address)))
-    return false;
-  snprintf(buffer, bufsize, "Bluetooth: %s", address);
-  return true;
-}
-
 void
 phomemo_device_info(const char *address, char *buffer, size_t bufsize)
 {
@@ -316,15 +306,6 @@ phomemo_status_cb(pappl_printer_t *printer)
   pappl_preason_t reasons;
   int battery;
   char err[256];
-  char location[256];
-
-  // A printer without a location gets its Bluetooth address, which desktop
-  // print settings show next to the name.
-  if ((!papplPrinterGetLocation(printer, location, sizeof(location)) ||
-       !*location) &&
-      phomemo_device_location(papplPrinterGetDeviceURI(printer), location,
-                              sizeof(location)))
-    papplPrinterSetLocation(printer, location);
 
   if (!bridge_connect(&bridge, err, sizeof(err)))
     return true;

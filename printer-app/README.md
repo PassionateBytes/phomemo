@@ -77,7 +77,7 @@ sudo lpadmin -p Phomemo_M08F_DDEEFF -E -m everywhere \
   -v 'ipps://Phomemo%20M08F%20(DDEEFF)._ipps._tcp.local/'
 ```
 
-`lpinfo --include-schemes dnssd -v` lists the exact URI. The app sets each printer's location to `Bluetooth: <address>` unless one is set, so print dialogs show which printer is which. CUPS reads supply levels only while it runs a job, so the battery (reported as an ink level, the only kind GNOME draws) appears in GNOME Settings after the first job through the permanent queue and shows the reading from the last job.
+`lpinfo --include-schemes dnssd -v` lists the exact URI. CUPS reads supply levels only while it runs a job, so the battery (reported as an ink level, the only kind GNOME draws) appears in GNOME Settings after the first job through the permanent queue and shows the reading from the last job.
 
 ## Options
 
