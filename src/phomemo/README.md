@@ -39,7 +39,7 @@ uv add phomemo
 ## Requirements
 
 - Python 3.13+
-- A Phomemo thermal printer (M08F tested, others via custom profiles)
+- A Phomemo thermal printer (M08F tested; others through a model description or a custom profile)
 - Platform with BLE support — Linux/BlueZ (tested), macOS, Windows
 
 ## Quick Start
@@ -188,9 +188,9 @@ def on_event(event: DeviceEvent):
 printer.on_event(on_event)
 ```
 
-### Custom Profiles
+### Profiles and Model Descriptions
 
-Add support for other Phomemo models by registering a profile:
+A profile holds everything model-specific. The built-in profiles come from the model descriptions in [`src/models/`](../models/README.md), which the printer application reads as well; a new model belongs there. A program can also register a profile in code:
 
 ```python
 from phomemo.profiles import PrinterProfile, register_profile
@@ -218,11 +218,16 @@ Profile fields beyond the BLE UUIDs:
 | `sheet_length_mm` | `None` | Sheet length in the feed direction (`None` for roll media). |
 | `top_margin_mm` | `0.0` | Unprintable lead at the top of a sheet (sensor-to-head distance). |
 | `bottom_margin_mm` | `0.0` | Kept free at the sheet end (M08F profiles: 5 mm). |
+| `density_levels` | `None` | `ESC N 04` values for `Density.LOW`, `MEDIUM`, `HIGH`; `None` means no density control. M08F: 1, 5, 6. |
+| `make`, `model_name` | `"Phomemo"`, `""` | Names as users see them. |
+| `media`, `default_media` | `()`, `None` | PWG names of the sheet sizes, and the default. |
 | `max_rows` (property) | derived | Rows between the margins; used by `FIT_PAGE` and the oversize warning. A4: 2253. |
+
+`load_description(path)` builds a profile from a model directory; `profile_for_name(name)` returns the profile whose `ble_name_pattern` matches an advertised Bluetooth name.
 
 ## Bridge Daemon
 
-`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../printer-app/README.md) (PAPPL based) or the bundled CLI drives it.
+`phomemo-bridge` runs the device side of a printer application: it owns the BLE link, waits for sheets, converts pages and prints them, and takes commands over a unix socket. The [printer application](../printer-app/README.md) (PAPPL based) or the bundled CLI drives it. Each printer brings its own profile: the printer application names the model in every `open`, otherwise the bridge reads it from the printer's advertised name.
 
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
@@ -282,7 +287,9 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 
 | Model | Profile | Print Width | Status |
 |-------|---------|-------------|--------|
-| M08F (A4) | `M08F-A4` | 1680 px (210 bytes/row) | Tested |
+| M08F (A4) | `m08f` | 1680 px (210 bytes/row) | Tested |
+
+New models are welcome; see [`src/models/`](../models/README.md).
 
 ## Architecture
 

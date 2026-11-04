@@ -47,11 +47,11 @@ See the [phomemo README](src/phomemo/README.md) for library usage.
 
 ## Supported Printers
 
-| Model | Profile | Print Width | Status |
-|-------|---------|-------------|--------|
-| M08F (A4) | `M08F-A4` | 1680 px | Tested |
+| Model | ID | Print Width | Status |
+|-------|----|-------------|--------|
+| M08F (A4) | `m08f` | 1680 px | Tested |
 
-The profile system is extensible; see the [driver README](src/phomemo/README.md#custom-profiles) for adding support for other models.
+Each model is described once in [`src/models/`](src/models/README.md), shared by the library, the bridge and the printer application. A Phomemo model that speaks the same protocol needs only a new description there; contributions of new models are very welcome.
 
 ## Requirements
 
@@ -65,7 +65,7 @@ Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
 
 | Part | Licence | Text |
 |------|---------|------|
-| Python library and bridge daemon (`src/phomemo/`) | GNU LGPL, version 3 or later | [COPYING.LESSER](src/phomemo/COPYING.LESSER), with the GNU GPL it builds on in [COPYING](src/phomemo/COPYING) |
+| Python library and bridge daemon (`src/phomemo/`), printer model descriptions (`src/models/`) | GNU LGPL, version 3 or later | [COPYING.LESSER](src/phomemo/COPYING.LESSER), with the GNU GPL it builds on in [COPYING](src/phomemo/COPYING) |
 | Printer application (`src/printer-app/`) | GNU GPL, version 3 or later | [COPYING](src/printer-app/COPYING) |
 | Packaging, build files and everything else not listed here | GNU GPL, version 3 or later | [COPYING](COPYING) |
 | Documentation (`docs/`, the READMEs) | CC BY-SA 4.0 | [docs/LICENSE](docs/LICENSE) |

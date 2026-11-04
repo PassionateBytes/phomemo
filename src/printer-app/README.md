@@ -61,9 +61,9 @@ phomemo-printer-app printers                         # confirm what is configure
 
 (`sudo` because adding a printer to the system service is an administrative change; listing is not.)
 
-or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F (DDEEFF)" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF` adds a known address. `phomemo-printer-app --help` lists all subcommands.
+or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F (DDEEFF)" -m m08f -v "phomemo://AA-BB-CC-DD-EE-FF?model=m08f"` adds a known address. `phomemo-printer-app --help` lists all subcommands.
 
-The device URI carries the printer's BLE address with dashes instead of colons, because a URI host cannot hold colons. The printer name is what DNS-SD advertises and what printer dialogs show; the web interface lives at `http://localhost:8000/Phomemo_M08F_(DDEEFF)/` (PAPPL replaces only the spaces in the name).
+The device URI carries the printer's BLE address with dashes instead of colons, because a URI host cannot hold colons, and its model (`?model=m08f`); the driver of the same name comes from the model description in [`src/models/`](../models/README.md). A URI without the model (printers registered by older versions) still works: the bridge reads the model from the printer's advertised name. The printer name is what DNS-SD advertises and what printer dialogs show; the web interface lives at `http://localhost:8000/Phomemo_M08F_(DDEEFF)/` (PAPPL replaces only the spaces in the name).
 
 ### CUPS queue
 
@@ -117,12 +117,12 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 
 | File | Role |
 |------|------|
-| `main.c` | Driver table, auto-add rule, `papplMainloop` entry point. |
+| `main.c` | Driver table built from the model descriptions, auto-add rule, `papplMainloop` entry point. |
+| `models.c` | Reads the model descriptions (`PHOMEMO_MODELS_DIR`, else `$(DATADIR)/phomemo/models` as built). |
 | `device.c` | The `phomemo://` device scheme over the bridge socket, status mapping. |
-| `driver.c` | Printer capabilities (media, resolution, raster type, `phomemo-tone`) and option mapping helpers. |
+| `driver.c` | Printer capabilities from the model (media, resolution, margins, icons) plus `phomemo-tone`, and option mapping helpers. |
 | `job.c` | Raster callbacks: wait for a sheet, stream rows, finish the page, surface errors. |
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
-| `icons/` | Printer icons (48, 128, 512 px PNG), embedded into the binary at build time by `icons/embed.sh`. |
 | `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |
 
 ## License
