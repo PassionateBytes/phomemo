@@ -48,7 +48,7 @@ The server listens on port 8000 for the first user on a machine (the log names t
 
 ## Register the printer
 
-At every start the server looks for printers through the bridge and registers each M08F in range (printer on, lid closed) as **Phomemo M08F**; a printer registered earlier stays. So: install, switch the printer on, start or restart the service. Later, or for a printer that was off at the time:
+At every start the server looks for printers through the bridge and registers each M08F in range (printer on, lid closed) under its model and the last three bytes of its Bluetooth address, for example **Phomemo M08F (DD:EE:FF)**, so several printers never clash; a printer registered earlier stays. So: install, switch the printer on, start or restart the service. Later, or for a printer that was off at the time:
 
 ```bash
 sudo phomemo-printer-app autoadd                     # scan and add every M08F in range
@@ -57,20 +57,20 @@ phomemo-printer-app printers                         # confirm what is configure
 
 (`sudo` because adding a printer to the system service is an administrative change; listing is not.)
 
-or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF` adds a known address. `phomemo-printer-app --help` (or `-h` on its own) lists all subcommands.
+or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F (DD:EE:FF)" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF` adds a known address. `phomemo-printer-app --help` (or `-h` on its own) lists all subcommands.
 
-The device URI carries the printer's BLE address with dashes instead of colons, because a URI host cannot hold colons. The printer name is what DNS-SD advertises and what printer dialogs show; the web interface lives at `http://localhost:8000/Phomemo_M08F/`.
+The device URI carries the printer's BLE address with dashes instead of colons, because a URI host cannot hold colons. The printer name is what DNS-SD advertises and what printer dialogs show; the web interface lives at `http://localhost:8000/Phomemo_M08F_(DD:EE:FF)/` (PAPPL replaces only the spaces in the name).
 
 ### CUPS queue
 
-CUPS discovers the printer through DNS-SD and creates its queue on first use; no `lpadmin` needed. CUPS derives the queue name from the advertised name by replacing everything but letters and digits with underscores, so "Phomemo M08F" prints as:
+CUPS discovers the printer through DNS-SD and creates its queue on first use; no `lpadmin` needed. CUPS derives the queue name from the advertised name by replacing each run of characters other than letters and digits with one underscore, so "Phomemo M08F (DD:EE:FF)" prints as:
 
 ```bash
-lpstat -e                       # lists Phomemo_M08F
-lp -d Phomemo_M08F document.pdf
+lpstat -e                       # lists Phomemo_M08F_DD_EE_FF
+lp -d Phomemo_M08F_DD_EE_FF document.pdf
 ```
 
-A queue with a name of your choosing: `lpadmin -p <name> -E -v ipp://localhost:8000/ipp/print/Phomemo_M08F -m everywhere`.
+A queue with a name of your choosing: `lpadmin -p <name> -E -v 'ipp://localhost:8000/ipp/print/Phomemo_M08F_(DD:EE:FF)' -m everywhere`.
 
 ## Options
 

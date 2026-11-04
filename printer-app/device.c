@@ -71,16 +71,12 @@ parse_address(const char *device_uri, char *address, size_t size)
 }
 
 void
-phomemo_device_info(const char *address, int count, char *buffer,
-                    size_t bufsize)
+phomemo_device_info(const char *address, char *buffer, size_t bufsize)
 {
   size_t len = strlen(address);
   const char *tail = len > 8 ? address + len - 8 : address;
 
-  if (count > 1)
-    snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, tail);
-  else
-    snprintf(buffer, bufsize, "%s", PHOMEMO_MAKE_AND_MODEL);
+  snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, tail);
 }
 
 // Builds the device URI for a BLE address (colons become dashes).
@@ -134,7 +130,6 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
   }
 
   cJSON *printers = cJSON_GetObjectItem(reply, "printers");
-  int count = cJSON_GetArraySize(printers);
   cJSON *printer;
   cJSON_ArrayForEach(printer, printers)
   {
@@ -144,7 +139,7 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
 
     char info[64];
     char uri[128];
-    phomemo_device_info(address->valuestring, count, info, sizeof(info));
+    phomemo_device_info(address->valuestring, info, sizeof(info));
     format_uri(address->valuestring, uri, sizeof(uri));
     if (cb(info, uri, PHOMEMO_DEVICE_ID, data))
     {

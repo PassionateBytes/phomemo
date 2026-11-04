@@ -648,14 +648,17 @@ async def test_printer_off_shows_offline_until_it_returns(
 
 
 async def test_server_registers_the_printer_in_range_at_start(
-    app_server: AppServer,
+    app_server: AppServer, tmp_path: Path
 ) -> None:
     for _ in range(40):
         _, out, _ = await run_app(app_server.env, "printers")
         if "Phomemo M08F" in out:
             break
         await asyncio.sleep(0.5)
-    assert "Phomemo M08F" in out
+    assert out.startswith("Phomemo M08F (DD:EE:FF) - printer - "), out
+    resource = out.split("/ipp/print/", 1)[1].strip()
+    attrs = await printer_attributes(app_server, tmp_path, resource)
+    assert attrs["printer-name"] == "Phomemo M08F (DD:EE:FF)"
 
 
 async def test_dash_h_alone_prints_help(app_server: AppServer) -> None:
