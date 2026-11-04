@@ -237,7 +237,7 @@ phomemo-bridge testpage                   # print the test page
 phomemo-bridge print page.png --media a4 --quality high --tone diffusion
 phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page's right edge leads
 phomemo-bridge eject
-phomemo-bridge -a AA:BB:CC:DD:EE:FF connect   # pick a printer when several are in range
+phomemo-bridge connect -a AA:BB:CC:DD:EE:FF   # pick a printer when several are in range
 ```
 
 `phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only M08F a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.

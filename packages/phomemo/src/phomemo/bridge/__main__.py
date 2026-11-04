@@ -110,31 +110,36 @@ def _parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--config", type=Path, help="read this TOML file instead of the defaults"
     )
-    ap.add_argument(
+    ap.add_argument("-v", "--verbose", action="store_true", help="debug logging")
+    ap.set_defaults(address=None)
+    sub = ap.add_subparsers(dest="command", required=True, metavar="COMMAND")
+
+    # Shared by every command that works on one printer.
+    printer_choice = argparse.ArgumentParser(add_help=False)
+    printer_choice.add_argument(
         "-a",
         "--address",
         help="Bluetooth address of the printer to use (AA:BB:CC:DD:EE:FF)",
     )
-    ap.add_argument("-v", "--verbose", action="store_true", help="debug logging")
-    sub = ap.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
-    def add(name: str) -> argparse.ArgumentParser:
+    def add(name: str, targets_printer: bool = True) -> argparse.ArgumentParser:
         summary, description = _COMMANDS[name]
         paragraphs = description.split("\n\n")
         return sub.add_parser(
             name,
+            parents=[printer_choice] if targets_printer else [],
             help=summary,
             description="\n\n".join(textwrap.fill(p, 79) for p in paragraphs),
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
-    add("server")
-    devices = add("devices")
+    add("server", targets_printer=False)
+    devices = add("devices", targets_printer=False)
     devices.add_argument(
         "--timeout", type=float, default=5.0, help="scan seconds (default: 5)"
     )
     add("connect")
-    add("disconnect")
+    add("disconnect", targets_printer=False)
     add("status")
     auto_off = add("auto-off")
     auto_off.add_argument(

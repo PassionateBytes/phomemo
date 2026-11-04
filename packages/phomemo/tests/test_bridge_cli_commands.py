@@ -55,7 +55,7 @@ async def run(
 async def test_connect_brings_the_link_up_and_leaves_it_held(
     served: BridgeConfig, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    code, out, _ = await run(served, capsys, "--address", ADDRESS, "connect")
+    code, out, _ = await run(served, capsys, "connect", "--address", ADDRESS)
     assert code == 0
     assert f"connected to {ADDRESS}" in out
     assert FakePrinter.instances[-1].connected
@@ -82,7 +82,7 @@ async def test_connect_reports_why_it_failed(
 async def test_disconnect_drops_the_link(
     served: BridgeConfig, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    await run(served, capsys, "--address", ADDRESS, "connect")
+    await run(served, capsys, "connect", "--address", ADDRESS)
     code, out, _ = await run(served, capsys, "disconnect")
     assert code == 0
     assert "disconnected" in out
@@ -102,7 +102,7 @@ async def test_status_without_a_link_says_so(
 async def test_status_shows_sensors_and_device_details_when_linked(
     served: BridgeConfig, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    await run(served, capsys, "--address", ADDRESS, "connect")
+    await run(served, capsys, "connect", "--address", ADDRESS)
     code, out, _ = await run(served, capsys, "status")
     assert code == 0
     assert json.loads(out) == {
@@ -121,8 +121,8 @@ async def test_status_shows_sensors_and_device_details_when_linked(
 async def test_status_for_another_printer_than_the_linked_one(
     served: BridgeConfig, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    await run(served, capsys, "--address", ADDRESS, "connect")
-    code, out, _ = await run(served, capsys, "--address", "11:22:33:44:55:66", "status")
+    await run(served, capsys, "connect", "--address", ADDRESS)
+    code, out, _ = await run(served, capsys, "status", "--address", "11:22:33:44:55:66")
     assert code == 0
     assert json.loads(out) == {
         "connected": False,
@@ -135,7 +135,7 @@ async def test_status_for_another_printer_than_the_linked_one(
 async def test_auto_off_reads_and_sets(
     served: BridgeConfig, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    await run(served, capsys, "--address", ADDRESS, "connect")
+    await run(served, capsys, "connect", "--address", ADDRESS)
     code, out, _ = await run(served, capsys, "auto-off")
     assert (code, out.strip()) == (0, f"{ADDRESS}: auto-off 5 min")
     code, out, _ = await run(served, capsys, "auto-off", "0")
@@ -156,7 +156,7 @@ async def test_auto_off_needs_a_link(
 async def test_status_after_disconnect_shows_last_seen_values(
     served: BridgeConfig, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    await run(served, capsys, "--address", ADDRESS, "connect")
+    await run(served, capsys, "connect", "--address", ADDRESS)
     await run(served, capsys, "status")
     await run(served, capsys, "disconnect")
     code, out, _ = await run(served, capsys, "status")
