@@ -130,7 +130,9 @@ async def fake_bridge(
     ScriptedPrinter.reachable_default = True
     hold = param.get("hold_seconds", 0.2)
     config = BridgeConfig(
-        socket_path=tmp_path / "bridge.sock", hold_seconds=hold, drain_seconds=0.0
+        socket_path=tmp_path / "bridge.sock",
+        idle_disconnect_minutes=hold / 60,
+        drain_seconds=0.0,
     )
     server = await start_server(config, printer_factory=ScriptedPrinter)
     env = {**os.environ, "PHOMEMO_BRIDGE_SOCKET": str(config.socket_path)}
@@ -316,6 +318,8 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
     assert attrs["phomemo-tone-supported"] == "auto,threshold,ordered,diffusion"
     assert attrs["printer-icons"].count("http") == 3
     assert attrs["phomemo-tone-default"] == "auto"
+    assert attrs["printer-firmware-name"].startswith("phomemo-printer-app,")
+    assert attrs["printer-firmware-string-version"].startswith("0.1.0,")
 
 
 PRINT_JOB_TEST = """{{
@@ -589,7 +593,9 @@ async def test_bridge_down_pauses_queue_until_bridge_returns(
     assert str(tmp_path / "late.sock") in (tmp_path / "app.log").read_text()
 
     config = BridgeConfig(
-        socket_path=tmp_path / "late.sock", hold_seconds=0.2, drain_seconds=0.0
+        socket_path=tmp_path / "late.sock",
+        idle_disconnect_minutes=0.2 / 60,
+        drain_seconds=0.0,
     )
     late = await start_server(config, printer_factory=ScriptedPrinter)
     try:
@@ -647,21 +653,16 @@ async def test_printer_off_shows_offline_until_it_returns(
     assert "offline" not in (await printer_state(printer, tmp_path))[1]
 
 
-async def test_server_registers_the_printer_in_range_at_start(
-    app_server: AppServer,
+async def test_autoadd_registers_the_printer_in_range(
+    app_server: AppServer, tmp_path: Path
 ) -> None:
-    for _ in range(40):
-        _, out, _ = await run_app(app_server.env, "printers")
-        if "Phomemo M08F" in out:
-            break
-        await asyncio.sleep(0.5)
-    assert "Phomemo M08F" in out
-
-
-async def test_dash_h_alone_prints_help(app_server: AppServer) -> None:
-    code, out, _ = await run_app(app_server.env, "-h")
-    assert code == 0
-    assert "Sub-commands:" in out
+    code, _, err = await run_app(app_server.env, "autoadd")
+    assert code == 0, err
+    _, out, _ = await run_app(app_server.env, "printers")
+    assert out.startswith("Phomemo M08F (DDEEFF) - printer - "), out
+    resource = out.split("/ipp/print/", 1)[1].strip()
+    attrs = await printer_attributes(app_server, tmp_path, resource)
+    assert attrs["printer-name"] == "Phomemo M08F (DDEEFF)"
 
 
 async def test_identify_printer_pulses_the_feed(printer: AppServer) -> None:
@@ -696,3 +697,22 @@ async def test_idle_status_reports_the_battery_as_a_supply(
     attrs = await printer_attributes(printer, tmp_path)
     assert "Battery" in attrs["printer-supply-description"]
     assert "level=77" in attrs["printer-supply"]
+    # GNOME Settings draws supply levels only for ink and toner.
+    assert "type=ink" in attrs["printer-supply"]
+    assert attrs["marker-types"] == "ink"
+
+
+@pytest.mark.parametrize("fake_bridge", [{"hold_seconds": 30}], indirect=True)
+async def test_battery_stays_while_the_link_is_down(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    await asyncio.sleep(2.1)
+    assert "level=77" in (await printer_attributes(printer, tmp_path))["printer-supply"]
+    printer.bridge.printer.connected = False
+    await asyncio.sleep(2.1)
+    attrs = await printer_attributes(printer, tmp_path)
+    assert "level=77" in attrs["printer-supply"]
+    assert "offline" not in attrs["printer-state-reasons"]

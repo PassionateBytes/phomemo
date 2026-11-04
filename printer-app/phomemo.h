@@ -46,11 +46,11 @@
 #define PHOMEMO_MEDIA_TYPE "thermal"  // the only paper the printer takes
 #define PHOMEMO_LOW_BATTERY 15  // percent
 
-// Device info for a discovered printer: the make and model, with the last
-// three bytes of the address appended when more than one printer is in
-// range (PAPPL names auto-added printers after it).
-void phomemo_device_info(const char *address, int count, char *buffer,
-                         size_t bufsize);
+// Device info for a discovered printer: the make and model followed by the
+// last three bytes of its address without colons, e.g.
+// "Phomemo M08F (DDEEFF)". PAPPL names auto-added printers after it, so each
+// printer gets a distinct name.
+void phomemo_device_info(const char *address, char *buffer, size_t bufsize);
 
 // Publishes the battery charge as the printer's supply level.
 void phomemo_set_battery(pappl_printer_t *printer, int percent);

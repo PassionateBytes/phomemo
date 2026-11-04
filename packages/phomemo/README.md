@@ -227,37 +227,50 @@ Profile fields beyond the BLE UUIDs:
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
 phomemo-bridge devices                    # list printers in range
+phomemo-bridge connect                    # bring the link up (dropped after idle_disconnect_minutes)
+phomemo-bridge status                     # link, sensors, battery, firmware, serial, auto-off
+phomemo-bridge auto-off                   # show the auto-off timer
+phomemo-bridge auto-off 15                # set it (5-minute steps, 0 = never)
+phomemo-bridge disconnect                 # drop the link now
 phomemo-bridge identify                   # eject a loaded sheet, pulse the feed three times
 phomemo-bridge testpage                   # print the test page
-phomemo-bridge status                     # link and sensor state
 phomemo-bridge print page.png --media a4 --quality high --tone diffusion
 phomemo-bridge print page.png --media a5  # sheet fed long edge first; the page's right edge leads
 phomemo-bridge eject
+phomemo-bridge connect -a AA:BB:CC:DD:EE:FF   # pick a printer when several are in range
 ```
+
+`phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only M08F a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.
 
 `packaging/systemd/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/systemd/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/systemd/90-phomemo-bridge.preset`); `packaging/rpm/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
-Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOME/phomemo/bridge.toml`; every key is optional. `PHOMEMO_BRIDGE_SOCKET` overrides the socket path.
+Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOME/phomemo/bridge.toml`; every key is optional. `PHOMEMO_BRIDGE_SOCKET` overrides the socket path. Unknown keys, values of the wrong type or range and files that do not parse are logged as warnings; the affected setting keeps its default.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `socket_path` | `/run/phomemo/bridge.sock` when that exists (the system service), else `$XDG_RUNTIME_DIR/phomemo-bridge.sock` | Listening socket; the command line finds the system bridge the same way. |
-| `hold_seconds` | `120` | Keep the BLE link after a job so the next one skips the reconnect. |
+| `idle_disconnect_minutes` | `30` | Minutes without a command after which the bridge drops the BLE link; it ends earlier when the printer switches off or leaves range, and `0` keeps it until then. While the link is held the printer does not advertise, so other devices cannot connect to it. |
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
 | `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
 | `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
-| `[printer] address` | discover by name | BLE address of the printer. |
 | `[printer] profile` | `M08F-A4` | Profile name. |
+| `[printer] auto_off_minutes` | unset (the packaged file sets `5`) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
+
+The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only M08F a scan finds; with several in range they refuse and list them.
 
 Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": R}` lines with `R` one of `connecting` (link being brought up), `printer-off` (printer off, out of range or in use elsewhere), `adapter-off` (Bluetooth unavailable), `lid-open`, `no-sheet`, `short-sheet` (the last sheet ran out, a longer one is needed). One client at a time; `abort` is the only command accepted while another is pending.
 
 | Command | Arguments | Reply |
 |---------|-----------|-------|
 | `discover` | `timeout` | `printers: [{name, address}]` |
-| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` when the printer is unreachable, `wait_ready` keeps retrying |
-| `status` | | `connected`, and when connected `lid`, `paper`; `battery` is the last charge read (null until the first link) |
+| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
+| `close` | | ends the session's use of the link; the bridge drops it after `idle_disconnect_minutes` without a command |
+| `disconnect` | | drops the link now instead of after `idle_disconnect_minutes` |
+| `status` | `address` (optional) | linked: `connected: true`, `address`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
+| `info` | | linked printer's `address`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
+| `auto_off` | `minutes` (optional) | sets the timer when `minutes` is given, then `auto_off_minutes` as the printer reports it; error `not connected` without a link |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |
@@ -266,7 +279,7 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | `test_page` | `printer_name`, `versions` (name to version) | connects if needed, queries the device and writes a test page PNG to `$XDG_RUNTIME_DIR/phomemo-testpage.png` (else the temp dir); `path` |
 | `eject` | | `ejected` |
 | `abort` | | stops a pending `wait_ready` or transfer (the band in progress is padded white, then drain and eject); ok even when idle |
-| `close` | | starts the hold timer |
+| `close` | | starts the idle timer (`idle_disconnect_minutes`) |
 
 ## Supported Printers
 

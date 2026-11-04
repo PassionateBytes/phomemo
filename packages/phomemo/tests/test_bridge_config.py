@@ -30,9 +30,9 @@ def test_config_defaults_without_files(
     monkeypatch.setattr(config_module, "SYSTEM_SOCKET", tmp_path / "absent.sock")
     config = load_config(paths=[], env={"XDG_RUNTIME_DIR": "/run/user/1000"})
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
-    assert config.address is None
+    assert config.auto_off_minutes is None
     assert config.profile == "M08F-A4"
-    assert config.hold_seconds == 120.0
+    assert config.idle_disconnect_minutes == 30.0
     assert config.settle_seconds == 3.0
     assert config.completion_timeout == 300.0
     assert config.band_height is None
@@ -47,13 +47,14 @@ def test_config_user_file_overrides_system_file(tmp_path: Path) -> None:
     system = tmp_path / "system.toml"
     user = tmp_path / "user.toml"
     system.write_text(
-        'hold_seconds = 10\nband_height = 64\n[printer]\naddress = "AA:BB"\n'
+        "idle_disconnect_minutes = 10\nband_height = 64\n"
+        "[printer]\nauto_off_minutes = 10\n"
     )
-    user.write_text("hold_seconds = 20\n")
+    user.write_text("idle_disconnect_minutes = 20\n")
     config = load_config(paths=[system, user], env={})
-    assert config.hold_seconds == 20.0
+    assert config.idle_disconnect_minutes == 20.0
     assert config.band_height == 64
-    assert config.address == "AA:BB"
+    assert config.auto_off_minutes == 10
 
 
 def test_config_env_socket_override(tmp_path: Path) -> None:
@@ -65,44 +66,61 @@ def test_config_env_socket_override(tmp_path: Path) -> None:
     assert config.socket_path == Path("/tmp/from-env.sock")
 
 
-def test_config_rejects_unknown_key(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("text", "key", "problem"),
+    [
+        ("hold_secs = 5\n", "hold_secs", "unknown key"),
+        ('completion_timeout = "soon"\n', "completion_timeout", "expected a number"),
+        (
+            "idle_disconnect_minutes = -1\n",
+            "idle_disconnect_minutes",
+            "must not be negative",
+        ),
+        ("band_height = 0\n", "band_height", "must be positive"),
+        ('[printer]\nprofile = "nope"\n', "printer.profile", "unknown profile"),
+        (
+            '[printer]\naddress = "AA:BB:CC:DD:EE:FF"\n',
+            "printer.address",
+            "unknown key",
+        ),
+        ("printer = 3\n", "printer", "expected a table"),
+    ],
+)
+def test_config_logs_an_invalid_entry_and_ignores_it(
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+    text: str,
+    key: str,
+    problem: str,
+) -> None:
     user = tmp_path / "user.toml"
-    user.write_text("hold_secs = 5\n")
-    with pytest.raises(ConfigError, match=r"user\.toml: hold_secs"):
-        load_config(paths=[user], env={})
+    user.write_text("settle_seconds = 9\n" + text)
+    with caplog.at_level("WARNING"):
+        config = load_config(paths=[user], env={})
+    assert f"user.toml: {key}: {problem}" in caplog.text
+    assert "ignored" in caplog.text
+    assert config.settle_seconds == 9.0
+    assert config.idle_disconnect_minutes == 30.0
+    assert config.profile == "M08F-A4"
+    assert config.band_height is None
 
 
-def test_config_rejects_non_numeric_timeout(tmp_path: Path) -> None:
-    user = tmp_path / "user.toml"
-    user.write_text('completion_timeout = "soon"\n')
-    with pytest.raises(ConfigError, match="completion_timeout"):
-        load_config(paths=[user], env={})
+def test_config_unreadable_file_is_logged_and_skipped(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    broken = tmp_path / "broken.toml"
+    broken.write_text("idle_disconnect_minutes = = 5\n")
+    good = tmp_path / "good.toml"
+    good.write_text("settle_seconds = 9\n")
+    with caplog.at_level("WARNING"):
+        config = load_config(paths=[broken, good], env={})
+    assert "broken.toml" in caplog.text
+    assert config.settle_seconds == 9.0
 
 
 def test_config_missing_file_is_skipped(tmp_path: Path) -> None:
     config = load_config(paths=[tmp_path / "absent.toml"], env={})
-    assert config.hold_seconds == 120.0
-
-
-def test_config_rejects_non_positive_band_height(tmp_path: Path) -> None:
-    user = tmp_path / "user.toml"
-    user.write_text("band_height = 0\n")
-    with pytest.raises(ConfigError, match="band_height"):
-        load_config(paths=[user], env={})
-
-
-def test_config_rejects_negative_timeout(tmp_path: Path) -> None:
-    user = tmp_path / "user.toml"
-    user.write_text("hold_seconds = -1\n")
-    with pytest.raises(ConfigError, match="hold_seconds"):
-        load_config(paths=[user], env={})
-
-
-def test_config_rejects_unknown_profile(tmp_path: Path) -> None:
-    user = tmp_path / "user.toml"
-    user.write_text('[printer]\nprofile = "nope"\n')
-    with pytest.raises(ConfigError, match="profile"):
-        load_config(paths=[user], env={})
+    assert config.idle_disconnect_minutes == 30.0
 
 
 def test_config_explicit_missing_file_is_an_error(tmp_path: Path) -> None:
@@ -118,3 +136,60 @@ def test_default_socket_prefers_the_system_bridge_when_present(tmp_path: Path) -
     assert default_socket(env, system) == tmp_path / "run" / "phomemo-bridge.sock"
     system.touch()
     assert default_socket(env, system) == system
+
+
+def test_config_without_auto_off_leaves_the_printer_alone() -> None:
+    assert load_config(paths=[], env={}).auto_off_minutes is None
+
+
+def test_packaged_config_enforces_five_minutes() -> None:
+    packaged = Path(__file__).parents[3] / "packaging" / "config" / "bridge.toml"
+    assert load_config(paths=[packaged], env={}).auto_off_minutes == 5
+
+
+@pytest.mark.parametrize("minutes", [0, 15, 60, 1275])
+def test_config_accepts_auto_off_in_five_minute_steps(
+    tmp_path: Path, minutes: int
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text(f"[printer]\nauto_off_minutes = {minutes}\n")
+    assert load_config(paths=[path], env={}).auto_off_minutes == minutes
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [("7", 5), ("8", 10), ("7.5", 10), ("10.0", 10), ("2", 5), ("1280", 1275)],
+)
+def test_config_auto_off_number_snaps_to_the_nearest_step(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, value: str, expected: int
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text(f"[printer]\nauto_off_minutes = {value}\n")
+    with caplog.at_level("WARNING"):
+        config = load_config(paths=[path], env={})
+    assert config.auto_off_minutes == expected
+    assert f"printer.auto_off_minutes: {value} is not a valid timer" in caplog.text
+    assert f"using {expected}" in caplog.text
+
+
+@pytest.mark.parametrize("value", ['"ten"', "true", "-5"])
+def test_config_auto_off_that_is_no_timer_is_logged_and_not_enforced(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, value: str
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text(f"[printer]\nauto_off_minutes = {value}\n")
+    with caplog.at_level("WARNING"):
+        config = load_config(paths=[path], env={})
+    assert config.auto_off_minutes is None
+    assert "printer.auto_off_minutes" in caplog.text
+    assert "ignored" in caplog.text
+
+
+def test_config_hold_seconds_is_gone(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text("hold_seconds = 300\n")
+    with caplog.at_level("WARNING"):
+        load_config(paths=[path], env={})
+    assert "hold_seconds: unknown key; ignored" in caplog.text

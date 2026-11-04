@@ -71,16 +71,19 @@ parse_address(const char *device_uri, char *address, size_t size)
 }
 
 void
-phomemo_device_info(const char *address, int count, char *buffer,
-                    size_t bufsize)
+phomemo_device_info(const char *address, char *buffer, size_t bufsize)
 {
   size_t len = strlen(address);
   const char *tail = len > 8 ? address + len - 8 : address;
+  char suffix[9];
+  size_t n = 0;
 
-  if (count > 1)
-    snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, tail);
-  else
-    snprintf(buffer, bufsize, "%s", PHOMEMO_MAKE_AND_MODEL);
+  for (; *tail && n < sizeof(suffix) - 1; tail++)
+    if (*tail != ':')
+      suffix[n++] = *tail;
+  suffix[n] = '\0';
+
+  snprintf(buffer, bufsize, "%s (%s)", PHOMEMO_MAKE_AND_MODEL, suffix);
 }
 
 // Builds the device URI for a BLE address (colons become dashes).
@@ -134,7 +137,6 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
   }
 
   cJSON *printers = cJSON_GetObjectItem(reply, "printers");
-  int count = cJSON_GetArraySize(printers);
   cJSON *printer;
   cJSON_ArrayForEach(printer, printers)
   {
@@ -144,7 +146,7 @@ phomemo_list_cb(pappl_device_cb_t cb, void *data, pappl_deverror_cb_t err_cb,
 
     char info[64];
     char uri[128];
-    phomemo_device_info(address->valuestring, count, info, sizeof(info));
+    phomemo_device_info(address->valuestring, info, sizeof(info));
     format_uri(address->valuestring, uri, sizeof(uri));
     if (cb(info, uri, PHOMEMO_DEVICE_ID, data))
     {
@@ -264,11 +266,13 @@ phomemo_write_cb(pappl_device_t *device, const void *buffer, size_t bytes)
 // Not registered as the scheme's device status callback: a call while a
 // job holds the connection would be taken for the job's pending reply.
 static bool
-query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, int *battery,
-             char *err, size_t errsize)
+query_status(phomemo_bridge_t *bridge, const char *address,
+             pappl_preason_t *reasons, int *battery, char *err, size_t errsize)
 {
   cJSON *request = cJSON_CreateObject();
   cJSON_AddStringToObject(request, "cmd", "status");
+  if (address)
+    cJSON_AddStringToObject(request, "address", address);
   cJSON *reply = phomemo_bridge_call(bridge, request, NULL, 0, NULL, NULL, err,
                                      errsize);
   cJSON_Delete(request);
@@ -278,9 +282,13 @@ query_status(phomemo_bridge_t *bridge, pappl_preason_t *reasons, int *battery,
   cJSON *lid = cJSON_GetObjectItem(reply, "lid");
   cJSON *paper = cJSON_GetObjectItem(reply, "paper");
   cJSON *charge = cJSON_GetObjectItem(reply, "battery");
+  if (!charge)
+  {
+    // Without a link the bridge reports what it last read from this printer.
+    cJSON *seen = cJSON_GetObjectItem(reply, "last_seen");
+    charge = cJSON_IsObject(seen) ? cJSON_GetObjectItem(seen, "battery") : NULL;
+  }
 
-  // The bridge remembers the last charge it read, so this is set while
-  // the link is down as well.
   *battery = cJSON_IsNumber(charge) ? charge->valueint : -1;
   *reasons = PAPPL_PREASON_NONE;
   if (!cJSON_IsTrue(cJSON_GetObjectItem(reply, "connected")))
@@ -304,11 +312,15 @@ phomemo_status_cb(pappl_printer_t *printer)
   pappl_preason_t reasons;
   int battery;
   char err[256];
+  char address[32];
 
-  if (!bridge_connect(&bridge, err, sizeof(err)))
+  if (!parse_address(papplPrinterGetDeviceURI(printer), address,
+                     sizeof(address)) ||
+      !bridge_connect(&bridge, err, sizeof(err)))
     return true;
 
-  bool answered = query_status(&bridge, &reasons, &battery, err, sizeof(err));
+  bool answered = query_status(&bridge, address, &reasons, &battery, err,
+                               sizeof(err));
   phomemo_bridge_close(&bridge);
   if (!answered)
     return true;
@@ -330,7 +342,9 @@ phomemo_set_battery(pappl_printer_t *printer, int percent)
   snprintf(supply.description, sizeof(supply.description), "Battery");
   supply.is_consumed = true;
   supply.level = percent;
-  supply.type = PAPPL_SUPPLY_TYPE_OTHER;
+  // IPP has no battery supply type, and GNOME Settings shows levels only for
+  // ink and toner supplies, so the battery is reported as ink.
+  supply.type = PAPPL_SUPPLY_TYPE_INK;
   papplPrinterSetSupplies(printer, 1, &supply);
 }
 

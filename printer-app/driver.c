@@ -21,6 +21,7 @@
 
 #include "phomemo.h"
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -106,27 +107,22 @@ static const char *const strings_en =
   "\"" PHOMEMO_TONE_OPTION ".diffusion\" = \"Diffusion dither\";\n"
   "\"media-type." PHOMEMO_MEDIA_TYPE "\" = \"Thermal paper\";\n";
 
-// The application's version and the option labels; PAPPL lists its own
-// version and libraries by itself. PAPPL has no hook between creating the
-// system and loading printers, so the driver callback publishes them once.
+// The option labels for the web interface. PAPPL's main loop has no hook
+// between creating the system and loading printers, so the driver callback
+// registers them with the first printer.
 static void
-publish_system_details(pappl_system_t *system)
+publish_strings(pappl_system_t *system)
 {
+  static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
   static pappl_system_t *published = NULL;
-  pappl_version_t versions[1];
 
-  if (published == system)
-    return;
-  published = system;
-
-  memset(versions, 0, sizeof(versions));
-  snprintf(versions[0].name, sizeof(versions[0].name), "phomemo-printer-app");
-  snprintf(versions[0].sversion, sizeof(versions[0].sversion), "%s",
-           PHOMEMO_VERSION);
-  sscanf(PHOMEMO_VERSION, "%hu.%hu.%hu", &versions[0].version[0],
-         &versions[0].version[1], &versions[0].version[2]);
-  papplSystemSetVersions(system, 1, versions);
-  papplSystemAddStringsData(system, "/phomemo.strings", "en", strings_en);
+  pthread_mutex_lock(&lock);
+  if (published != system)
+  {
+    published = system;
+    papplSystemAddStringsData(system, "/phomemo.strings", "en", strings_en);
+  }
+  pthread_mutex_unlock(&lock);
 }
 
 bool
@@ -194,7 +190,7 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
   data->num_vendor = 1;
   data->vendor[0] = PHOMEMO_TONE_OPTION;
 
-  publish_system_details(system);
+  publish_strings(system);
 
   if (!*attrs)
     *attrs = ippNew();

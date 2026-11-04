@@ -115,14 +115,59 @@ class BridgeClient:
     async def discover(self, timeout: float = 5.0) -> list[dict[str, str]]:
         return (await self.call({"cmd": "discover", "timeout": timeout}))["printers"]
 
-    async def open(self) -> None:
-        await self.call({"cmd": "open"})
+    async def open(self, address: str | None = None) -> dict[str, Any]:
+        """Bring the printer link up.
+
+        Args:
+            address: Printer to link to; ``None`` keeps the bridge's choice
+                (configured address, the last printer, or a name scan).
+
+        Returns:
+            ``connected`` and, when that is false, the ``reason``.
+        """
+        obj: dict[str, Any] = {"cmd": "open"}
+        if address is not None:
+            obj["address"] = address
+        reply = await self.call(obj)
+        return {k: v for k, v in reply.items() if k not in ("ok", "cmd")}
+
+    async def drop_link(self) -> None:
+        """Drop the printer link now instead of after the idle timeout."""
+        await self.call({"cmd": "disconnect"})
+
+    async def info(self) -> dict[str, Any]:
+        """Device details and sensors of the linked printer."""
+        reply = await self.call({"cmd": "info"})
+        return {k: v for k, v in reply.items() if k not in ("ok", "cmd")}
+
+    async def auto_off(self, minutes: int | None = None) -> int | None:
+        """Read the linked printer's auto-off timer, setting it first if given.
+
+        Args:
+            minutes: New timeout, a multiple of 5; 0 = never switch off.
+
+        Returns:
+            The timer in minutes as the printer reports it.
+        """
+        obj: dict[str, Any] = {"cmd": "auto_off"}
+        if minutes is not None:
+            obj["minutes"] = minutes
+        return (await self.call(obj))["auto_off_minutes"]
 
     async def close(self) -> None:
         await self.call({"cmd": "close"})
 
-    async def status(self) -> dict[str, Any]:
-        reply = await self.call({"cmd": "status"})
+    async def status(self, address: str | None = None) -> dict[str, Any]:
+        """Link state and sensors; ``last_seen`` values without a link.
+
+        Args:
+            address: Printer to report on; ``None`` means the linked or
+                last linked one.
+        """
+        obj: dict[str, Any] = {"cmd": "status"}
+        if address is not None:
+            obj["address"] = address
+        reply = await self.call(obj)
         return {k: v for k, v in reply.items() if k not in ("ok", "cmd")}
 
     async def wait_ready(self, settle: float | None = None) -> None:

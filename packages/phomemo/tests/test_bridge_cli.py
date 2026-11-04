@@ -34,3 +34,50 @@ def test_old_names_are_gone() -> None:
         _parser().parse_args(["serve"])
     with pytest.raises(SystemExit):
         _parser().parse_args(["discover"])
+
+
+def test_every_command_has_a_summary_and_a_description() -> None:
+    parser = _parser()
+    sub = next(a for a in parser._actions if a.dest == "command")
+    summaries = {c.dest: c.help for c in sub._choices_actions}
+    for name, command in sub.choices.items():
+        assert summaries.get(name), name
+        assert command.description and len(command.description) > 40, name
+
+
+def test_link_and_device_commands_parse() -> None:
+    parser = _parser()
+    args = parser.parse_args(["connect", "-a", "AA:BB:CC:DD:EE:FF"])
+    assert (args.command, args.address) == ("connect", "AA:BB:CC:DD:EE:FF")
+    assert parser.parse_args(["disconnect"]).command == "disconnect"
+    assert parser.parse_args(["auto-off"]).minutes is None
+    assert parser.parse_args(["auto-off", "15"]).minutes == 15
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        ["connect"],
+        ["status"],
+        ["auto-off"],
+        ["eject"],
+        ["identify"],
+        ["testpage"],
+        ["print", "page.png"],
+    ],
+)
+def test_printer_commands_take_an_address(command: list[str]) -> None:
+    args = _parser().parse_args([*command, "--address", "AA:BB:CC:DD:EE:FF"])
+    assert args.address == "AA:BB:CC:DD:EE:FF"
+    assert _parser().parse_args(command).address is None
+
+
+@pytest.mark.parametrize("command", ["server", "devices", "disconnect"])
+def test_commands_without_a_printer_take_no_address(command: str) -> None:
+    with pytest.raises(SystemExit):
+        _parser().parse_args([command, "-a", "AA:BB:CC:DD:EE:FF"])
+
+
+def test_address_is_no_longer_a_global_option() -> None:
+    with pytest.raises(SystemExit):
+        _parser().parse_args(["-a", "AA:BB:CC:DD:EE:FF", "connect"])

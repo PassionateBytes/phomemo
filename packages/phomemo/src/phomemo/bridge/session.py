@@ -115,7 +115,7 @@ class Session:
         self._used_link = False
 
     async def run(self) -> None:
-        """Read commands until EOF, then release the printer link to the hold timer."""
+        """Read commands until EOF, then leave the printer link to the idle timer."""
         bridge = self._bridge
         if bridge.session_active:
             await self._send({"ok": False, "error": "busy"})
@@ -216,7 +216,10 @@ class Session:
             "discover": self._cmd_discover,
             "open": self._cmd_open,
             "close": self._cmd_close,
+            "disconnect": self._cmd_disconnect,
             "status": self._cmd_status,
+            "info": self._cmd_info,
+            "auto_off": self._cmd_auto_off,
             "identify": self._cmd_identify,
             "test_page": self._cmd_test_page,
             "wait_ready": self._cmd_wait_ready,
@@ -247,33 +250,84 @@ class Session:
             )
         except ConnectionError as exc:
             logger.info("Printer not reachable at open: %s", exc)
-            return {"connected": False}
+            return {"connected": False, "reason": str(exc)}
         return {"connected": True}
 
     async def _cmd_close(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         self._bridge.start_hold()
         return {}
 
-    async def _cmd_status(
+    async def _cmd_disconnect(
         self, _obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
-        bridge = self._bridge
-        if not bridge.connected or bridge.printer is None:
-            return {"connected": False, "battery": bridge.last_battery}
+        """Drop the link now instead of leaving it to the idle timer."""
+        self._used_link = False
+        await self._bridge.disconnect()
+        return {}
+
+    async def _cmd_info(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         printer = await self._answering_printer()
-        lid = await printer.query_lid(timeout=1.0)
-        paper = await printer.query_paper(timeout=1.0)
-        battery = await printer.query_battery(timeout=1.0)
-        if battery is not None:
-            bridge.last_battery = battery
-        else:
-            battery = bridge.last_battery
-        return {
-            "connected": True,
-            "lid": lid.value if lid is not None else None,
-            "paper": paper.value if paper is not None else None,
-            "battery": battery,
+        info = await printer.query_device_info(timeout=1.0)
+        values = {
+            "firmware": info.firmware,
+            "serial": info.serial,
+            "battery": info.battery,
+            "auto_off_minutes": info.auto_off_minutes,
+            "lid": info.lid.value if info.lid is not None else None,
+            "paper": info.paper.value if info.paper is not None else None,
         }
+        self._bridge.remember(printer.address, **values)
+        return {"address": printer.address, **values}
+
+    async def _cmd_auto_off(
+        self, obj: dict[str, Any], _payload: bytes
+    ) -> dict[str, Any]:
+        """Read the auto-off timer, setting it first when ``minutes`` is given."""
+        printer = await self._answering_printer()
+        minutes = obj.get("minutes")
+        if minutes is not None:
+            if isinstance(minutes, bool) or not isinstance(minutes, int):
+                raise CommandError(f"minutes must be an integer, got {minutes!r}")
+            try:
+                await printer.set_auto_off_timer(minutes)
+            except ValueError as exc:
+                raise CommandError(str(exc)) from exc
+        current = await printer.query_auto_off(timeout=1.0)
+        self._bridge.remember(printer.address, auto_off_minutes=current)
+        return {"auto_off_minutes": current}
+
+    async def _cmd_status(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
+        """Live sensors of the linked printer, else what was last read.
+
+        With ``address``, reports on that printer: live when it is the
+        linked one, otherwise its last-seen values and the printer the
+        bridge is linked to instead. Never brings a link up.
+        """
+        bridge = self._bridge
+        address = obj.get("address")
+        linked = bridge.connected and bridge.printer is not None
+        if linked and address in (None, bridge.linked_address):
+            printer = await self._answering_printer()
+            lid = await printer.query_lid(timeout=1.0)
+            paper = await printer.query_paper(timeout=1.0)
+            battery = await printer.query_battery(timeout=1.0)
+            values = {
+                "lid": lid.value if lid is not None else None,
+                "paper": paper.value if paper is not None else None,
+                "battery": battery,
+            }
+            bridge.remember(printer.address, **values)
+            return {"connected": True, "address": printer.address, **values}
+        target = address if address is not None else bridge.linked_address
+        reply: dict[str, Any] = {"connected": False}
+        if target is not None:
+            reply["address"] = target
+        if linked and target != bridge.linked_address:
+            reply["linked_to"] = bridge.linked_address
+        seen = bridge.last_seen(target)
+        if seen is not None:
+            reply["last_seen"] = seen
+        return reply
 
     async def _cmd_identify(
         self, _obj: dict[str, Any], _payload: bytes

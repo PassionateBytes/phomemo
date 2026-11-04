@@ -16,6 +16,7 @@
 
 """Bridge configuration: TOML files layered under environment overrides."""
 
+import logging
 import os
 import tomllib
 from collections.abc import Mapping
@@ -25,7 +26,10 @@ from typing import Any
 
 import phomemo.profiles  # noqa: F401, registers the built-in profiles
 from phomemo.bridge.server import BridgeConfig
+from phomemo.printer import AUTO_OFF_MAX_MINUTES
 from phomemo.registry import list_profiles
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_CONFIG = Path("/etc/phomemo/bridge.toml")
 SYSTEM_SOCKET = Path("/run/phomemo/bridge.sock")
@@ -33,7 +37,7 @@ SOCKET_NAME = "phomemo-bridge.sock"
 SOCKET_ENV = "PHOMEMO_BRIDGE_SOCKET"
 
 _NUMERIC = {
-    "hold_seconds",
+    "idle_disconnect_minutes",
     "settle_seconds",
     "completion_timeout",
     "drain_seconds",
@@ -41,12 +45,16 @@ _NUMERIC = {
     "bottom_margin_mm",
 }
 _INTEGER = {"band_height", "dpi", "print_width_px"}
-_STRING = {"socket_path", "address", "profile"}
-_PRINTER_TABLE = {"address", "profile"}
+_STRING = {"socket_path"}
+_PRINTER_TABLE = {"profile", "auto_off_minutes"}
+
+
+class _Invalid(ValueError):
+    """A configuration value that cannot be used; the message says why."""
 
 
 class ConfigError(ValueError):
-    """A configuration file could not be used; the message names file and key."""
+    """A configuration file named explicitly does not exist."""
 
 
 def default_paths(env: Mapping[str, str]) -> list[Path]:
@@ -83,47 +91,86 @@ def default_socket(env: Mapping[str, str], system_socket: Path | None = None) ->
     return Path(runtime) / SOCKET_NAME if runtime else system_socket
 
 
-def _check(path: Path, key: str, value: Any) -> Any:
+def _auto_off(value: Any) -> tuple[int, str | None]:
+    """The timer for a configured value, and a note when it had to be adjusted."""
+    if isinstance(value, bool) or not isinstance(value, int | float) or value < 0:
+        raise _Invalid(
+            f"expected minutes as a number between 0 and {AUTO_OFF_MAX_MINUTES}, "
+            f"got {value!r}"
+        )
+    if value == 0:
+        minutes = 0
+    else:
+        minutes = min(max(5, int(value / 5 + 0.5) * 5), AUTO_OFF_MAX_MINUTES)
+    if minutes == value and isinstance(value, int):
+        return minutes, None
+    return minutes, f"{value!r} is not a valid timer (5-minute steps), using {minutes}"
+
+
+def _check(key: str, value: Any) -> tuple[Any, str | None]:
+    """The usable value for ``key``, and a note when it was adjusted.
+
+    Raises:
+        _Invalid: If the value cannot be used.
+    """
+    if key == "auto_off_minutes":
+        return _auto_off(value)
     if key in _NUMERIC:
         if isinstance(value, bool) or not isinstance(value, int | float):
-            raise ConfigError(f"{path}: {key}: expected a number, got {value!r}")
+            raise _Invalid(f"expected a number, got {value!r}")
         if value < 0:
-            raise ConfigError(f"{path}: {key}: must not be negative, got {value!r}")
-        return float(value)
+            raise _Invalid(f"must not be negative, got {value!r}")
+        return float(value), None
     if key in _INTEGER:
         if isinstance(value, bool) or not isinstance(value, int):
-            raise ConfigError(f"{path}: {key}: expected an integer, got {value!r}")
+            raise _Invalid(f"expected an integer, got {value!r}")
         if value <= 0:
-            raise ConfigError(f"{path}: {key}: must be positive, got {value!r}")
-        return value
-    if key in _STRING:
+            raise _Invalid(f"must be positive, got {value!r}")
+        return value, None
+    if key in _STRING or key == "profile":
         if not isinstance(value, str):
-            raise ConfigError(f"{path}: {key}: expected a string, got {value!r}")
+            raise _Invalid(f"expected a string, got {value!r}")
         if key == "profile" and value not in list_profiles():
-            raise ConfigError(
-                f"{path}: {key}: unknown profile {value!r}, "
-                f"known: {', '.join(list_profiles())}"
+            raise _Invalid(
+                f"unknown profile {value!r}, known: {', '.join(list_profiles())}"
             )
-        return value
-    raise ConfigError(f"{path}: {key}: unknown key")
+        return value, None
+    raise _Invalid("unknown key")
+
+
+def _entries(data: dict[str, Any]) -> list[tuple[str, str, Any]]:
+    """Flatten the file into (shown name, key, value), tables included."""
+    entries: list[tuple[str, str, Any]] = []
+    for key, value in data.items():
+        if key != "printer":
+            entries.append((key, key, value))
+        elif not isinstance(value, dict):
+            entries.append(("printer", "printer", value))
+        else:
+            for sub, subvalue in value.items():
+                known = sub if sub in _PRINTER_TABLE else f"printer.{sub}"
+                entries.append((f"printer.{sub}", known, subvalue))
+    return entries
 
 
 def _read(path: Path) -> dict[str, Any]:
+    """The usable settings of one file; every problem is logged, not raised."""
     try:
         data = tomllib.loads(path.read_text())
-    except tomllib.TOMLDecodeError as exc:
-        raise ConfigError(f"{path}: {exc}") from exc
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        logger.warning("%s: cannot read the file (%s); ignored", path, exc)
+        return {}
     values: dict[str, Any] = {}
-    for key, value in data.items():
-        if key == "printer":
-            if not isinstance(value, dict):
-                raise ConfigError(f"{path}: printer: expected a table")
-            for sub, subvalue in value.items():
-                if sub not in _PRINTER_TABLE:
-                    raise ConfigError(f"{path}: printer.{sub}: unknown key")
-                values[sub] = _check(path, sub, subvalue)
+    for shown, key, value in _entries(data):
+        try:
+            if key == "printer":
+                raise _Invalid("expected a table")
+            values[key], note = _check(key, value)
+        except _Invalid as exc:
+            logger.warning("%s: %s: %s; ignored", path, shown, exc)
             continue
-        values[key] = _check(path, key, value)
+        if note is not None:
+            logger.warning("%s: %s: %s", path, shown, note)
     return values
 
 
@@ -147,9 +194,13 @@ def load_config(
     Returns:
         The merged configuration.
 
+    Problems inside a file (unknown keys, wrong types, out-of-range values,
+    a file that does not parse) are logged as warnings and the affected
+    setting keeps its default.
+
     Raises:
-        ConfigError: On a missing explicit file, an unreadable file, an
-            unknown key, a wrong type, or an out-of-range value.
+        ConfigError: If a file in ``paths`` is missing and ``require_files``
+            is set.
     """
     merged: dict[str, Any] = {}
     for path in default_paths(env) if paths is None else paths:

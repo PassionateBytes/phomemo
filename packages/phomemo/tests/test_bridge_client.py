@@ -32,7 +32,9 @@ from tests.test_bridge_server import FakePrinter
 @pytest.fixture
 async def served(tmp_path: Path) -> AsyncIterator[BridgeConfig]:
     FakePrinter.instances.clear()
-    config = BridgeConfig(socket_path=tmp_path / "bridge.sock", hold_seconds=0.2)
+    config = BridgeConfig(
+        socket_path=tmp_path / "bridge.sock", idle_disconnect_minutes=0.2 / 60
+    )
     server = await start_server(config, printer_factory=FakePrinter)
     try:
         yield config

@@ -76,6 +76,7 @@ install -D -m 644 packaging/systemd/phomemo-bridge.service %{buildroot}%{_unitdi
 install -D -m 644 packaging/systemd/phomemo.sysusers.conf %{buildroot}%{_sysusersdir}/phomemo.conf
 install -D -m 644 packaging/systemd/90-phomemo-bridge.preset %{buildroot}%{_presetdir}/90-phomemo-bridge.preset
 install -D -m 644 packaging/config/bridge.toml %{buildroot}%{_sysconfdir}/phomemo/bridge.toml
+install -D -m 644 packaging/config/phomemo-printer-app.conf %{buildroot}%{_sysconfdir}/phomemo-printer-app.conf
 
 %check
 %make_build -C printer-app test CFLAGS="%{build_cflags}" LDFLAGS="%{build_ldflags}"
@@ -108,6 +109,7 @@ fi
 %{_sysusersdir}/phomemo.conf
 %dir %{_sysconfdir}/phomemo
 %config(noreplace) %{_sysconfdir}/phomemo/bridge.toml
+%config(noreplace) %{_sysconfdir}/phomemo-printer-app.conf
 
 %files -n python3-phomemo -f %{pyproject_files}
 %doc packages/phomemo/README.md

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Bridge daemon: socket server, shared printer link, hold timer."""
+"""Bridge daemon: socket server, shared printer link, idle timer."""
 
 import asyncio
 import contextlib
@@ -22,7 +22,9 @@ import logging
 import signal
 from collections.abc import Callable
 from dataclasses import dataclass, fields, replace
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from bleak.backends.device import BLEDevice
 
@@ -45,9 +47,13 @@ class BridgeConfig:
 
     Attributes:
         socket_path: Unix socket the bridge listens on.
-        address: BLE address of the printer, or ``None`` to discover by name.
         profile: Printer profile name.
-        hold_seconds: Seconds the BLE link stays up after ``close``.
+        idle_disconnect_minutes: Minutes without a command after which the
+            bridge drops the BLE link (it ends earlier when the printer
+            switches off or leaves range); 0 keeps it until then.
+        auto_off_minutes: Auto-off timer the bridge sets on the printer at
+            each new link (multiple of 5, 0 = never switch off); ``None``
+            leaves the printer's setting alone.
         settle_seconds: Cap on the wait for the sheet to seat after insertion.
         completion_timeout: Seconds to wait for the motor stop after a page.
         drain_seconds: Pause after a cancelled transfer so the printer
@@ -60,9 +66,9 @@ class BridgeConfig:
     """
 
     socket_path: Path
-    address: str | None = None
     profile: str = "M08F-A4"
-    hold_seconds: float = 120.0
+    idle_disconnect_minutes: float = 30.0
+    auto_off_minutes: int | None = None
     settle_seconds: float = 3.0
     completion_timeout: float = 300.0
     drain_seconds: float = 1.0
@@ -89,18 +95,39 @@ _PROFILE_FIELDS = frozenset(
 
 
 class Bridge:
-    """State shared by all client sessions: the printer link and its hold timer."""
+    """State shared by all client sessions: the printer link and its idle timer."""
 
     def __init__(self, config: BridgeConfig, printer_factory: PrinterFactory) -> None:
         self.config = config
         self.profile = config.resolved_profile()
         self._factory = printer_factory
-        self._address: str | None = config.address
+        self._address: str | None = None  # last printer used, kept in memory
         self.printer: Printer | None = None
         self.session_active = False
-        self.last_battery: int | None = None  # last charge read, survives the link
+        self._seen: dict[str, dict[str, Any]] = {}
         self._hold_handle: asyncio.TimerHandle | None = None
         self._hold_task: asyncio.Task[None] | None = None
+
+    def remember(self, address: str | None, **values: Any) -> None:
+        """Record values read from the printer at ``address``, with the time.
+
+        ``None`` values (a query that got no answer) keep what was known.
+        """
+        if address is None:
+            return
+        entry = self._seen.setdefault(address, {})
+        entry.update({k: v for k, v in values.items() if v is not None})
+        entry["at"] = datetime.now().isoformat(timespec="seconds")
+
+    def last_seen(self, address: str | None) -> dict[str, Any] | None:
+        """The values last read from the printer at ``address``, if any."""
+        entry = self._seen.get(address) if address is not None else None
+        return dict(entry) if entry else None
+
+    @property
+    def linked_address(self) -> str | None:
+        """Address of the printer the bridge holds or last held a link to."""
+        return self.printer.address if self.printer is not None else None
 
     @property
     def connected(self) -> bool:
@@ -144,6 +171,21 @@ class Bridge:
             self.printer = self._factory(self.profile, self._address)
         await self.printer.connect(discovery_timeout=discovery_timeout)
         logger.info("Printer link up")
+        await self._apply_auto_off(self.printer)
+
+    async def _apply_auto_off(self, printer: Printer) -> None:
+        """Set the configured auto-off timer unless the printer already has it."""
+        wanted = self.config.auto_off_minutes
+        if wanted is None:
+            return
+        try:
+            current = await printer.query_auto_off()
+            if current != wanted:
+                await printer.set_auto_off_timer(wanted)
+                logger.info("Printer auto-off set from %s to %d min", current, wanted)
+            self.remember(printer.address, auto_off_minutes=wanted)
+        except Exception as exc:  # noqa: BLE001, a link problem surfaces at the next command
+            logger.warning("Could not set the printer auto-off: %s", exc)
 
     async def disconnect(self) -> None:
         """Drop the BLE link."""
@@ -153,12 +195,14 @@ class Bridge:
             logger.info("Printer link down")
 
     def start_hold(self) -> None:
-        """Keep the link for ``hold_seconds``, then drop it."""
+        """Keep the link for ``idle_disconnect_minutes``, then drop it."""
         self.cancel_hold()
         if not self.connected:
             return
         loop = asyncio.get_running_loop()
-        self._hold_handle = loop.call_later(self.config.hold_seconds, self._expire_hold)
+        minutes = self.config.idle_disconnect_minutes
+        if minutes > 0:
+            self._hold_handle = loop.call_later(minutes * 60, self._expire_hold)
 
     def _expire_hold(self) -> None:
         self._hold_task = asyncio.ensure_future(self.disconnect())
