@@ -157,8 +157,17 @@ class BridgeClient:
     async def close(self) -> None:
         await self.call({"cmd": "close"})
 
-    async def status(self) -> dict[str, Any]:
-        reply = await self.call({"cmd": "status"})
+    async def status(self, address: str | None = None) -> dict[str, Any]:
+        """Link state and sensors; ``last_seen`` values without a link.
+
+        Args:
+            address: Printer to report on; ``None`` means the linked or
+                last linked one.
+        """
+        obj: dict[str, Any] = {"cmd": "status"}
+        if address is not None:
+            obj["address"] = address
+        reply = await self.call(obj)
         return {k: v for k, v in reply.items() if k not in ("ok", "cmd")}
 
     async def wait_ready(self, settle: float | None = None) -> None:

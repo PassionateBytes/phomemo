@@ -285,16 +285,61 @@ async def test_hold_timer_disconnects_after_hold_seconds(bridge: BridgeConfig) -
 
 
 @pytest.mark.asyncio
-async def test_status_keeps_the_last_battery_reading_while_disconnected(
+async def test_status_without_a_link_reports_the_last_seen_values(
     bridge: BridgeConfig,
 ) -> None:
     client = await _connect(bridge)
-    await client.call({"cmd": "open"})
-    assert (await client.call({"cmd": "status"}))["battery"] == 77
-    printer = _printer()
-    printer.connected = False
+    await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    await client.call({"cmd": "status"})
+    await client.call({"cmd": "info"})
+    _printer().connected = False
     reply = await client.call({"cmd": "status"})
-    assert reply == {"ok": True, "cmd": "status", "connected": False, "battery": 77}
+    seen = reply.pop("last_seen")
+    assert reply == {
+        "ok": True,
+        "cmd": "status",
+        "connected": False,
+        "address": "AA:BB:CC:DD:EE:FF",
+    }
+    assert seen.pop("at")
+    assert seen == {
+        "battery": 77,
+        "lid": "closed",
+        "paper": "present",
+        "firmware": "1.1.3",
+        "serial": "<serial>",
+        "auto_off_minutes": 5,
+    }
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_status_never_linked_has_nothing_last_seen(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    assert await client.call({"cmd": "status"}) == {
+        "ok": True,
+        "cmd": "status",
+        "connected": False,
+    }
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_status_keeps_last_seen_values_per_printer(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open", "address": "AA:BB:CC:00:00:01"})
+    _printer().battery = 40
+    await client.call({"cmd": "status"})
+    await client.call({"cmd": "open", "address": "AA:BB:CC:00:00:02"})
+    _printer().battery = 90
+    await client.call({"cmd": "status"})
+    first = await client.call({"cmd": "status", "address": "AA:BB:CC:00:00:01"})
+    assert first["connected"] is False
+    assert first["linked_to"] == "AA:BB:CC:00:00:02"
+    assert first["last_seen"]["battery"] == 40
+    second = await client.call({"cmd": "status", "address": "AA:BB:CC:00:00:02"})
+    assert second["connected"] is True
+    assert second["battery"] == 90
     await client.close()
 
 
@@ -302,7 +347,7 @@ async def test_status_keeps_the_last_battery_reading_while_disconnected(
 async def test_status_reports_sensors_and_connected_flag(bridge: BridgeConfig) -> None:
     client = await _connect(bridge)
     before = await client.call({"cmd": "status"})
-    assert before == {"ok": True, "cmd": "status", "connected": False, "battery": None}
+    assert before == {"ok": True, "cmd": "status", "connected": False}
     await client.call({"cmd": "open"})
     after = await client.call({"cmd": "status"})
     assert after == {

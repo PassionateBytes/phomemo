@@ -268,7 +268,7 @@ Wire format: one JSON object per line; a message with `"bytes": N` is followed b
 | `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
 | `close` | | ends the session's use of the link; the bridge holds it for `hold_seconds` |
 | `disconnect` | | drops the link now, without the hold |
-| `status` | | `connected`, and when connected `address`, `lid`, `paper`; `battery` is the last charge read (null until the first link). Never connects. |
+| `status` | `address` (optional) | linked: `connected: true`, `address`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
 | `info` | | linked printer's `address`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
 | `auto_off` | `minutes` (optional) | sets the timer when `minutes` is given, then `auto_off_minutes` as the printer reports it; error `not connected` without a link |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |

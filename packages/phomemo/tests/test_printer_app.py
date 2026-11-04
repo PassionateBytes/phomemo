@@ -696,3 +696,19 @@ async def test_idle_status_reports_the_battery_as_a_supply(
     # GNOME Settings draws supply levels only for ink and toner.
     assert "type=ink" in attrs["printer-supply"]
     assert attrs["marker-types"] == "ink"
+
+
+@pytest.mark.parametrize("fake_bridge", [{"hold_seconds": 30}], indirect=True)
+async def test_battery_stays_while_the_link_is_down(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "a4.pwg", 595, 842)
+    attrs = await finish_job(start_job(printer, tmp_path, raster))
+    assert attrs["job-state"] == "completed", attrs
+    await asyncio.sleep(2.1)
+    assert "level=77" in (await printer_attributes(printer, tmp_path))["printer-supply"]
+    printer.bridge.printer.connected = False
+    await asyncio.sleep(2.1)
+    attrs = await printer_attributes(printer, tmp_path)
+    assert "level=77" in attrs["printer-supply"]
+    assert "offline" not in attrs["printer-state-reasons"]

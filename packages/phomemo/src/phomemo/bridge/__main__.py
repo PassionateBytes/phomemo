@@ -70,8 +70,10 @@ _COMMANDS: dict[str, tuple[str, str]] = {
         "show link, sensors and device details",
         "Show whether the bridge holds a link and, when it does, the linked "
         "printer's address, lid and paper sensors, battery, firmware, serial "
-        'number and auto-off timer. Does not connect by itself; run "connect" '
-        "first. With --address, reports whether that printer is the linked one.",
+        "number and auto-off timer. Without a link, shows the values last read "
+        'from that printer under "last_seen", with the time they were read. Does '
+        'not connect by itself; run "connect" first. With --address, reports on '
+        "that printer.",
     ),
     "auto-off": (
         "show or set the auto-off timer",
@@ -186,20 +188,14 @@ def _fail(message: str) -> int:
 
 async def _linked(client: BridgeClient, address: str | None) -> dict | None:
     """The bridge's status when it holds a link to ``address`` (or any printer)."""
-    status = await client.status()
-    if not status["connected"]:
-        return None
-    if address is not None and status.get("address") != address:
-        return None
-    return status
+    status = await client.status(address)
+    return status if status["connected"] else None
 
 
 async def _status(client: BridgeClient, address: str | None) -> dict:
-    status = await client.status()
+    status = await client.status(address)
     if not status["connected"]:
         return status
-    if address is not None and status.get("address") != address:
-        return {"connected": False, "address": address, "linked_to": status["address"]}
     info = await client.info()
     for key in ("firmware", "serial", "auto_off_minutes"):
         status[key] = info[key]

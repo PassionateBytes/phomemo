@@ -95,7 +95,7 @@ async def test_status_without_a_link_says_so(
 ) -> None:
     code, out, _ = await run(served, capsys, "status")
     assert code == 0
-    assert json.loads(out) == {"connected": False, "battery": None}
+    assert json.loads(out) == {"connected": False}
 
 
 @pytest.mark.asyncio
@@ -150,3 +150,19 @@ async def test_auto_off_needs_a_link(
     code, _, err = await run(served, capsys, "auto-off")
     assert code == 1
     assert "not connected" in err
+
+
+@pytest.mark.asyncio
+async def test_status_after_disconnect_shows_last_seen_values(
+    served: BridgeConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
+    await run(served, capsys, "--address", ADDRESS, "connect")
+    await run(served, capsys, "status")
+    await run(served, capsys, "disconnect")
+    code, out, _ = await run(served, capsys, "status")
+    reply = json.loads(out)
+    assert code == 0
+    assert reply["connected"] is False
+    assert reply["address"] == ADDRESS
+    assert reply["last_seen"]["battery"] == 77
+    assert reply["last_seen"]["firmware"] == "1.1.3"

@@ -22,7 +22,9 @@ import logging
 import signal
 from collections.abc import Callable
 from dataclasses import dataclass, fields, replace
+from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from bleak.backends.device import BLEDevice
 
@@ -100,9 +102,30 @@ class Bridge:
         self._address: str | None = None  # last printer used, kept in memory
         self.printer: Printer | None = None
         self.session_active = False
-        self.last_battery: int | None = None  # last charge read, survives the link
+        self._seen: dict[str, dict[str, Any]] = {}
         self._hold_handle: asyncio.TimerHandle | None = None
         self._hold_task: asyncio.Task[None] | None = None
+
+    def remember(self, address: str | None, **values: Any) -> None:
+        """Record values read from the printer at ``address``, with the time.
+
+        ``None`` values (a query that got no answer) keep what was known.
+        """
+        if address is None:
+            return
+        entry = self._seen.setdefault(address, {})
+        entry.update({k: v for k, v in values.items() if v is not None})
+        entry["at"] = datetime.now().isoformat(timespec="seconds")
+
+    def last_seen(self, address: str | None) -> dict[str, Any] | None:
+        """The values last read from the printer at ``address``, if any."""
+        entry = self._seen.get(address) if address is not None else None
+        return dict(entry) if entry else None
+
+    @property
+    def linked_address(self) -> str | None:
+        """Address of the printer the bridge holds or last held a link to."""
+        return self.printer.address if self.printer is not None else None
 
     @property
     def connected(self) -> bool:
@@ -155,10 +178,10 @@ class Bridge:
             return
         try:
             current = await printer.query_auto_off()
-            if current == wanted:
-                return
-            await printer.set_auto_off_timer(wanted)
-            logger.info("Printer auto-off set from %s to %d min", current, wanted)
+            if current != wanted:
+                await printer.set_auto_off_timer(wanted)
+                logger.info("Printer auto-off set from %s to %d min", current, wanted)
+            self.remember(printer.address, auto_off_minutes=wanted)
         except Exception as exc:  # noqa: BLE001, a link problem surfaces at the next command
             logger.warning("Could not set the printer auto-off: %s", exc)
 

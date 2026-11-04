@@ -268,10 +268,7 @@ class Session:
     async def _cmd_info(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         printer = await self._answering_printer()
         info = await printer.query_device_info(timeout=1.0)
-        if info.battery is not None:
-            self._bridge.last_battery = info.battery
-        return {
-            "address": printer.address,
+        values = {
             "firmware": info.firmware,
             "serial": info.serial,
             "battery": info.battery,
@@ -279,6 +276,8 @@ class Session:
             "lid": info.lid.value if info.lid is not None else None,
             "paper": info.paper.value if info.paper is not None else None,
         }
+        self._bridge.remember(printer.address, **values)
+        return {"address": printer.address, **values}
 
     async def _cmd_auto_off(
         self, obj: dict[str, Any], _payload: bytes
@@ -293,30 +292,42 @@ class Session:
                 await printer.set_auto_off_timer(minutes)
             except ValueError as exc:
                 raise CommandError(str(exc)) from exc
-        return {"auto_off_minutes": await printer.query_auto_off(timeout=1.0)}
+        current = await printer.query_auto_off(timeout=1.0)
+        self._bridge.remember(printer.address, auto_off_minutes=current)
+        return {"auto_off_minutes": current}
 
-    async def _cmd_status(
-        self, _obj: dict[str, Any], _payload: bytes
-    ) -> dict[str, Any]:
+    async def _cmd_status(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
+        """Live sensors of the linked printer, else what was last read.
+
+        With ``address``, reports on that printer: live when it is the
+        linked one, otherwise its last-seen values and the printer the
+        bridge is linked to instead. Never brings a link up.
+        """
         bridge = self._bridge
-        if not bridge.connected or bridge.printer is None:
-            return {"connected": False, "battery": bridge.last_battery}
-        address = bridge.printer.address
-        printer = await self._answering_printer()
-        lid = await printer.query_lid(timeout=1.0)
-        paper = await printer.query_paper(timeout=1.0)
-        battery = await printer.query_battery(timeout=1.0)
-        if battery is not None:
-            bridge.last_battery = battery
-        else:
-            battery = bridge.last_battery
-        return {
-            "connected": True,
-            "address": address,
-            "lid": lid.value if lid is not None else None,
-            "paper": paper.value if paper is not None else None,
-            "battery": battery,
-        }
+        address = obj.get("address")
+        linked = bridge.connected and bridge.printer is not None
+        if linked and address in (None, bridge.linked_address):
+            printer = await self._answering_printer()
+            lid = await printer.query_lid(timeout=1.0)
+            paper = await printer.query_paper(timeout=1.0)
+            battery = await printer.query_battery(timeout=1.0)
+            values = {
+                "lid": lid.value if lid is not None else None,
+                "paper": paper.value if paper is not None else None,
+                "battery": battery,
+            }
+            bridge.remember(printer.address, **values)
+            return {"connected": True, "address": printer.address, **values}
+        target = address if address is not None else bridge.linked_address
+        reply: dict[str, Any] = {"connected": False}
+        if target is not None:
+            reply["address"] = target
+        if linked and target != bridge.linked_address:
+            reply["linked_to"] = bridge.linked_address
+        seen = bridge.last_seen(target)
+        if seen is not None:
+            reply["last_seen"] = seen
+        return reply
 
     async def _cmd_identify(
         self, _obj: dict[str, Any], _payload: bytes
