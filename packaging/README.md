@@ -7,7 +7,7 @@ format-neutral directories; each package format gets its own directory.
 | Directory | Contents | Used by |
 |-----------|----------|---------|
 | `systemd/` | System units, the service user (sysusers), presets that enable the units on installation | `make install`, `rpm/` |
-| `config/` | Default configuration installed to `/etc/phomemo/` | `make install`, `rpm/` |
+| `config/` | Default configuration: `bridge.toml` to `/etc/phomemo/`, `phomemo-printer-app.conf` to `/etc/` | `make install`, `rpm/` |
 | `rpm/` | Spec files: `phomemo-driver.spec` (the driver and the `python3-phomemo` subpackage), `python-bleak.spec` (bleak, which Fedora lacks) | COPR (through `.copr/Makefile`), CI, `make srpm` |
 
 The Python package itself is published to PyPI from `packages/phomemo/` by

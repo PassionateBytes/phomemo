@@ -44,7 +44,11 @@ phomemo-bridge server
 phomemo-printer-app server -o log-level=info
 ```
 
-The server listens on port 8000 for the first user on a machine (the log names the port, `-o server-port=N` pins it) and serves a web interface at `http://localhost:8000/`. It binds all interfaces so other machines can print; `-o listen-hostname=localhost` keeps it local. Queue management through the web interface is limited to localhost by default.
+The server tries port 8000 + (user ID % 1000), so 8000 for the root service, and counts up past ports in use; the log names the port it got. It serves a web interface at `http://localhost:8000/` and binds all interfaces so other machines can print. Changing settings through the web interface is limited to this machine by default.
+
+### Configuration
+
+The service reads `/etc/phomemo-printer-app.conf` (PAPPL's `name=value` format, commented; the packaged file sets `log-level=info`): `server-port` pins the port, `listen-hostname=localhost` keeps the server local, `server-options` switches web interface pages and TLS, `auth-service` and `admin-group` allow changes from other machines. Each option can also be given as `-o name=value` on the command line, which wins over the file; `~/.config/phomemo-printer-app.conf` serves a server run by hand. Restart the service after a change. The bridge reads `/etc/phomemo/bridge.toml` (see the [library README](../packages/phomemo/README.md#bridge-daemon)).
 
 ## Register the printer
 

@@ -67,6 +67,8 @@ install: build
 	install -m 644 packaging/systemd/phomemo.sysusers.conf $(DESTDIR)$(SYSCONF)/sysusers.d/phomemo.conf
 	test -e $(DESTDIR)$(SYSCONF)/phomemo/bridge.toml || \
 	  install -m 644 packaging/config/bridge.toml $(DESTDIR)$(SYSCONF)/phomemo/bridge.toml
+	test -e $(DESTDIR)$(SYSCONF)/phomemo-printer-app.conf || \
+	  install -m 644 packaging/config/phomemo-printer-app.conf $(DESTDIR)$(SYSCONF)/phomemo-printer-app.conf
 ifeq ($(DESTDIR),)
 	systemd-sysusers
 	systemctl daemon-reload
@@ -82,7 +84,7 @@ uninstall:
 	rm -f $(PREFIX)/bin/phomemo-bridge $(PREFIX)/bin/phomemo-printer-app
 	rm -rf $(VENV)
 	systemctl daemon-reload
-	@echo "kept: $(SYSCONF)/phomemo/bridge.toml and the printer application's state in /var/lib"
+	@echo "kept: $(SYSCONF)/phomemo/bridge.toml, $(SYSCONF)/phomemo-printer-app.conf and the printer application's state in /var/lib"
 
 check:
 	uv run ruff check .
