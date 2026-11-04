@@ -21,6 +21,7 @@
 #include "phomemo.h"
 
 #include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -55,6 +56,15 @@ main(void)
   assert(!strcmp(phomemo_content_name(PAPPL_CONTENT_PHOTO), "photo"));
 
   char err[256] = "";
+  unsetenv("PHOMEMO_MODELS_DIR");
+  assert(phomemo_models_load(NULL, err, sizeof(err)) == 1);
+  const phomemo_model_t *embedded = phomemo_model_find("m08f");
+  assert(embedded);
+  assert(!strcmp(embedded->make_and_model, "Phomemo M08F"));
+  for (int i = 0; i < 3; i++)
+    assert(embedded->icon_data[i] && embedded->icon_len[i] > 100 &&
+           !embedded->icons[i][0]);
+
   assert(phomemo_models_load("../models", err, sizeof(err)) == 1);
   const phomemo_model_t *m08f = phomemo_model_find("m08f");
   assert(m08f);
@@ -67,7 +77,7 @@ main(void)
   assert(m08f->num_media == 2 && m08f->default_media == 0);
   assert(!strcmp(m08f->media[0], "iso_a4_210x297mm"));
   assert(!strcmp(m08f->media[1], "iso_a5_148x210mm"));
-  assert(strstr(m08f->icons[2], "/m08f/icon-512.png"));
+  assert(strstr(m08f->icons[2], "/m08f/icon-512.png") && !m08f->icon_data[2]);
   assert(phomemo_model_for_device_id("MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;") ==
          m08f);
   assert(!phomemo_model_for_device_id("MFG:Phomemo;MDL:Q30;"));

@@ -148,8 +148,12 @@ phomemo_driver_cb(pappl_system_t *system, const char *driver_name,
     return false;
 
   for (int i = 0; i < 3; i++)
+  {
+    data->icons[i].data = model->icon_data[i];
+    data->icons[i].datalen = model->icon_len[i];
     snprintf(data->icons[i].filename, sizeof(data->icons[i].filename), "%s",
              model->icons[i]);
+  }
 
   data->testpage_cb = phomemo_testpage_cb;
   data->identify_cb = phomemo_identify_cb;

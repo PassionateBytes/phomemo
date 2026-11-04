@@ -88,11 +88,9 @@ def test_wheel_and_sdist_carry_the_model_descriptions(tmp_path: Path) -> None:
     assert any(m.endswith("src/phomemo/models/m08f/model.json") for m in members)
 
 
-def test_spec_builds_for_and_ships_the_system_model_directory() -> None:
+def test_spec_installs_no_model_directory() -> None:
     spec = (REPO / "packaging" / "rpm" / "phomemo-driver.spec").read_text()
-    assert "%make_build -C src/printer-app PREFIX=%{_prefix}" in spec
-    assert "cp -a src/models/. %{buildroot}%{_datadir}/phomemo/models/" in spec
-    assert "%{_datadir}/phomemo/" in spec.split("%files -n python3-phomemo")[1]
+    assert "phomemo/models" not in spec
 
 
 def test_spec_declares_the_bundled_cjson() -> None:
@@ -105,7 +103,6 @@ def test_spec_declares_the_bundled_cjson() -> None:
     assert f"Provides:       bundled(cjson) = {version}" in spec
 
 
-def test_make_install_installs_the_model_directory() -> None:
+def test_make_install_installs_no_model_directory() -> None:
     makefile = (REPO / "Makefile").read_text()
-    assert "$(MAKE) -C src/printer-app PREFIX=$(PREFIX)" in makefile
-    assert "cp -a src/models/. $(DESTDIR)$(PREFIX)/share/phomemo/models/" in makefile
+    assert "phomemo/models" not in makefile

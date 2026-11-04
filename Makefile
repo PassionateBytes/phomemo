@@ -47,7 +47,7 @@ VENV       = $(PREFIX)/lib/phomemo
 .PHONY: build install uninstall check dist tarball srpm bump tag clean
 
 build:
-	$(MAKE) -C src/printer-app PREFIX=$(PREFIX)
+	$(MAKE) -C src/printer-app
 
 # The Python package goes into its own virtual environment under PREFIX
 # (system Pythons refuse direct installs); the units point at PREFIX.
@@ -57,8 +57,6 @@ install: build
 	$(PYTHON) -m venv --clear $(DESTDIR)$(VENV)
 	$(DESTDIR)$(VENV)/bin/pip install --quiet --upgrade pip
 	$(DESTDIR)$(VENV)/bin/pip install --quiet ./src/phomemo
-	install -d $(DESTDIR)$(PREFIX)/share/phomemo/models
-	cp -a src/models/. $(DESTDIR)$(PREFIX)/share/phomemo/models/
 	install -d $(DESTDIR)$(PREFIX)/bin
 	ln -sf $(VENV)/bin/phomemo-bridge $(DESTDIR)$(PREFIX)/bin/phomemo-bridge
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(PRESETDIR) \
@@ -84,7 +82,7 @@ uninstall:
 	rm -f $(PRESETDIR)/90-phomemo-bridge.preset $(PRESETDIR)/90-phomemo-printer-app.preset
 	rm -f $(SYSCONF)/sysusers.d/phomemo.conf
 	rm -f $(PREFIX)/bin/phomemo-bridge $(PREFIX)/bin/phomemo-printer-app
-	rm -rf $(VENV) $(PREFIX)/share/phomemo
+	rm -rf $(VENV)
 	systemctl daemon-reload
 	@echo "kept: $(SYSCONF)/phomemo/bridge.toml, $(SYSCONF)/phomemo-printer-app.conf and the printer application's state in /var/lib"
 

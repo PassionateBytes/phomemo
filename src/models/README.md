@@ -36,13 +36,15 @@ m08f/
 A description with a missing or mistyped field is rejected with the file and
 the field named.
 
-## Where they are read from
+## How the parts get them
 
-- Library: `PHOMEMO_MODELS_DIR`, else the copy shipped in the Python package,
-  else this directory in a source checkout, else `/usr/share/phomemo/models`.
-- Printer application: `PHOMEMO_MODELS_DIR`, else the directory chosen at
-  build time (`$(PREFIX)/share/phomemo/models`; the RPM installs to
-  `/usr/share/phomemo/models`).
+- Library: a hatch build hook copies this directory into the wheel and the
+  sdist as package data. At import it reads `PHOMEMO_MODELS_DIR` when set,
+  else that package copy, else this directory in a source checkout.
+- Printer application: `embed-models.sh` builds every description and its
+  icons into the binary (`models_data.c`, generated at build time).
+  `PHOMEMO_MODELS_DIR` set at start replaces the built-in descriptions with
+  the directories found there, for trying out a model without a rebuild.
 
 ## Adding a model
 

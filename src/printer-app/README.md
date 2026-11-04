@@ -118,7 +118,8 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 | File | Role |
 |------|------|
 | `main.c` | Driver table built from the model descriptions, auto-add rule, `papplMainloop` entry point. |
-| `models.c` | Reads the model descriptions (`PHOMEMO_MODELS_DIR`, else `$(DATADIR)/phomemo/models` as built). |
+| `models.c` | The model table: the built-in descriptions, or the directories under `PHOMEMO_MODELS_DIR` when set. |
+| `embed-models.sh` | Builds `../models/*` (description and icons) into `models_data.c` at build time. |
 | `device.c` | The `phomemo://` device scheme over the bridge socket, status mapping. |
 | `driver.c` | Printer capabilities from the model (media, resolution, margins, icons) plus `phomemo-tone`, and option mapping helpers. |
 | `job.c` | Raster callbacks: wait for a sheet, stream rows, finish the page, surface errors. |
