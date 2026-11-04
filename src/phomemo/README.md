@@ -231,6 +231,7 @@ Profile fields beyond the BLE UUIDs:
 
 ```bash
 phomemo-bridge server                     # daemon; socket in $XDG_RUNTIME_DIR/phomemo-bridge.sock
+phomemo-bridge -V                         # version
 phomemo-bridge devices                    # list printers in range
 phomemo-bridge connect                    # bring the link up (dropped after idle_disconnect_minutes)
 phomemo-bridge status                     # link, sensors, battery, firmware, serial, auto-off

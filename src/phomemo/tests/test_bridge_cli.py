@@ -81,3 +81,19 @@ def test_commands_without_a_printer_take_no_address(command: str) -> None:
 def test_address_is_no_longer_a_global_option() -> None:
     with pytest.raises(SystemExit):
         _parser().parse_args(["-a", "AA:BB:CC:DD:EE:FF", "connect"])
+
+
+@pytest.mark.parametrize("flag", ["-V", "--version"])
+def test_version_flag_prints_the_package_version(
+    flag: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from importlib.metadata import version
+
+    with pytest.raises(SystemExit) as exit_info:
+        _parser().parse_args([flag])
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out.strip() == f"phomemo-bridge {version('phomemo')}"
+
+
+def test_dash_v_still_means_verbose() -> None:
+    assert _parser().parse_args(["-v", "status"]).verbose is True

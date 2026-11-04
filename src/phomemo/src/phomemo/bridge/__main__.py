@@ -26,6 +26,7 @@ import json
 import logging
 import sys
 import textwrap
+from importlib.metadata import version
 from pathlib import Path
 
 from phomemo.bridge.client import MEDIA, QUALITY, BridgeClient, BridgeError
@@ -114,6 +115,13 @@ def _parser() -> argparse.ArgumentParser:
         "--config", type=Path, help="read this TOML file instead of the defaults"
     )
     ap.add_argument("-v", "--verbose", action="store_true", help="debug logging")
+    ap.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version=f"%(prog)s {version('phomemo')}",
+        help="print the version and exit",
+    )
     ap.set_defaults(address=None)
     sub = ap.add_subparsers(dest="command", required=True, metavar="COMMAND")
 
