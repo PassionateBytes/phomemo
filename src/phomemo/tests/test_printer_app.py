@@ -375,7 +375,9 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
     assert attrs["printer-icons"].count("http") == 3
     assert attrs["phomemo-tone-default"] == "auto"
     assert attrs["printer-firmware-name"].startswith("phomemo-printer-app,")
-    assert attrs["printer-firmware-string-version"].startswith("0.1.0,")
+    header = (REPO_ROOT / "src" / "printer-app" / "phomemo.h").read_text()
+    version = re.search(r'#define PHOMEMO_VERSION "([^"]+)"', header).group(1)
+    assert attrs["printer-firmware-string-version"].startswith(f"{version},")
 
 
 PRINT_JOB_TEST = """{{
