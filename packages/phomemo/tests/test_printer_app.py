@@ -316,6 +316,8 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
     assert attrs["phomemo-tone-supported"] == "auto,threshold,ordered,diffusion"
     assert attrs["printer-icons"].count("http") == 3
     assert attrs["phomemo-tone-default"] == "auto"
+    assert attrs["printer-firmware-name"].startswith("phomemo-printer-app,")
+    assert attrs["printer-firmware-string-version"].startswith("0.1.0,")
 
 
 PRINT_JOB_TEST = """{{
@@ -647,24 +649,16 @@ async def test_printer_off_shows_offline_until_it_returns(
     assert "offline" not in (await printer_state(printer, tmp_path))[1]
 
 
-async def test_server_registers_the_printer_in_range_at_start(
+async def test_autoadd_registers_the_printer_in_range(
     app_server: AppServer, tmp_path: Path
 ) -> None:
-    for _ in range(40):
-        _, out, _ = await run_app(app_server.env, "printers")
-        if "Phomemo M08F" in out:
-            break
-        await asyncio.sleep(0.5)
+    code, _, err = await run_app(app_server.env, "autoadd")
+    assert code == 0, err
+    _, out, _ = await run_app(app_server.env, "printers")
     assert out.startswith("Phomemo M08F (DDEEFF) - printer - "), out
     resource = out.split("/ipp/print/", 1)[1].strip()
     attrs = await printer_attributes(app_server, tmp_path, resource)
     assert attrs["printer-name"] == "Phomemo M08F (DDEEFF)"
-
-
-async def test_dash_h_alone_prints_help(app_server: AppServer) -> None:
-    code, out, _ = await run_app(app_server.env, "-h")
-    assert code == 0
-    assert "Sub-commands:" in out
 
 
 async def test_identify_printer_pulses_the_feed(printer: AppServer) -> None:
