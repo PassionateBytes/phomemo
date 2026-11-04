@@ -32,7 +32,13 @@
 #drain_seconds = 1
 
 [printer]
-# BLE address of the printer; without it the bridge takes the first M08F it
-# finds by name.
+# BLE address of the printer. Without it the bridge uses the printer the
+# printer application asks for, else the one linked last, else the only M08F a
+# scan finds (several in range: it refuses and lists them).
 #address = "AA:BB:CC:DD:EE:FF"
 #profile = "M08F-A4"
+
+# Auto-off timer the bridge sets on the printer at each new link, in minutes:
+# a multiple of 5 up to 1275, 0 = never switch off. An invalid value is logged
+# and replaced by 5.
+#auto_off_minutes = 5

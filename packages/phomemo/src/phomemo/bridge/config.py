@@ -16,6 +16,7 @@
 
 """Bridge configuration: TOML files layered under environment overrides."""
 
+import logging
 import os
 import tomllib
 from collections.abc import Mapping
@@ -25,7 +26,10 @@ from typing import Any
 
 import phomemo.profiles  # noqa: F401, registers the built-in profiles
 from phomemo.bridge.server import BridgeConfig
+from phomemo.printer import AUTO_OFF_MAX_MINUTES
 from phomemo.registry import list_profiles
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_CONFIG = Path("/etc/phomemo/bridge.toml")
 SYSTEM_SOCKET = Path("/run/phomemo/bridge.sock")
@@ -42,7 +46,9 @@ _NUMERIC = {
 }
 _INTEGER = {"band_height", "dpi", "print_width_px"}
 _STRING = {"socket_path", "address", "profile"}
-_PRINTER_TABLE = {"address", "profile"}
+_PRINTER_TABLE = {"address", "profile", "auto_off_minutes"}
+AUTO_OFF_DEFAULT = 5
+AUTO_OFF_MAX = AUTO_OFF_MAX_MINUTES
 
 
 class ConfigError(ValueError):
@@ -83,7 +89,28 @@ def default_socket(env: Mapping[str, str], system_socket: Path | None = None) ->
     return Path(runtime) / SOCKET_NAME if runtime else system_socket
 
 
+def _auto_off(path: Path, value: Any) -> int:
+    valid = (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and 0 <= value <= AUTO_OFF_MAX
+        and value % 5 == 0
+    )
+    if valid:
+        return value
+    logger.warning(
+        "%s: auto_off_minutes: %r is not a multiple of 5 between 0 and %d, using %d",
+        path,
+        value,
+        AUTO_OFF_MAX,
+        AUTO_OFF_DEFAULT,
+    )
+    return AUTO_OFF_DEFAULT
+
+
 def _check(path: Path, key: str, value: Any) -> Any:
+    if key == "auto_off_minutes":
+        return _auto_off(path, value)
     if key in _NUMERIC:
         if isinstance(value, bool) or not isinstance(value, int | float):
             raise ConfigError(f"{path}: {key}: expected a number, got {value!r}")

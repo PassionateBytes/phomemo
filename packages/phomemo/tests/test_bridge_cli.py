@@ -34,3 +34,21 @@ def test_old_names_are_gone() -> None:
         _parser().parse_args(["serve"])
     with pytest.raises(SystemExit):
         _parser().parse_args(["discover"])
+
+
+def test_every_command_has_a_summary_and_a_description() -> None:
+    parser = _parser()
+    sub = next(a for a in parser._actions if a.dest == "command")
+    summaries = {c.dest: c.help for c in sub._choices_actions}
+    for name, command in sub.choices.items():
+        assert summaries.get(name), name
+        assert command.description and len(command.description) > 40, name
+
+
+def test_link_and_device_commands_parse() -> None:
+    parser = _parser()
+    args = parser.parse_args(["-a", "AA:BB:CC:DD:EE:FF", "connect"])
+    assert (args.command, args.address) == ("connect", "AA:BB:CC:DD:EE:FF")
+    assert parser.parse_args(["disconnect"]).command == "disconnect"
+    assert parser.parse_args(["auto-off"]).minutes is None
+    assert parser.parse_args(["auto-off", "15"]).minutes == 15

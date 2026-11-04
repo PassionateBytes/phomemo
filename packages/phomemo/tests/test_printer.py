@@ -29,6 +29,7 @@ from phomemo.events import (
     MotorStopEvent,
     PaperEvent,
     PaperState,
+    TimerEvent,
 )
 from phomemo.printer import PrintAborted, Printer, SheetRanOut
 from phomemo.protocol import QueryCommand
@@ -624,3 +625,75 @@ async def test_lid_opened_during_transfer_aborts_and_pads() -> None:
             bytes(_ROW * 600), height=600, completion_timeout=5.0
         )
     assert len(rec.stream) == _PREFIX + _HEADER + 256 * _ROW
+
+
+@pytest.mark.asyncio
+async def test_query_auto_off_returns_the_timer_in_minutes() -> None:
+    printer = _make_printer()
+
+    async def answer() -> None:
+        await asyncio.sleep(0.01)
+        printer._dispatch_event(TimerEvent(kind=EventKind.DEVICE_TIMER, value=1))
+
+    asyncio.create_task(answer())
+    assert await printer.query_auto_off(timeout=0.5) == 5
+
+
+@pytest.mark.asyncio
+async def test_query_auto_off_is_none_when_the_printer_stays_silent() -> None:
+    printer = _make_printer()
+    assert await printer.query_auto_off(timeout=0.05) is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("minutes", [-5, 7, 1280])
+async def test_set_auto_off_rejects_values_the_timer_cannot_hold(minutes: int) -> None:
+    printer = _make_printer()
+    with pytest.raises(ValueError, match="multiple of 5 between 0 and 1275"):
+        await printer.set_auto_off_timer(minutes)
+
+
+@pytest.mark.asyncio
+async def test_connect_by_name_remembers_the_address_it_found(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    device = _fake_device()
+    scans = 0
+    resolved: list[str] = []
+
+    async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
+        nonlocal scans
+        scans += 1
+        return [device]
+
+    async def fake_find(address: str, timeout: float) -> BLEDevice | None:
+        resolved.append(address)
+        return device
+
+    monkeypatch.setattr(printer_module, "discover", fake_discover)
+    monkeypatch.setattr(
+        printer_module.BleakScanner, "find_device_by_address", fake_find
+    )
+    printer = _make_printer()
+    await printer.connect()
+    assert printer.address == _MAC
+    await printer.connect()
+    assert scans == 1
+    assert resolved == [_MAC]
+
+
+@pytest.mark.asyncio
+async def test_connect_by_name_refuses_when_several_printers_answer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    first = BLEDevice(address="AA:BB:CC:00:00:01", name="M08F", details=None)
+    second = BLEDevice(address="AA:BB:CC:00:00:02", name="M08F", details=None)
+
+    async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
+        return [first, second]
+
+    monkeypatch.setattr(printer_module, "discover", fake_discover)
+    printer = _make_printer()
+    with pytest.raises(ConnectionError, match="AA:BB:CC:00:00:01, AA:BB:CC:00:00:02"):
+        await printer.connect()
+    assert printer.address is None

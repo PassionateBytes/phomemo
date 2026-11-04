@@ -58,6 +58,9 @@ class FakePrinter:
         self.print_started = asyncio.Event()
         self.release_print: asyncio.Event | None = None
         self.rows_sent = 0
+        self.auto_off: int | None = 10
+        self.auto_off_writes: list[int] = []
+        self.auto_off_error: Exception | None = None
         FakePrinter.instances.append(self)
 
     @property
@@ -91,7 +94,7 @@ class FakePrinter:
             paper=self.paper,
             firmware="1.1.3",
             serial="<serial>",
-            auto_off_minutes=10,
+            auto_off_minutes=self.auto_off,
         )
 
     @property
@@ -100,6 +103,17 @@ class FakePrinter:
 
     async def query_battery(self, timeout: float = 1.0) -> int | None:
         return None if self.muted else self.battery
+
+    async def query_auto_off(self, timeout: float = 1.0) -> int | None:
+        return None if self.muted else self.auto_off
+
+    async def set_auto_off_timer(self, minutes: int) -> None:
+        if self.auto_off_error is not None:
+            raise self.auto_off_error
+        if not 0 <= minutes <= 1275 or minutes % 5:
+            raise ValueError(f"Timer must be a multiple of 5, got {minutes}")
+        self.auto_off_writes.append(minutes)
+        self.auto_off = minutes
 
     async def check_ready(self, timeout: float = 1.0) -> tuple[bool, str]:
         if self.muted:
@@ -292,6 +306,7 @@ async def test_status_reports_sensors_and_connected_flag(bridge: BridgeConfig) -
         "ok": True,
         "cmd": "status",
         "connected": True,
+        "address": None,
         "lid": "closed",
         "paper": "present",
         "battery": 77,
@@ -530,6 +545,7 @@ async def test_open_with_printer_off_is_ok_and_not_connected(tmp_path: Path) -> 
             "ok": True,
             "cmd": "open",
             "connected": False,
+            "reason": "Device not found",
         }
         await client.close()
     finally:
@@ -896,4 +912,148 @@ async def test_identify_reconnects_a_silent_printer(bridge: BridgeConfig) -> Non
     assert (await client.call({"cmd": "identify"}))["ok"]
     assert printer.connects == 2
     assert len(printer.feeds) == 3
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_sets_the_configured_auto_off(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    assert (await client.call({"cmd": "open"}))["connected"] is True
+    assert _printer().auto_off_writes == [5]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_leaves_a_matching_auto_off_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    FakePrinter.instances.clear()
+    config = BridgeConfig(socket_path=tmp_path / "b.sock", auto_off_minutes=10)
+    server = await start_server(config, printer_factory=FakePrinter)
+    try:
+        client = await _connect(config)
+        await client.call({"cmd": "open"})
+        assert _printer().auto_off_writes == []
+        await client.close()
+    finally:
+        server.close()
+        server.close_clients()
+
+
+@pytest.mark.asyncio
+async def test_reused_link_does_not_rewrite_auto_off(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    _printer().auto_off = 10
+    await client.call({"cmd": "open"})
+    assert _printer().auto_off_writes == [5]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_failed_auto_off_write_does_not_fail_the_connect(
+    bridge: BridgeConfig, caplog: pytest.LogCaptureFixture
+) -> None:
+    FakePrinter.instances.clear()
+    client = await _connect(bridge)
+
+    original = FakePrinter.__init__
+
+    def failing(self: FakePrinter, *args: Any) -> None:
+        original(self, *args)
+        self.auto_off_error = OSError("write failed")
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(FakePrinter, "__init__", failing)
+        with caplog.at_level("WARNING"):
+            reply = await client.call({"cmd": "open"})
+    assert reply["connected"] is True
+    assert "auto-off" in caplog.text
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_info_reports_the_device_details(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    reply = await client.call({"cmd": "info"})
+    assert reply["ok"] is True
+    assert reply["address"] == "AA:BB:CC:DD:EE:FF"
+    assert reply["firmware"] == "1.1.3"
+    assert reply["serial"] == "<serial>"
+    assert reply["battery"] == 77
+    assert reply["auto_off_minutes"] == 5
+    assert reply["lid"] == "closed"
+    assert reply["paper"] == "present"
+    await client.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cmd", ["info", "auto_off"])
+async def test_device_commands_need_a_link(bridge: BridgeConfig, cmd: str) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": cmd})
+    assert reply == {"ok": False, "cmd": cmd, "error": "not connected"}
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_auto_off_reads_and_sets_the_timer(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    assert (await client.call({"cmd": "auto_off"}))["auto_off_minutes"] == 5
+    reply = await client.call({"cmd": "auto_off", "minutes": 30})
+    assert reply["auto_off_minutes"] == 30
+    assert _printer().auto_off_writes == [5, 30]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_auto_off_rejects_an_invalid_value(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    reply = await client.call({"cmd": "auto_off", "minutes": 7})
+    assert reply["ok"] is False
+    assert "multiple of 5" in reply["error"]
+    assert _printer().auto_off_writes == [5]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_disconnect_drops_the_link_without_a_hold(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open"})
+    assert (await client.call({"cmd": "disconnect"}))["ok"] is True
+    assert not _printer().connected
+    await client.close()
+    await asyncio.sleep(0.05)
+    assert not _printer().connected
+
+
+@pytest.mark.asyncio
+async def test_status_names_the_linked_printer(bridge: BridgeConfig) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    assert (await client.call({"cmd": "status"}))["address"] == "AA:BB:CC:DD:EE:FF"
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_reports_why_the_printer_is_not_reachable(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    FakePrinter.instances.clear()
+    original = FakePrinter.__init__
+
+    def unreachable(self: FakePrinter, *args: Any) -> None:
+        original(self, *args)
+        self.reachable = False
+        self.connect_error = "Several printers in range (A, B); choose one by address"
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(FakePrinter, "__init__", unreachable)
+        reply = await client.call({"cmd": "open"})
+    assert reply["connected"] is False
+    assert reply["reason"].startswith("Several printers in range")
     await client.close()

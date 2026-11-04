@@ -118,3 +118,29 @@ def test_default_socket_prefers_the_system_bridge_when_present(tmp_path: Path) -
     assert default_socket(env, system) == tmp_path / "run" / "phomemo-bridge.sock"
     system.touch()
     assert default_socket(env, system) == system
+
+
+def test_config_auto_off_defaults_to_five_minutes() -> None:
+    assert load_config(paths=[], env={}).auto_off_minutes == 5
+
+
+@pytest.mark.parametrize("minutes", [0, 15, 60, 1275])
+def test_config_accepts_auto_off_in_five_minute_steps(
+    tmp_path: Path, minutes: int
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text(f"[printer]\nauto_off_minutes = {minutes}\n")
+    assert load_config(paths=[path], env={}).auto_off_minutes == minutes
+
+
+@pytest.mark.parametrize("value", ["7", "-5", "1280", '"ten"', "true", "10.0"])
+def test_config_invalid_auto_off_logs_and_falls_back_to_five(
+    tmp_path: Path, value: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text(f"[printer]\nauto_off_minutes = {value}\n")
+    with caplog.at_level("WARNING"):
+        config = load_config(paths=[path], env={})
+    assert config.auto_off_minutes == 5
+    assert "auto_off_minutes" in caplog.text
+    assert "using 5" in caplog.text

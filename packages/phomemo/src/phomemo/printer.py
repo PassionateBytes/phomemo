@@ -84,6 +84,8 @@ from phomemo.transport import BleTransport
 
 logger = logging.getLogger(__name__)
 
+AUTO_OFF_MAX_MINUTES = 1275  # one byte counting 5-minute steps
+
 EventCallback = Callable[[DeviceEvent], None]
 ProgressCallback = Callable[[int, int], None]
 
@@ -248,8 +250,9 @@ class Printer:
         BlueZ can only connect to a device it has seen advertising recently,
         so a bare MAC address is resolved through a targeted scan first.
         Without an ``address``, scans for a nearby device whose advertised
-        name matches the profile's ``ble_name_pattern`` and connects to the
-        first match.
+        name matches the profile's ``ble_name_pattern``, connects to it and
+        keeps its address for later connects; several matches are refused
+        rather than picking one.
 
         Args:
             discovery_timeout: Scan duration in seconds, for both name-based
@@ -257,9 +260,9 @@ class Printer:
                 provided at instantiation.
 
         Raises:
-            ConnectionError: If the connection fails, if no matching device
-                is discovered, or if the given MAC address is not seen within
-                ``discovery_timeout``.
+            ConnectionError: If the connection fails, if a name scan finds
+                no matching device or several, or if the given MAC address is
+                not seen within ``discovery_timeout``.
             RuntimeError: If already connected.
         """
         device = self._address
@@ -271,8 +274,16 @@ class Printer:
                     f"No device found matching profile {self._profile.name!r} "
                     f"(pattern {pattern!r}) within {discovery_timeout}s"
                 )
+            if len(devices) > 1:
+                found = ", ".join(sorted(d.address for d in devices))
+                raise ConnectionError(
+                    f"Several printers in range ({found}); choose one by address"
+                )
             device = devices[0]
             logger.info("Discovered %s at %s", device.name, device.address)
+            # Later connects resolve the address by a fresh scan; BlueZ may
+            # have dropped this device object by then.
+            self._address = device.address
         elif isinstance(device, str):
             try:
                 found = await BleakScanner.find_device_by_address(
@@ -410,15 +421,16 @@ class Printer:
         """Set the auto-off timer.
 
         Args:
-            minutes: Timeout in minutes. Must be a multiple of 5.
-                0 disables the timer.
+            minutes: Timeout in minutes, a multiple of 5 up to
+                ``AUTO_OFF_MAX_MINUTES``. 0 disables the timer.
 
         Raises:
-            ValueError: If minutes is not a non-negative multiple of 5.
+            ValueError: If minutes is out of range or not a multiple of 5.
         """
-        if minutes < 0 or minutes % 5 != 0:
+        if not 0 <= minutes <= AUTO_OFF_MAX_MINUTES or minutes % 5 != 0:
             raise ValueError(
-                f"Timer must be a non-negative multiple of 5, got {minutes}"
+                f"Timer must be a multiple of 5 between 0 and "
+                f"{AUTO_OFF_MAX_MINUTES}, got {minutes}"
             )
         logger.debug("Setting auto-off timer: %d minutes", minutes)
         value = minutes // 5
@@ -547,6 +559,19 @@ class Printer:
         event = await self._query(QueryCommand.PAPER_STATE, PaperEvent, timeout)
         return event.paper if event else None
 
+    async def query_auto_off(self, timeout: float = 1.0) -> int | None:
+        """Query the auto-off timer.
+
+        Args:
+            timeout: Seconds to wait for the response.
+
+        Returns:
+            Timeout in minutes (0 = disabled), or ``None`` if the printer
+            did not answer.
+        """
+        event = await self._query(QueryCommand.DEVICE_TIMER, TimerEvent, timeout)
+        return event.minutes if isinstance(event, TimerEvent) else None
+
     async def query_device_info(self, timeout: float = 1.0) -> DeviceInfo:
         """Query all available device information.
 
@@ -572,10 +597,7 @@ class Printer:
         if lid == LidState.CLOSED:
             paper = await self.query_paper(timeout)
 
-        timer_ev = await self._query(QueryCommand.DEVICE_TIMER, TimerEvent, timeout)
-        auto_off_minutes = (
-            timer_ev.minutes if isinstance(timer_ev, TimerEvent) else None
-        )
+        auto_off_minutes = await self.query_auto_off(timeout)
 
         return DeviceInfo(
             battery=battery,

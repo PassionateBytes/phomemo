@@ -48,6 +48,8 @@ class BridgeConfig:
         address: BLE address of the printer, or ``None`` to discover by name.
         profile: Printer profile name.
         hold_seconds: Seconds the BLE link stays up after ``close``.
+        auto_off_minutes: Auto-off timer the bridge sets on the printer at
+            each connect (multiple of 5, 0 = never switch off).
         settle_seconds: Cap on the wait for the sheet to seat after insertion.
         completion_timeout: Seconds to wait for the motor stop after a page.
         drain_seconds: Pause after a cancelled transfer so the printer
@@ -63,6 +65,7 @@ class BridgeConfig:
     address: str | None = None
     profile: str = "M08F-A4"
     hold_seconds: float = 300.0
+    auto_off_minutes: int = 5
     settle_seconds: float = 3.0
     completion_timeout: float = 300.0
     drain_seconds: float = 1.0
@@ -144,6 +147,19 @@ class Bridge:
             self.printer = self._factory(self.profile, self._address)
         await self.printer.connect(discovery_timeout=discovery_timeout)
         logger.info("Printer link up")
+        await self._apply_auto_off(self.printer)
+
+    async def _apply_auto_off(self, printer: Printer) -> None:
+        """Set the configured auto-off timer unless the printer already has it."""
+        wanted = self.config.auto_off_minutes
+        try:
+            current = await printer.query_auto_off()
+            if current == wanted:
+                return
+            await printer.set_auto_off_timer(wanted)
+            logger.info("Printer auto-off set from %s to %d min", current, wanted)
+        except Exception as exc:  # noqa: BLE001, a link problem surfaces at the next command
+            logger.warning("Could not set the printer auto-off: %s", exc)
 
     async def disconnect(self) -> None:
         """Drop the BLE link."""
