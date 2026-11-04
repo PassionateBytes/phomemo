@@ -32,7 +32,7 @@ def test_config_defaults_without_files(
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
     assert config.address is None
     assert config.profile == "M08F-A4"
-    assert config.hold_seconds == 120.0
+    assert config.hold_seconds == 300.0
     assert config.settle_seconds == 3.0
     assert config.completion_timeout == 300.0
     assert config.band_height is None
@@ -81,7 +81,7 @@ def test_config_rejects_non_numeric_timeout(tmp_path: Path) -> None:
 
 def test_config_missing_file_is_skipped(tmp_path: Path) -> None:
     config = load_config(paths=[tmp_path / "absent.toml"], env={})
-    assert config.hold_seconds == 120.0
+    assert config.hold_seconds == 300.0
 
 
 def test_config_rejects_non_positive_band_height(tmp_path: Path) -> None:

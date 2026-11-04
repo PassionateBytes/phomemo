@@ -62,7 +62,7 @@ class BridgeConfig:
     socket_path: Path
     address: str | None = None
     profile: str = "M08F-A4"
-    hold_seconds: float = 120.0
+    hold_seconds: float = 300.0
     settle_seconds: float = 3.0
     completion_timeout: float = 300.0
     drain_seconds: float = 1.0

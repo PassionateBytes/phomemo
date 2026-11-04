@@ -20,7 +20,7 @@
 
 # Seconds the printer link stays up after a job so the next one skips the
 # reconnect.
-#hold_seconds = 120
+#hold_seconds = 300
 
 # Cap on the wait for an inserted sheet to seat at the head.
 #settle_seconds = 3

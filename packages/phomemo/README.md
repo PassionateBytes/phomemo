@@ -242,7 +242,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | Key | Default | Meaning |
 |-----|---------|---------|
 | `socket_path` | `/run/phomemo/bridge.sock` when that exists (the system service), else `$XDG_RUNTIME_DIR/phomemo-bridge.sock` | Listening socket; the command line finds the system bridge the same way. |
-| `hold_seconds` | `120` | Keep the BLE link after a job so the next one skips the reconnect. |
+| `hold_seconds` | `300` | Keep the BLE link after a job so the next one skips the reconnect. While the link is held the printer does not advertise, so other devices cannot connect to it. |
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
