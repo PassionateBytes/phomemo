@@ -14,9 +14,9 @@ The application sends each page to the bridge as 8-bit grayscale rows; the bridg
 Dependencies on Fedora: `pappl-devel`, `cups-devel`, `gcc`, `make`, `pkg-config`. The tests additionally use `ipptool` (package `cups-ipptool`) and Ghostscript.
 
 ```bash
-make -C printer-app            # builds printer-app/phomemo-printer-app
-make -C printer-app test       # C unit tests (bridge client, option mapping)
-uv run pytest packages/phomemo/tests/test_printer_app.py   # end-to-end against a fake bridge
+make -C src/printer-app            # builds printer-app/phomemo-printer-app
+make -C src/printer-app test       # C unit tests (bridge client, option mapping)
+uv run pytest src/phomemo/tests/test_printer_app.py   # end-to-end against a fake bridge
 ```
 
 The pytest harness starts the built binary as a private server under the test's temporary directory and is skipped when the binary is missing.
@@ -48,7 +48,7 @@ The server tries port 8000 + (user ID % 1000), so 8000 for the root service, and
 
 ### Configuration
 
-The service reads `/etc/phomemo-printer-app.conf` (PAPPL's `name=value` format, commented; the packaged file sets `log-level=info`): `server-port` pins the port, `listen-hostname=localhost` keeps the server local, `server-options` switches web interface pages and TLS, `auth-service` and `admin-group` allow changes from other machines. Each option can also be given as `-o name=value` on the command line, which wins over the file; `~/.config/phomemo-printer-app.conf` serves a server run by hand. Restart the service after a change. The bridge reads `/etc/phomemo/bridge.toml` (see the [library README](../packages/phomemo/README.md#bridge-daemon)).
+The service reads `/etc/phomemo-printer-app.conf` (PAPPL's `name=value` format, commented; the packaged file sets `log-level=info`): `server-port` pins the port, `listen-hostname=localhost` keeps the server local, `server-options` switches web interface pages and TLS, `auth-service` and `admin-group` allow changes from other machines. Each option can also be given as `-o name=value` on the command line, which wins over the file; `~/.config/phomemo-printer-app.conf` serves a server run by hand. Restart the service after a change. The bridge reads `/etc/phomemo/bridge.toml` (see the [library README](../phomemo/README.md#bridge-daemon)).
 
 ## Register the printer
 

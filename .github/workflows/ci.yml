@@ -43,15 +43,15 @@ jobs:
           useradd --create-home tester
           chown -R tester "$GITHUB_WORKSPACE"
       - name: Python environment
-        run: su tester -c "uv sync"
+        run: su tester -c "uv sync --all-packages"
       - name: Lint
         run: su tester -c "uv run ruff check . && uv run ruff format --check ."
       - name: Build the printer application
-        run: su tester -c "make -C printer-app"
+        run: su tester -c "make -C src/printer-app"
       - name: C unit tests
-        run: su tester -c "make -C printer-app test"
+        run: su tester -c "make -C src/printer-app test"
       - name: Python tests (library, bridge, end-to-end against the built application)
-        run: su tester -c "uv run pytest -q"
+        run: su tester -c "uv run pytest -q src/phomemo/tests"
 
   rpm:
     name: RPM build (Fedora 44)

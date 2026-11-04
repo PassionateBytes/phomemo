@@ -14,20 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
-[project]
-name = "phomemo-workspace"
-version = "0.0.0"
-description = "Workspace root for phomemo packages"
-requires-python = ">=3.13"
-dependencies = [
-    "phomemo",
-]
-
-[tool.uv.sources]
-phomemo = { workspace = true }
+# uv workspace: the library and the documentation site share one lock file.
+# The root is no project of its own; each member has its own pyproject.toml.
 
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["src/phomemo", "docs"]
 
 [tool.ruff]
 target-version = "py313"
@@ -38,21 +29,3 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.format]
 quote-style = "double"
-
-[dependency-groups]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-asyncio>=0.25.0",
-    "ruff>=0.11.0",
-    "ty>=0.0.26",
-]
-docs = [
-    "furo>=2024.8",
-    "myst-parser>=4",
-    "sphinx>=8",
-]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-addopts = "--import-mode=importlib"
-testpaths = ["packages/phomemo/tests"]

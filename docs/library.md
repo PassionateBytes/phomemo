@@ -1,2 +1,2 @@
-```{include} ../packages/phomemo/README.md
+```{include} ../src/phomemo/README.md
 ```

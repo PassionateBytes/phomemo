@@ -10,7 +10,7 @@ format-neutral directories; each package format gets its own directory.
 | `config/` | Default configuration: `bridge.toml` to `/etc/phomemo/`, `phomemo-printer-app.conf` to `/etc/` | `make install`, `rpm/` |
 | `rpm/` | Spec files: `phomemo-driver.spec` (the driver and the `python3-phomemo` subpackage), `python-bleak.spec` (bleak, which Fedora lacks) | COPR (through `.copr/Makefile`), CI, `make srpm` |
 
-The Python package itself is published to PyPI from `packages/phomemo/` by
+The Python package itself is published to PyPI from `src/phomemo/` by
 the release workflow; it needs nothing from here.
 
 ## The Fedora route
@@ -34,4 +34,4 @@ the release workflow; it needs nothing from here.
    and a job to the workflows that builds it in CI and, on a tag, publishes
    it.
 4. Add the format to the table above and its install instructions to
-   `printer-app/README.md`.
+   `src/printer-app/README.md`.

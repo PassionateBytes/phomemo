@@ -32,7 +32,7 @@
 
 .DEFAULT_GOAL := install
 
-VERSION   := $(shell sed -n 's/^version = "\(.*\)"/\1/p' packages/phomemo/pyproject.toml)
+VERSION   := $(shell sed -n 's/^version = "\(.*\)"/\1/p' src/phomemo/pyproject.toml)
 NAME      := phomemo-driver
 DIST      := dist
 
@@ -47,16 +47,16 @@ VENV       = $(PREFIX)/lib/phomemo
 .PHONY: build install uninstall check dist tarball srpm bump tag clean
 
 build:
-	$(MAKE) -C printer-app
+	$(MAKE) -C src/printer-app
 
 # The Python package goes into its own virtual environment under PREFIX
 # (system Pythons refuse direct installs); the units point at PREFIX.
 install: build
-	$(MAKE) -C printer-app install PREFIX=$(PREFIX) DESTDIR=$(DESTDIR) \
+	$(MAKE) -C src/printer-app install PREFIX=$(PREFIX) DESTDIR=$(DESTDIR) \
 	  UNITDIR=$(UNITDIR) PRESETDIR=$(PRESETDIR)
 	$(PYTHON) -m venv --clear $(DESTDIR)$(VENV)
 	$(DESTDIR)$(VENV)/bin/pip install --quiet --upgrade pip
-	$(DESTDIR)$(VENV)/bin/pip install --quiet ./packages/phomemo
+	$(DESTDIR)$(VENV)/bin/pip install --quiet ./src/phomemo
 	install -d $(DESTDIR)$(PREFIX)/bin
 	ln -sf $(VENV)/bin/phomemo-bridge $(DESTDIR)$(PREFIX)/bin/phomemo-bridge
 	install -d $(DESTDIR)$(UNITDIR) $(DESTDIR)$(PRESETDIR) \
@@ -89,11 +89,11 @@ uninstall:
 check:
 	uv run ruff check .
 	uv run ruff format --check .
-	uv run pytest -q
-	$(MAKE) -C printer-app test
+	uv run pytest -q src/phomemo/tests
+	$(MAKE) -C src/printer-app test
 
 dist:
-	uv build packages/phomemo --out-dir $(DIST)
+	uv build src/phomemo --out-dir $(DIST)
 
 tarball:
 	mkdir -p $(DIST)
@@ -106,11 +106,11 @@ srpm: tarball
 
 bump:
 	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
-	sed -i 's/^version = ".*"/version = "$(VERSION)"/' packages/phomemo/pyproject.toml
+	sed -i 's/^version = ".*"/version = "$(VERSION)"/' src/phomemo/pyproject.toml
 	sed -i 's/^Version:        .*/Version:        $(VERSION)/' packaging/rpm/phomemo-driver.spec
-	sed -i 's/^#define PHOMEMO_VERSION ".*"/#define PHOMEMO_VERSION "$(VERSION)"/' printer-app/phomemo.h
+	sed -i 's/^#define PHOMEMO_VERSION ".*"/#define PHOMEMO_VERSION "$(VERSION)"/' src/printer-app/phomemo.h
 	uv lock
-	git add packages/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec printer-app/phomemo.h uv.lock
+	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock
 	git commit -m "chore: version $(VERSION)"
 
 tag:
@@ -119,4 +119,4 @@ tag:
 
 clean:
 	rm -rf $(DIST)
-	$(MAKE) -C printer-app clean
+	$(MAKE) -C src/printer-app clean

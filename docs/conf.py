@@ -16,13 +16,6 @@
 
 """Sphinx configuration for the phomemo-driver documentation site."""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(
-    0, str(Path(__file__).resolve().parents[1] / "packages" / "phomemo" / "src")
-)
-
 project = "phomemo-driver"
 author = "Paul Bütof"
 copyright = (

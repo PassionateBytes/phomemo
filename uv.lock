@@ -5,7 +5,7 @@ requires-python = ">=3.13"
 [manifest]
 members = [
     "phomemo",
-    "phomemo-workspace",
+    "phomemo-docs",
 ]
 
 [[package]]
@@ -453,7 +453,7 @@ wheels = [
 [[package]]
 name = "phomemo"
 version = "0.1.0"
-source = { editable = "packages/phomemo" }
+source = { editable = "src/phomemo" }
 dependencies = [
     { name = "bleak" },
     { name = "pillow" },
@@ -464,6 +464,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
+    { name = "ty" },
 ]
 
 [package.metadata]
@@ -477,42 +478,25 @@ dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.25.0" },
     { name = "ruff", specifier = ">=0.11.0" },
+    { name = "ty", specifier = ">=0.0.26" },
 ]
 
 [[package]]
-name = "phomemo-workspace"
+name = "phomemo-docs"
 version = "0.0.0"
-source = { virtual = "." }
+source = { virtual = "docs" }
 dependencies = [
-    { name = "phomemo" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "ruff" },
-    { name = "ty" },
-]
-docs = [
     { name = "furo" },
     { name = "myst-parser" },
+    { name = "phomemo" },
     { name = "sphinx" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "phomemo", editable = "packages/phomemo" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.25.0" },
-    { name = "ruff", specifier = ">=0.11.0" },
-    { name = "ty", specifier = ">=0.0.26" },
-]
-docs = [
+requires-dist = [
     { name = "furo", specifier = ">=2024.8" },
     { name = "myst-parser", specifier = ">=4" },
+    { name = "phomemo", editable = "src/phomemo" },
     { name = "sphinx", specifier = ">=8" },
 ]
 

@@ -29,10 +29,10 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Check that the tag matches the package version
         run: |
-          version=$(sed -n 's/^version = "\(.*\)"/\1/p' packages/phomemo/pyproject.toml)
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' src/phomemo/pyproject.toml)
           test "v$version" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != version $version"; exit 1; }
       - name: Build wheel and sdist
-        run: uv build packages/phomemo --out-dir dist
+        run: uv build src/phomemo --out-dir dist
       - uses: actions/upload-artifact@v4
         with:
           name: python

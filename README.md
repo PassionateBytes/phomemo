@@ -10,8 +10,8 @@ The repository is a [uv workspace](https://docs.astral.sh/uv/concepts/workspaces
 
 | Package | Description |
 |---------|-------------|
-| [**phomemo**](packages/phomemo/) | Async driver library. Modular, profile-based API for BLE communication, raster printing, device queries, and event handling. Ships `phomemo-bridge`, the daemon that owns the printer for the printer application. |
-| [**printer-app**](printer-app/) | [PAPPL](https://www.msweet.org/pappl/) printer application in C: presents the M08F as an IPP Everywhere printer to CUPS and other clients, driving `phomemo-bridge`. |
+| [**phomemo**](src/phomemo/) | Async driver library. Modular, profile-based API for BLE communication, raster printing, device queries, and event handling. Ships `phomemo-bridge`, the daemon that owns the printer for the printer application. |
+| [**printer-app**](src/printer-app/) | [PAPPL](https://www.msweet.org/pappl/) printer application in C: presents the M08F as an IPP Everywhere printer to CUPS and other clients, driving `phomemo-bridge`. |
 
 Documentation site: [passionatebytes.github.io/phomemo-driver](https://passionatebytes.github.io/phomemo-driver/) (built from this repository's READMEs, the protocol reference and the library's docstrings).
 
@@ -36,14 +36,14 @@ cd phomemo-driver
 sudo make              # builds, installs under /usr/local, enables and starts both services
 ```
 
-Then switch the printer on and restart the service once (`sudo systemctl restart phomemo-printer-app`), or run `sudo phomemo-printer-app autoadd`; details and the package route in the [printer-app README](printer-app/README.md). For development or library use:
+Then switch the printer on and restart the service once (`sudo systemctl restart phomemo-printer-app`), or run `sudo phomemo-printer-app autoadd`; details and the package route in the [printer-app README](src/printer-app/README.md). For development or library use:
 
 ```bash
-uv sync
-uv run pytest
+uv sync --all-packages
+uv run pytest src/phomemo/tests
 ```
 
-See the [phomemo README](packages/phomemo/README.md) for library usage.
+See the [phomemo README](src/phomemo/README.md) for library usage.
 
 ## Supported Printers
 
@@ -51,7 +51,7 @@ See the [phomemo README](packages/phomemo/README.md) for library usage.
 |-------|---------|-------------|--------|
 | M08F (A4) | `M08F-A4` | 1680 px | Tested |
 
-The profile system is extensible; see the [driver README](packages/phomemo/README.md#custom-profiles) for adding support for other models.
+The profile system is extensible; see the [driver README](src/phomemo/README.md#custom-profiles) for adding support for other models.
 
 ## Requirements
 
@@ -65,12 +65,12 @@ Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
 
 | Part | Licence | Text |
 |------|---------|------|
-| Python library and bridge daemon (`packages/phomemo/`) | GNU LGPL, version 3 or later | [COPYING.LESSER](packages/phomemo/COPYING.LESSER), with the GNU GPL it builds on in [COPYING](packages/phomemo/COPYING) |
-| Printer application (`printer-app/`) | GNU GPL, version 3 or later | [COPYING](printer-app/COPYING) |
+| Python library and bridge daemon (`src/phomemo/`) | GNU LGPL, version 3 or later | [COPYING.LESSER](src/phomemo/COPYING.LESSER), with the GNU GPL it builds on in [COPYING](src/phomemo/COPYING) |
+| Printer application (`src/printer-app/`) | GNU GPL, version 3 or later | [COPYING](src/printer-app/COPYING) |
 | Packaging, build files and everything else not listed here | GNU GPL, version 3 or later | [COPYING](COPYING) |
 | Documentation (`docs/`, the READMEs) | CC BY-SA 4.0 | [docs/LICENSE](docs/LICENSE) |
 
-Each source file states its licence in its header. Bundled third-party code keeps its own licence: [cJSON](printer-app/third_party/cJSON.LICENSE) (MIT) in the printer application.
+Each source file states its licence in its header. Bundled third-party code keeps its own licence: [cJSON](src/printer-app/third_party/cJSON.LICENSE) (MIT) in the printer application.
 
 ## Contact
 
