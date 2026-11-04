@@ -106,3 +106,28 @@ def test_spec_declares_the_bundled_cjson() -> None:
 def test_make_install_installs_no_model_directory() -> None:
     makefile = (REPO / "Makefile").read_text()
     assert "phomemo/models" not in makefile
+
+
+def test_package_metadata_marks_the_beta_and_links_the_docs() -> None:
+    import tomllib
+
+    project = tomllib.loads((REPO / "src" / "phomemo" / "pyproject.toml").read_text())[
+        "project"
+    ]
+    assert "Development Status :: 4 - Beta" in project["classifiers"]
+    assert project["urls"]["Documentation"].startswith(
+        "https://passionatebytes.github.io/phomemo-driver"
+    )
+
+
+def test_bump_resets_the_rpm_release() -> None:
+    bump = (REPO / "Makefile").read_text().split("bump:")[1].split("\ntag:")[0]
+    assert "s/^Release:        .*/Release:        1%{?dist}/" in bump
+
+
+def test_spec_changelog_starts_with_the_current_version() -> None:
+    spec = (REPO / "packaging" / "rpm" / "phomemo-driver.spec").read_text()
+    version = re.search(r"^Version:\s+(\S+)", spec, re.M).group(1)
+    release = re.search(r"^Release:\s+(\d+)", spec, re.M).group(1)
+    first_entry = spec.split("%changelog\n")[1].splitlines()[0]
+    assert first_entry.endswith(f" - {version}-{release}")

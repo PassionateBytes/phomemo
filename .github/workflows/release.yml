@@ -85,8 +85,10 @@ jobs:
       - name: Create the release with generated notes
         env:
           GH_TOKEN: ${{ github.token }}
+        # Versions before 1.0 are beta releases: published as pre-releases.
         run: >
           gh release create "${GITHUB_REF_NAME}"
           --title "phomemo-driver ${GITHUB_REF_NAME#v}"
           --generate-notes
+          $([[ "${GITHUB_REF_NAME}" == v0.* ]] && echo --prerelease)
           artifacts/python/* artifacts/srpm/*

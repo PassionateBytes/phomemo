@@ -108,6 +108,7 @@ bump:
 	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
 	sed -i 's/^version = ".*"/version = "$(VERSION)"/' src/phomemo/pyproject.toml
 	sed -i 's/^Version:        .*/Version:        $(VERSION)/' packaging/rpm/phomemo-driver.spec
+	sed -i 's/^Release:        .*/Release:        1%{?dist}/' packaging/rpm/phomemo-driver.spec
 	sed -i 's/^#define PHOMEMO_VERSION ".*"/#define PHOMEMO_VERSION "$(VERSION)"/' src/printer-app/phomemo.h
 	uv lock
 	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock
