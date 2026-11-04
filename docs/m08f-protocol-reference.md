@@ -516,6 +516,12 @@ Value `00` = disabled. Non-zero values set the auto-off timeout in **5-minute
 increments** (value `01` = 5 min, value `02` = 10 min, etc.). Timer counts
 from last activity.
 
+An open BLE connection without traffic does not count as activity. With the
+timer at 10 minutes, a link left idle after connecting was dropped by the
+printer switching itself off about 9.5 minutes later (measured 2026-11-04).
+Holding a connection open therefore does not keep the printer awake; a host
+that keeps the link between jobs sees it end at the auto-off.
+
 ---
 
 ## BLE Bridge Chip (AT Interface)
