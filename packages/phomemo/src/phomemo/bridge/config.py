@@ -1,3 +1,19 @@
+# This file is part of phomemo.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
+
 """Bridge configuration: TOML files layered under environment overrides."""
 
 import os
@@ -46,10 +62,25 @@ def default_paths(env: Mapping[str, str]) -> list[Path]:
     return [SYSTEM_CONFIG, Path(xdg).expanduser() / "phomemo" / "bridge.toml"]
 
 
-def default_socket(env: Mapping[str, str]) -> Path:
-    """Socket under ``XDG_RUNTIME_DIR`` for a user service, else the system path."""
+def default_socket(env: Mapping[str, str], system_socket: Path | None = None) -> Path:
+    """The system bridge's socket when it exists, else one under ``XDG_RUNTIME_DIR``.
+
+    The system service listens at ``/run/phomemo/bridge.sock``; a user's
+    command line talks to it when it is there. Without it (development, a
+    user service) the socket lives in the user's runtime directory.
+
+    Args:
+        env: Environment providing ``XDG_RUNTIME_DIR``.
+        system_socket: The system bridge's socket; ``SYSTEM_SOCKET`` by default.
+
+    Returns:
+        The socket path to listen on or connect to.
+    """
+    system_socket = system_socket or SYSTEM_SOCKET
+    if system_socket.exists():
+        return system_socket
     runtime = env.get("XDG_RUNTIME_DIR")
-    return Path(runtime) / SOCKET_NAME if runtime else SYSTEM_SOCKET
+    return Path(runtime) / SOCKET_NAME if runtime else system_socket
 
 
 def _check(path: Path, key: str, value: Any) -> Any:

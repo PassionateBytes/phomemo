@@ -1,12 +1,33 @@
+# This file is part of phomemo.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
+
 """Tests for bridge configuration loading."""
 
 from pathlib import Path
 
+import phomemo.bridge.config as config_module
 import pytest
 from phomemo.bridge.config import ConfigError, load_config
 
 
-def test_config_defaults_without_files() -> None:
+def test_config_defaults_without_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A system bridge running on the test machine must not change the default.
+    monkeypatch.setattr(config_module, "SYSTEM_SOCKET", tmp_path / "absent.sock")
     config = load_config(paths=[], env={"XDG_RUNTIME_DIR": "/run/user/1000"})
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
     assert config.address is None
@@ -87,3 +108,13 @@ def test_config_rejects_unknown_profile(tmp_path: Path) -> None:
 def test_config_explicit_missing_file_is_an_error(tmp_path: Path) -> None:
     with pytest.raises(ConfigError, match="absent.toml"):
         load_config(paths=[tmp_path / "absent.toml"], env={}, require_files=True)
+
+
+def test_default_socket_prefers_the_system_bridge_when_present(tmp_path: Path) -> None:
+    from phomemo.bridge.config import default_socket
+
+    system = tmp_path / "bridge.sock"
+    env = {"XDG_RUNTIME_DIR": str(tmp_path / "run")}
+    assert default_socket(env, system) == tmp_path / "run" / "phomemo-bridge.sock"
+    system.touch()
+    assert default_socket(env, system) == system

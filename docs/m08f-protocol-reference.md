@@ -5,7 +5,9 @@ printer.
 
 > Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
 > ([www.passionate-bytes.com](https://www.passionate-bytes.com)).  
-> Licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+> This work is licensed under Creative Commons Attribution-ShareAlike 4.0
+> International. To view a copy of this license, visit
+> <https://creativecommons.org/licenses/by-sa/4.0/>.
 
 ## Table of Contents
 

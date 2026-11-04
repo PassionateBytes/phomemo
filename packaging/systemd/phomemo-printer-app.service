@@ -1,0 +1,34 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# System service presenting the printer to CUPS and the network (IPP,
+# DNS-SD, web interface on port 8000). Talks to phomemo-bridge over its
+# socket. State in /var/lib, spool in /var/spool, log in the journal.
+[Unit]
+Description=Phomemo printer application (IPP side of the printer driver)
+Documentation=https://github.com/PassionateBytes/phomemo-driver
+After=network-online.target avahi-daemon.service phomemo-bridge.service
+Wants=network-online.target phomemo-bridge.service
+
+[Service]
+Type=simple
+Environment=PHOMEMO_BRIDGE_SOCKET=/run/phomemo/bridge.sock
+ExecStart=/usr/bin/phomemo-printer-app server -o log-file=- -o log-level=info
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

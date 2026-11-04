@@ -23,19 +23,24 @@ The pytest harness starts the built binary as a private server under the test's 
 
 ## Install
 
+Fedora, from the COPR repository. The package enables both services and starts them on installation, so the printer works right away:
+
 ```bash
-make -C printer-app install    # PREFIX defaults to ~/.local
+sudo dnf copr enable passionatebytes/phomemo-driver
+sudo dnf install phomemo-driver
 ```
 
-With a `PREFIX` under `$HOME` the systemd user unit `packaging/phomemo-printer-app.service` is installed to `~/.config/systemd/user/` as well. Install `phomemo` (with its `phomemo-bridge` unit) the same way, then:
+From source, from the repository root: builds the application, installs the Python package into a virtual environment under `/usr/local/lib/phomemo`, installs both system units with their presets, creates the service user, enables and starts the services.
 
 ```bash
-systemctl --user enable --now phomemo-bridge phomemo-printer-app
+sudo dnf install gcc make pkgconf-pkg-config pappl-devel cups-devel python3 cups avahi bluez   # build and runtime dependencies
+sudo make                                        # PREFIX=/usr/local; `sudo make uninstall` reverses it
 ```
 
-Both units point at the same bridge socket, `$XDG_RUNTIME_DIR/phomemo-bridge.sock`. Without the unit, run the server by hand:
+Both services are system services: the bridge runs as the `phomemo` user and listens on `/run/phomemo/bridge.sock` (open to local users), the application runs as root like other PAPPL printer applications, with its state in `/var/lib` and the web interface on port 8000. Without the units, for development, run both by hand as your user (the bridge socket then lives in `$XDG_RUNTIME_DIR`):
 
 ```bash
+phomemo-bridge server
 phomemo-printer-app server -o log-level=info
 ```
 
@@ -46,9 +51,11 @@ The server listens on port 8000 for the first user on a machine (the log names t
 At every start the server looks for printers through the bridge and registers each M08F in range (printer on, lid closed) as **Phomemo M08F**; a printer registered earlier stays. So: install, switch the printer on, start or restart the service. Later, or for a printer that was off at the time:
 
 ```bash
-phomemo-printer-app autoadd                          # scan and add every M08F in range
+sudo phomemo-printer-app autoadd                     # scan and add every M08F in range
 phomemo-printer-app printers                         # confirm what is configured
 ```
+
+(`sudo` because adding a printer to the system service is an administrative change; listing is not.)
 
 or open the web interface at http://localhost:8000/ and use "Add Printer", which scans the same way. `phomemo-printer-app devices` shows what is in range without adding anything; `add -d "Phomemo M08F" -m m08f -v phomemo://AA-BB-CC-DD-EE-FF` adds a known address. `phomemo-printer-app --help` (or `-h` on its own) lists all subcommands.
 
@@ -93,7 +100,7 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 
 - **No devices listed / jobs pause**: the bridge is not reachable. Check `systemctl --user status phomemo-bridge` and that `PHOMEMO_BRIDGE_SOCKET` (or `$XDG_RUNTIME_DIR/phomemo-bridge.sock`) is the same for both programs; `phomemo-bridge status` talks to the daemon directly.
 - **Printer not found although it is on**: BlueZ may still hold a stale link after a killed daemon; `bluetoothctl disconnect <address>` frees it. The printer does not advertise while connected, and switches off after ten minutes idle.
-- **Logs**: with the units, `journalctl --user -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge server -v`.
+- **Logs**: with the units, `journalctl -f -u phomemo-printer-app -u phomemo-bridge` follows both (the unit runs the server with `-o log-file=-`, so its log goes to the journal). By hand: `phomemo-printer-app server -o log-file=- -o log-level=debug`; the bridge logs with `phomemo-bridge server -v`.
 
 ## Sources
 
@@ -106,3 +113,9 @@ The only media type is `thermal` (the printer takes nothing else). Margins are 1
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
 | `icons/` | Printer icons (48, 128, 512 px PNG), embedded into the binary at build time by `icons/embed.sh`. |
 | `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |
+
+## License
+
+Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
+
+GNU General Public License, version 3 or later: see [COPYING](COPYING). The bundled [cJSON](third_party/cJSON.LICENSE) is MIT-licensed. This README is documentation and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
