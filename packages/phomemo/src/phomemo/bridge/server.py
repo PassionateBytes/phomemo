@@ -45,11 +45,11 @@ class BridgeConfig:
 
     Attributes:
         socket_path: Unix socket the bridge listens on.
-        address: BLE address of the printer, or ``None`` to discover by name.
         profile: Printer profile name.
         hold_seconds: Seconds the BLE link stays up after ``close``.
         auto_off_minutes: Auto-off timer the bridge sets on the printer at
-            each connect (multiple of 5, 0 = never switch off).
+            each new link (multiple of 5, 0 = never switch off); ``None``
+            leaves the printer's setting alone.
         settle_seconds: Cap on the wait for the sheet to seat after insertion.
         completion_timeout: Seconds to wait for the motor stop after a page.
         drain_seconds: Pause after a cancelled transfer so the printer
@@ -62,10 +62,9 @@ class BridgeConfig:
     """
 
     socket_path: Path
-    address: str | None = None
     profile: str = "M08F-A4"
     hold_seconds: float = 300.0
-    auto_off_minutes: int = 5
+    auto_off_minutes: int | None = None
     settle_seconds: float = 3.0
     completion_timeout: float = 300.0
     drain_seconds: float = 1.0
@@ -98,7 +97,7 @@ class Bridge:
         self.config = config
         self.profile = config.resolved_profile()
         self._factory = printer_factory
-        self._address: str | None = config.address
+        self._address: str | None = None  # last printer used, kept in memory
         self.printer: Printer | None = None
         self.session_active = False
         self.last_battery: int | None = None  # last charge read, survives the link
@@ -152,6 +151,8 @@ class Bridge:
     async def _apply_auto_off(self, printer: Printer) -> None:
         """Set the configured auto-off timer unless the printer already has it."""
         wanted = self.config.auto_off_minutes
+        if wanted is None:
+            return
         try:
             current = await printer.query_auto_off()
             if current == wanted:

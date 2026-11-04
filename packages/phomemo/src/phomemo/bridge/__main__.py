@@ -34,10 +34,10 @@ from phomemo.bridge.server import serve
 from phomemo.imaging import ToneMode
 
 _PRINTER_CHOICE = (
-    "Which printer: the one given with --address, else the [printer] address "
-    "from the configuration, else the printer linked or used last, else the only "
-    "M08F a scan finds. With several printers in range and none of these, the "
-    'command refuses and lists them; pick one with --address (see "devices").'
+    "Which printer: the one given with --address, else the printer linked or "
+    "used last since the bridge started, else the only M08F a scan finds. With "
+    "several printers in range and none of these, the command refuses and lists "
+    'them; pick one with --address (see "devices").'
 )
 
 _COMMANDS: dict[str, tuple[str, str]] = {
@@ -58,7 +58,8 @@ _COMMANDS: dict[str, tuple[str, str]] = {
         "Bring the Bluetooth link to the printer up. The bridge keeps it for "
         "hold_seconds afterwards (see the configuration), so later commands and "
         "jobs skip the reconnect. At each new link the bridge sets the printer's "
-        "auto-off timer to auto_off_minutes.\n\n" + _PRINTER_CHOICE,
+        "auto-off timer to auto_off_minutes when that key is set.\n\n"
+        + _PRINTER_CHOICE,
     ),
     "disconnect": (
         "drop the printer link now",
@@ -75,10 +76,10 @@ _COMMANDS: dict[str, tuple[str, str]] = {
     "auto-off": (
         "show or set the auto-off timer",
         "Show the linked printer's auto-off timer, or set it first when MINUTES "
-        "is given (a multiple of 5 up to 1275; 0 = never switch off). The "
-        "bridge sets "
-        "auto_off_minutes from its configuration at the next link, so change "
-        'that key for a lasting setting. Needs a link; run "connect" first.',
+        "is given (a multiple of 5 up to 1275; 0 = never switch off). When "
+        "auto_off_minutes is set in the configuration, the bridge writes that "
+        "value again at the next link, so change the key for a lasting "
+        'setting. Needs a link; run "connect" first.',
     ),
     "print": (
         "print one image file as a page",

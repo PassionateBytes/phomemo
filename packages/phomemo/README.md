@@ -248,16 +248,22 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
 | `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
 | `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
-| `[printer] address` | discover by name | BLE address of the printer. |
 | `[printer] profile` | `M08F-A4` | Profile name. |
+| `[printer] auto_off_minutes` | unset (the packaged file sets `5`) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off. Unset leaves the printer's own setting alone; an invalid value is logged and replaced by `5`. |
+
+The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only M08F a scan finds; with several in range they refuse and list them.
 
 Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": R}` lines with `R` one of `connecting` (link being brought up), `printer-off` (printer off, out of range or in use elsewhere), `adapter-off` (Bluetooth unavailable), `lid-open`, `no-sheet`, `short-sheet` (the last sheet ran out, a longer one is needed). One client at a time; `abort` is the only command accepted while another is pending.
 
 | Command | Arguments | Reply |
 |---------|-----------|-------|
 | `discover` | `timeout` | `printers: [{name, address}]` |
-| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` when the printer is unreachable, `wait_ready` keeps retrying |
-| `status` | | `connected`, and when connected `lid`, `paper`; `battery` is the last charge read (null until the first link) |
+| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
+| `close` | | ends the session's use of the link; the bridge holds it for `hold_seconds` |
+| `disconnect` | | drops the link now, without the hold |
+| `status` | | `connected`, and when connected `address`, `lid`, `paper`; `battery` is the last charge read (null until the first link). Never connects. |
+| `info` | | linked printer's `address`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
+| `auto_off` | `minutes` (optional) | sets the timer when `minutes` is given, then `auto_off_minutes` as the printer reports it; error `not connected` without a link |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |

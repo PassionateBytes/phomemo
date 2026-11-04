@@ -32,7 +32,9 @@ ADDRESS = "AA:BB:CC:DD:EE:FF"
 @pytest.fixture
 async def served(tmp_path: Path) -> AsyncIterator[BridgeConfig]:
     FakePrinter.instances.clear()
-    config = BridgeConfig(socket_path=tmp_path / "bridge.sock", hold_seconds=5.0)
+    config = BridgeConfig(
+        socket_path=tmp_path / "bridge.sock", hold_seconds=5.0, auto_off_minutes=5
+    )
     server = await start_server(config, printer_factory=FakePrinter)
     try:
         yield config

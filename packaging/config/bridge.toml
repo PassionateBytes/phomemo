@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
-# phomemo-bridge configuration. Every key is optional; the values shown are
-# the defaults. A user's own file at $XDG_CONFIG_HOME/phomemo/bridge.toml
+# phomemo-bridge configuration. Every key is optional; the commented values
+# are the defaults. A user's own file at $XDG_CONFIG_HOME/phomemo/bridge.toml
 # overrides this one for a user-run bridge.
 
 # Seconds the printer link stays up after a job so the next one skips the
@@ -32,13 +32,10 @@
 #drain_seconds = 1
 
 [printer]
-# BLE address of the printer. Without it the bridge uses the printer the
-# printer application asks for, else the one linked last, else the only M08F a
-# scan finds (several in range: it refuses and lists them).
-#address = "AA:BB:CC:DD:EE:FF"
 #profile = "M08F-A4"
 
 # Auto-off timer the bridge sets on the printer at each new link, in minutes:
 # a multiple of 5 up to 1275, 0 = never switch off. An invalid value is logged
-# and replaced by 5.
-#auto_off_minutes = 5
+# and replaced by 5. Comment the line out to leave the printer's own setting
+# alone.
+auto_off_minutes = 5

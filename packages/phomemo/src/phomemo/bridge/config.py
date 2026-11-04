@@ -45,8 +45,8 @@ _NUMERIC = {
     "bottom_margin_mm",
 }
 _INTEGER = {"band_height", "dpi", "print_width_px"}
-_STRING = {"socket_path", "address", "profile"}
-_PRINTER_TABLE = {"address", "profile", "auto_off_minutes"}
+_STRING = {"socket_path", "profile"}
+_PRINTER_TABLE = {"profile", "auto_off_minutes"}
 AUTO_OFF_DEFAULT = 5
 AUTO_OFF_MAX = AUTO_OFF_MAX_MINUTES
 

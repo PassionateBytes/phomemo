@@ -30,7 +30,7 @@ def test_config_defaults_without_files(
     monkeypatch.setattr(config_module, "SYSTEM_SOCKET", tmp_path / "absent.sock")
     config = load_config(paths=[], env={"XDG_RUNTIME_DIR": "/run/user/1000"})
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
-    assert config.address is None
+    assert config.auto_off_minutes is None
     assert config.profile == "M08F-A4"
     assert config.hold_seconds == 300.0
     assert config.settle_seconds == 3.0
@@ -47,13 +47,13 @@ def test_config_user_file_overrides_system_file(tmp_path: Path) -> None:
     system = tmp_path / "system.toml"
     user = tmp_path / "user.toml"
     system.write_text(
-        'hold_seconds = 10\nband_height = 64\n[printer]\naddress = "AA:BB"\n'
+        "hold_seconds = 10\nband_height = 64\n[printer]\nauto_off_minutes = 10\n"
     )
     user.write_text("hold_seconds = 20\n")
     config = load_config(paths=[system, user], env={})
     assert config.hold_seconds == 20.0
     assert config.band_height == 64
-    assert config.address == "AA:BB"
+    assert config.auto_off_minutes == 10
 
 
 def test_config_env_socket_override(tmp_path: Path) -> None:
@@ -120,8 +120,20 @@ def test_default_socket_prefers_the_system_bridge_when_present(tmp_path: Path) -
     assert default_socket(env, system) == system
 
 
-def test_config_auto_off_defaults_to_five_minutes() -> None:
-    assert load_config(paths=[], env={}).auto_off_minutes == 5
+def test_config_without_auto_off_leaves_the_printer_alone() -> None:
+    assert load_config(paths=[], env={}).auto_off_minutes is None
+
+
+def test_config_printer_address_is_no_longer_a_key(tmp_path: Path) -> None:
+    path = tmp_path / "bridge.toml"
+    path.write_text('[printer]\naddress = "AA:BB:CC:DD:EE:FF"\n')
+    with pytest.raises(ConfigError, match="printer.address: unknown key"):
+        load_config(paths=[path], env={})
+
+
+def test_packaged_config_enforces_five_minutes() -> None:
+    packaged = Path(__file__).parents[3] / "packaging" / "config" / "bridge.toml"
+    assert load_config(paths=[packaged], env={}).auto_off_minutes == 5
 
 
 @pytest.mark.parametrize("minutes", [0, 15, 60, 1275])

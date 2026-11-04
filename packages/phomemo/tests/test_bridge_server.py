@@ -197,7 +197,10 @@ class Client:
 @pytest.fixture
 def config(tmp_path: Path) -> BridgeConfig:
     return BridgeConfig(
-        socket_path=tmp_path / "bridge.sock", hold_seconds=0.2, drain_seconds=0.0
+        socket_path=tmp_path / "bridge.sock",
+        hold_seconds=0.2,
+        drain_seconds=0.0,
+        auto_off_minutes=5,
     )
 
 
@@ -1057,3 +1060,20 @@ async def test_open_reports_why_the_printer_is_not_reachable(
     assert reply["connected"] is False
     assert reply["reason"].startswith("Several printers in range")
     await client.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_without_an_auto_off_setting_leaves_the_timer(
+    tmp_path: Path,
+) -> None:
+    FakePrinter.instances.clear()
+    config = BridgeConfig(socket_path=tmp_path / "n.sock", auto_off_minutes=None)
+    server = await start_server(config, printer_factory=FakePrinter)
+    try:
+        client = await _connect(config)
+        await client.call({"cmd": "open"})
+        assert _printer().auto_off_writes == []
+        await client.close()
+    finally:
+        server.close()
+        server.close_clients()
