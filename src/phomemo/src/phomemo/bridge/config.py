@@ -24,10 +24,8 @@ from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
-import phomemo.profiles  # noqa: F401, registers the built-in profiles
 from phomemo.bridge.server import BridgeConfig
 from phomemo.printer import AUTO_OFF_MAX_MINUTES
-from phomemo.registry import list_profiles
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +39,8 @@ _NUMERIC = {
     "settle_seconds",
     "completion_timeout",
     "drain_seconds",
-    "top_margin_mm",
-    "bottom_margin_mm",
 }
-_INTEGER = {"band_height", "dpi", "print_width_px"}
-_STRING = {"socket_path", "profile"}
+_STRING = {"socket_path"}
 
 
 class _Invalid(ValueError):
@@ -120,19 +115,9 @@ def _check(key: str, value: Any) -> tuple[Any, str | None]:
         if value < 0:
             raise _Invalid(f"must not be negative, got {value!r}")
         return float(value), None
-    if key in _INTEGER:
-        if isinstance(value, bool) or not isinstance(value, int):
-            raise _Invalid(f"expected an integer, got {value!r}")
-        if value <= 0:
-            raise _Invalid(f"must be positive, got {value!r}")
-        return value, None
     if key in _STRING:
         if not isinstance(value, str):
             raise _Invalid(f"expected a string, got {value!r}")
-        if key == "profile" and value not in list_profiles():
-            raise _Invalid(
-                f"unknown profile {value!r}, known: {', '.join(list_profiles())}"
-            )
         return value, None
     raise _Invalid("unknown key")
 

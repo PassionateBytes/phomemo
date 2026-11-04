@@ -21,7 +21,7 @@ import contextlib
 import logging
 import signal
 from collections.abc import Callable
-from dataclasses import dataclass, fields, replace
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -30,7 +30,12 @@ from bleak.backends.device import BLEDevice
 
 from phomemo.discovery import discover
 from phomemo.printer import Printer
-from phomemo.registry import PrinterProfile, get_profile
+from phomemo.registry import (
+    PrinterProfile,
+    get_profile,
+    list_profiles,
+    profile_for_name,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +48,11 @@ __all__ = ["BridgeConfig", "Bridge", "serve", "start_server"]
 class BridgeConfig:
     """Operational settings of the bridge.
 
-    Geometry overrides default to the profile's values when ``None``.
+    The printer model, and with it everything about the printer's geometry,
+    comes from each printer's model description, not from here.
 
     Attributes:
         socket_path: Unix socket the bridge listens on.
-        profile: Printer profile name.
         idle_disconnect_minutes: Minutes without a command after which the
             bridge drops the BLE link (it ends earlier when the printer
             switches off or leaves range); 0 keeps it until then.
@@ -58,40 +63,14 @@ class BridgeConfig:
         completion_timeout: Seconds to wait for the motor stop after a page.
         drain_seconds: Pause after a cancelled transfer so the printer
             finishes the data it already accepted before the eject.
-        band_height: Rows per ``GS v 0`` band.
-        top_margin_mm: Unprintable lead of the sheet.
-        bottom_margin_mm: Rows kept free at the sheet end.
-        dpi: Print resolution.
-        print_width_px: Head width in dots.
     """
 
     socket_path: Path
-    profile: str = "m08f"
     idle_disconnect_minutes: float = 30.0
     auto_off_minutes: int | None = None
     settle_seconds: float = 3.0
     completion_timeout: float = 300.0
     drain_seconds: float = 1.0
-    band_height: int | None = None
-    top_margin_mm: float | None = None
-    bottom_margin_mm: float | None = None
-    dpi: int | None = None
-    print_width_px: int | None = None
-
-    def resolved_profile(self) -> PrinterProfile:
-        """The printer profile with the config's geometry overrides applied."""
-        base = get_profile(self.profile)
-        overrides = {
-            f.name: getattr(self, f.name)
-            for f in fields(self)
-            if f.name in _PROFILE_FIELDS and getattr(self, f.name) is not None
-        }
-        return replace(base, **overrides) if overrides else base
-
-
-_PROFILE_FIELDS = frozenset(
-    {"band_height", "top_margin_mm", "bottom_margin_mm", "dpi", "print_width_px"}
-)
 
 
 class Bridge:
@@ -99,9 +78,9 @@ class Bridge:
 
     def __init__(self, config: BridgeConfig, printer_factory: PrinterFactory) -> None:
         self.config = config
-        self.profile = config.resolved_profile()
         self._factory = printer_factory
-        self._address: str | None = None  # last printer used, kept in memory
+        # The printer linked or used last, with its model's profile; kept in
+        # memory until the bridge stops.
         self.printer: Printer | None = None
         self.session_active = False
         self._seen: dict[str, dict[str, Any]] = {}
@@ -134,44 +113,86 @@ class Bridge:
         """Whether a live BLE link exists."""
         return self.printer is not None and self.printer.is_connected
 
-    async def discover(self, timeout: float) -> list[BLEDevice]:
-        """Scan for printers matching the profile's advertised name.
+    async def discover(self, timeout: float) -> list[tuple[BLEDevice, PrinterProfile]]:
+        """Scan for printers of every known model.
 
         Args:
             timeout: Scan duration in seconds.
 
         Returns:
-            Matching devices, possibly empty.
+            Each device found with the profile its advertised name matches;
+            devices of no known model are left out.
         """
-        return await discover(
-            name_pattern=self.profile.ble_name_pattern, timeout=timeout
+        pattern = "|".join(
+            f"(?:{get_profile(name).ble_name_pattern})" for name in list_profiles()
         )
+        devices = await discover(name_pattern=pattern, timeout=timeout)
+        found = [(device, profile_for_name(device.name)) for device in devices]
+        return [(device, profile) for device, profile in found if profile is not None]
 
     async def connect(
-        self, discovery_timeout: float = 5.0, address: str | None = None
+        self,
+        discovery_timeout: float = 5.0,
+        address: str | None = None,
+        model: str | None = None,
     ) -> None:
         """Establish the BLE link, reusing a held one.
 
         Args:
             discovery_timeout: Scan budget when the printer must be found.
-            address: Printer to use instead of the configured one; a change
-                of address drops the current link and targets the new one.
+            address: Printer to link to; another address than the current
+                printer's drops that link. ``None`` keeps the printer used
+                last, or takes the only known printer a scan finds.
+            model: Model of that printer; without it a scan reads the model
+                from the printer's advertised name.
 
         Raises:
-            ConnectionError: If the printer is not found or refuses.
+            ConnectionError: If the model is unknown, the printer is not
+                found, several printers qualify, or the printer refuses.
         """
         self.cancel_hold()
-        if address is not None and address != self._address:
+        if model is not None and model not in list_profiles():
+            raise ConnectionError(f"unknown printer model {model!r}")
+        current = self.printer
+        if current is not None and (
+            (address is not None and address != current.address)
+            or (model is not None and model != current.profile.name)
+        ):
             await self.disconnect()
             self.printer = None
-            self._address = address
         if self.connected:
             return
         if self.printer is None:
-            self.printer = self._factory(self.profile, self._address)
+            self.printer = await self._new_printer(address, model, discovery_timeout)
         await self.printer.connect(discovery_timeout=discovery_timeout)
-        logger.info("Printer link up")
+        logger.info("Printer link up (%s)", self.printer.profile.name)
         await self._apply_auto_off(self.printer)
+
+    async def _new_printer(
+        self, address: str | None, model: str | None, timeout: float
+    ) -> Printer:
+        if model is not None:
+            return self._factory(get_profile(model), address)
+        found = await self.discover(timeout)
+        if address is not None:
+            matches = [
+                (device, profile)
+                for device, profile in found
+                if device.address.upper() == address.upper()
+            ]
+            if not matches:
+                raise ConnectionError(f"no printer of a known model at {address}")
+            device, profile = matches[0]
+            return self._factory(profile, device)
+        if not found:
+            raise ConnectionError("no printer of a known model in range")
+        if len(found) > 1:
+            addresses = ", ".join(sorted(device.address for device, _ in found))
+            raise ConnectionError(
+                f"several printers in range ({addresses}); choose one by address"
+            )
+        device, profile = found[0]
+        return self._factory(profile, device)
 
     async def _apply_auto_off(self, printer: Printer) -> None:
         """Set the configured auto-off timer unless the printer already has it."""

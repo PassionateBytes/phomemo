@@ -240,7 +240,7 @@ phomemo-bridge eject
 phomemo-bridge connect -a AA:BB:CC:DD:EE:FF   # pick a printer when several are in range
 ```
 
-`phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only M08F a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.
+`phomemo-bridge COMMAND -h` describes each command. Commands use the printer given with `-a/--address`, else the one linked or used last since the bridge started, else the only printer of a known model a scan finds; with several printers in range they refuse and list them. `status` and `auto-off` never connect by themselves; run `connect` first.
 
 `packaging/systemd/phomemo-bridge.service` is its system unit (service user `phomemo` from `packaging/systemd/phomemo.sysusers.conf`, socket `/run/phomemo/bridge.sock`, enabled by `packaging/systemd/90-phomemo-bridge.preset`); `packaging/rpm/phomemo-driver.spec` builds it as the `python3-phomemo` RPM, a subpackage of `phomemo-driver`.
 
@@ -253,23 +253,20 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `settle_seconds` | `3` | Cap on the wait for an inserted sheet to seat at the head. |
 | `completion_timeout` | `300` | Seconds to wait for the motor stop after a page. |
 | `drain_seconds` | `1` | Pause after a cancelled transfer before ejecting. |
-| `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
-| `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
-| `profile` | `M08F-A4` | Printer model profile (Bluetooth name pattern, head width, resolution, sheet geometry); `M08F-A4` is the only one so far. |
 | `auto_off_minutes` | unset (also in the packaged file) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
 
-The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only M08F a scan finds; with several in range they refuse and list them.
+The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only printer of a known model a scan finds; with several in range they refuse and list them.
 
 Wire format: one JSON object per line; a message with `"bytes": N` is followed by N raw bytes. Replies carry `ok` and `cmd`; while a long command is pending the bridge pushes `{"event": "progress", "percent": P}` and `{"event": "waiting", "reason": R}` lines with `R` one of `connecting` (link being brought up), `printer-off` (printer off, out of range or in use elsewhere), `adapter-off` (Bluetooth unavailable), `lid-open`, `no-sheet`, `short-sheet` (the last sheet ran out, a longer one is needed). One client at a time; `abort` is the only command accepted while another is pending.
 
 | Command | Arguments | Reply |
 |---------|-----------|-------|
-| `discover` | `timeout` | `printers: [{name, address}]` |
-| `open` | `address` (optional) | connects (or reuses the held link); a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
+| `discover` | `timeout` | `printers: [{name, address, model}]`: printers of every known model in range, with the model their advertised name matches |
+| `open` | `address`, `model` (both optional) | connects (or reuses the held link) with the profile of `model`, or of the model the printer's advertised name matches; a different address than the current one retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
 | `close` | | ends the session's use of the link; the bridge drops it after `idle_disconnect_minutes` without a command |
 | `disconnect` | | drops the link now instead of after `idle_disconnect_minutes` |
-| `status` | `address` (optional) | linked: `connected: true`, `address`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
-| `info` | | linked printer's `address`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
+| `status` | `address` (optional) | linked: `connected: true`, `address`, `model`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last linked printer), `linked_to` when the bridge holds another printer, and `last_seen` with the values last read from that printer and their time `at` (absent until it was read once since the bridge started). Never connects. |
+| `info` | | linked printer's `address`, `model`, `firmware`, `serial`, `battery`, `auto_off_minutes`, `lid`, `paper`; error `not connected` without a link |
 | `auto_off` | `minutes` (optional) | sets the timer when `minutes` is given, then `auto_off_minutes` as the printer reports it; error `not connected` without a link |
 | `wait_ready` | `settle` | returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |

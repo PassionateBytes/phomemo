@@ -237,16 +237,24 @@ class Session:
         self, obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
         timeout = float(obj.get("timeout", 5.0))
-        devices = await self._bridge.discover(timeout)
-        return {"printers": [{"name": d.name, "address": d.address} for d in devices]}
+        found = await self._bridge.discover(timeout)
+        return {
+            "printers": [
+                {"name": device.name, "address": device.address, "model": profile.name}
+                for device, profile in found
+            ]
+        }
 
     async def _cmd_open(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         """Bring the link up if reachable; ``wait_ready`` keeps retrying otherwise."""
         self._used_link = True
         address = obj.get("address")
+        model = obj.get("model")
         try:
             await self._bridge.connect(
-                discovery_timeout=5.0, address=str(address) if address else None
+                discovery_timeout=5.0,
+                address=str(address) if address else None,
+                model=str(model) if model else None,
             )
         except ConnectionError as exc:
             logger.info("Printer not reachable at open: %s", exc)
@@ -269,6 +277,7 @@ class Session:
         printer = await self._answering_printer()
         info = await printer.query_device_info(timeout=1.0)
         values = {
+            "model": printer.profile.name,
             "firmware": info.firmware,
             "serial": info.serial,
             "battery": info.battery,
@@ -312,6 +321,7 @@ class Session:
             paper = await printer.query_paper(timeout=1.0)
             battery = await printer.query_battery(timeout=1.0)
             values = {
+                "model": printer.profile.name,
                 "lid": lid.value if lid is not None else None,
                 "paper": paper.value if paper is not None else None,
                 "battery": battery,
@@ -375,7 +385,10 @@ class Session:
         device = await printer.query_device_info(timeout=1.0)
         versions = obj.get("versions") or {}
         info = PageInfo(
-            printer_name=str(obj.get("printer_name", "Phomemo M08F")),
+            printer_name=str(
+                obj.get("printer_name")
+                or f"{printer.profile.make} {printer.profile.model_name}"
+            ),
             address=getattr(printer, "address", None),
             firmware=device.firmware,
             serial=device.serial,
@@ -385,11 +398,12 @@ class Session:
             versions={str(k): str(v) for k, v in versions.items()},
             socket_path=str(bridge.config.socket_path),
         )
-        length_mm = bridge.profile.sheet_length_mm or 297.0
+        profile = printer.profile
+        length_mm = profile.sheet_length_mm or 297.0
         directory = Path(os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir())
         path = directory / "phomemo-testpage.png"
-        img = await asyncio.to_thread(render_test_page, info, bridge.profile, length_mm)
-        await asyncio.to_thread(save_test_page, img, path, bridge.profile.dpi)
+        img = await asyncio.to_thread(render_test_page, info, profile, length_mm)
+        await asyncio.to_thread(save_test_page, img, path, profile.dpi)
         return {"path": str(path)}
 
     async def _cmd_eject(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
@@ -592,7 +606,7 @@ class Session:
             prepared = await asyncio.to_thread(
                 prepare_page,
                 page.image(),
-                bridge.profile,
+                printer.profile,
                 page.media_length_mm,
                 page.tone,
                 page.rotate,

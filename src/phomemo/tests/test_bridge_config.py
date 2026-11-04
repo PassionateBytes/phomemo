@@ -31,11 +31,9 @@ def test_config_defaults_without_files(
     config = load_config(paths=[], env={"XDG_RUNTIME_DIR": "/run/user/1000"})
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
     assert config.auto_off_minutes is None
-    assert config.profile == "m08f"
     assert config.idle_disconnect_minutes == 30.0
     assert config.settle_seconds == 3.0
     assert config.completion_timeout == 300.0
-    assert config.band_height is None
 
 
 def test_config_system_socket_without_runtime_dir() -> None:
@@ -47,12 +45,12 @@ def test_config_user_file_overrides_system_file(tmp_path: Path) -> None:
     system = tmp_path / "system.toml"
     user = tmp_path / "user.toml"
     system.write_text(
-        "idle_disconnect_minutes = 10\nband_height = 64\nauto_off_minutes = 10\n"
+        "idle_disconnect_minutes = 10\nsettle_seconds = 7\nauto_off_minutes = 10\n"
     )
     user.write_text("idle_disconnect_minutes = 20\n")
     config = load_config(paths=[system, user], env={})
     assert config.idle_disconnect_minutes == 20.0
-    assert config.band_height == 64
+    assert config.settle_seconds == 7.0
     assert config.auto_off_minutes == 10
 
 
@@ -75,8 +73,8 @@ def test_config_env_socket_override(tmp_path: Path) -> None:
             "idle_disconnect_minutes",
             "must not be negative",
         ),
-        ("band_height = 0\n", "band_height", "must be positive"),
-        ('profile = "nope"\n', "profile", "unknown profile"),
+        ("band_height = 256\n", "band_height", "unknown key"),
+        ('profile = "m08f"\n', "profile", "unknown key"),
         (
             'address = "AA:BB:CC:DD:EE:FF"\n',
             "address",
@@ -100,8 +98,6 @@ def test_config_logs_an_invalid_entry_and_ignores_it(
     assert "ignored" in caplog.text
     assert config.settle_seconds == 9.0
     assert config.idle_disconnect_minutes == 30.0
-    assert config.profile == "m08f"
-    assert config.band_height is None
 
 
 def test_config_unreadable_file_is_logged_and_skipped(

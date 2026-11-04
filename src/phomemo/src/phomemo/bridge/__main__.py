@@ -35,9 +35,10 @@ from phomemo.imaging import ToneMode
 
 _PRINTER_CHOICE = (
     "Which printer: the one given with --address, else the printer linked or "
-    "used last since the bridge started, else the only M08F a scan finds. With "
-    "several printers in range and none of these, the command refuses and lists "
-    'them; pick one with --address (see "devices").'
+    "used last since the bridge started, else the only printer of a known model "
+    "a scan finds. With several printers in range and none of these, the "
+    'command refuses and lists them; pick one with --address (see "devices"). '
+    "The model comes from the printer's advertised name."
 )
 
 _COMMANDS: dict[str, tuple[str, str]] = {
@@ -49,9 +50,9 @@ _COMMANDS: dict[str, tuple[str, str]] = {
     ),
     "devices": (
         "list printers in range",
-        "Scan for M08F printers and list their Bluetooth addresses and names. "
-        "A printer shows up only while it is switched on and not linked to "
-        "another host.",
+        "Scan for printers of every known model and list each one's Bluetooth "
+        "address, model and advertised name. A printer shows up only while it "
+        "is switched on and not linked to another host.",
     ),
     "connect": (
         "bring the printer link up",
@@ -246,7 +247,7 @@ async def _run_client(args: argparse.Namespace, socket_path: Path) -> int:
         elif args.command == "devices":
             printers = await client.discover(args.timeout)
             for printer in printers:
-                print(f"{printer['address']}  {printer['name']}")
+                print(f"{printer['address']}  {printer['model']:<8}  {printer['name']}")
             if not printers:
                 print("no printer in range", file=sys.stderr)
                 return 1

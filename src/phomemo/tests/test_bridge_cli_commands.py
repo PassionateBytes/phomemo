@@ -110,6 +110,7 @@ async def test_status_shows_sensors_and_device_details_when_linked(
     assert json.loads(out) == {
         "connected": True,
         "address": ADDRESS,
+        "model": "m08f",
         "lid": "closed",
         "paper": "present",
         "battery": 77,
@@ -168,3 +169,12 @@ async def test_status_after_disconnect_shows_last_seen_values(
     assert reply["address"] == ADDRESS
     assert reply["last_seen"]["battery"] == 77
     assert reply["last_seen"]["firmware"] == "1.1.3"
+
+
+@pytest.mark.asyncio
+async def test_devices_lists_address_model_and_name(
+    served: BridgeConfig, capsys: pytest.CaptureFixture[str]
+) -> None:
+    code, out, _ = await run(served, capsys, "devices", "--timeout", "0.1")
+    assert code == 0
+    assert out.split() == [ADDRESS, "m08f", "M08F"]

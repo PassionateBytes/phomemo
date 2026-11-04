@@ -33,9 +33,6 @@
 # Minutes without a command before the link is dropped (0 = until printer off).
 #idle_disconnect_minutes = 30
 
-# Printer model profile; M08F-A4 is the only one so far.
-#profile = "M08F-A4"
-
 # Longest wait in seconds for an inserted sheet to settle at the print head.
 #settle_seconds = 3
 
