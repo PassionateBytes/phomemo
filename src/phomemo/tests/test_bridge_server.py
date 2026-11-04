@@ -31,7 +31,7 @@ from phomemo.events import LidState, PaperState
 from phomemo.printer import DeviceInfo, PrintAborted, SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
-A4 = get_profile("M08F-A4")
+A4 = get_profile("m08f")
 
 
 class FakePrinter:

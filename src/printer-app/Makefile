@@ -36,7 +36,7 @@ ALL_LDLIBS = $(LDLIBS) $(shell pkg-config --libs pappl) -pthread
 
 APP      = phomemo-printer-app
 SRCS     = main.c bridge.c device.c driver.c job.c icons.c
-ICONS    = icons/m08f-48.png icons/m08f-128.png icons/m08f-512.png
+ICONS    = ../models/m08f/icon-48.png ../models/m08f/icon-128.png ../models/m08f/icon-512.png
 VENDOR   = third_party/cJSON.c
 VOBJS    = $(VENDOR:.c=.o)
 OBJS     = $(SRCS:.c=.o)

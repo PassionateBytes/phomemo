@@ -37,7 +37,7 @@ class FakeClient:
 
 
 def _make_transport(**overrides: object) -> tuple[BleTransport, FakeClient]:
-    profile = replace(get_profile("M08F-A4"), **overrides)  # type: ignore[arg-type]
+    profile = replace(get_profile("m08f"), **overrides)  # type: ignore[arg-type]
     transport = BleTransport(profile)
     client = FakeClient()
     transport._client = client  # type: ignore[assignment]
@@ -46,7 +46,7 @@ def _make_transport(**overrides: object) -> tuple[BleTransport, FakeClient]:
 
 
 def test_default_profile_timing() -> None:
-    profile = get_profile("M08F-A4")
+    profile = get_profile("m08f")
     assert profile.write_with_response is True
     assert profile.chunk_delay_s == 0.0
 
@@ -116,7 +116,7 @@ async def test_subscribe_failure_is_a_connection_error_even_without_services(
         def services(self) -> object:
             raise BleakError("Service Discovery has not been performed yet")
 
-    transport = BleTransport(replace(get_profile("M08F-A4"), negotiate_mtu=False))
+    transport = BleTransport(replace(get_profile("m08f"), negotiate_mtu=False))
     monkeypatch.setattr(
         transport_module, "BleakClient", lambda address, **kw: FlakyClient()
     )
@@ -146,7 +146,7 @@ async def test_unsolicited_disconnect_clears_connected(
         async def start_notify(self, uuid: str, cb: object) -> None:
             pass
 
-    transport = BleTransport(replace(get_profile("M08F-A4"), negotiate_mtu=False))
+    transport = BleTransport(replace(get_profile("m08f"), negotiate_mtu=False))
     monkeypatch.setattr(transport_module, "BleakClient", Client)
     await transport.connect("AA:BB:CC:DD:EE:FF", on_event=lambda data: None)
     assert transport.is_connected is True

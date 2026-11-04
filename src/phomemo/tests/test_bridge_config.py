@@ -31,7 +31,7 @@ def test_config_defaults_without_files(
     config = load_config(paths=[], env={"XDG_RUNTIME_DIR": "/run/user/1000"})
     assert config.socket_path == Path("/run/user/1000/phomemo-bridge.sock")
     assert config.auto_off_minutes is None
-    assert config.profile == "M08F-A4"
+    assert config.profile == "m08f"
     assert config.idle_disconnect_minutes == 30.0
     assert config.settle_seconds == 3.0
     assert config.completion_timeout == 300.0
@@ -82,7 +82,7 @@ def test_config_env_socket_override(tmp_path: Path) -> None:
             "address",
             "unknown key",
         ),
-        ('[printer]\nprofile = "M08F-A4"\n', "printer", "unknown key"),
+        ('[printer]\nprofile = "m08f"\n', "printer", "unknown key"),
     ],
 )
 def test_config_logs_an_invalid_entry_and_ignores_it(
@@ -100,7 +100,7 @@ def test_config_logs_an_invalid_entry_and_ignores_it(
     assert "ignored" in caplog.text
     assert config.settle_seconds == 9.0
     assert config.idle_disconnect_minutes == 30.0
-    assert config.profile == "M08F-A4"
+    assert config.profile == "m08f"
     assert config.band_height is None
 
 
@@ -141,9 +141,9 @@ def test_config_without_auto_off_leaves_the_printer_alone() -> None:
     assert load_config(paths=[], env={}).auto_off_minutes is None
 
 
-def test_packaged_config_enforces_five_minutes() -> None:
+def test_packaged_config_leaves_the_printer_auto_off_alone() -> None:
     packaged = Path(__file__).parents[3] / "packaging" / "config" / "bridge.toml"
-    assert load_config(paths=[packaged], env={}).auto_off_minutes == 5
+    assert load_config(paths=[packaged], env={}).auto_off_minutes is None
 
 
 @pytest.mark.parametrize("minutes", [0, 15, 60, 1275])

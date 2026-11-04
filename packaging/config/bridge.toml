@@ -26,7 +26,8 @@
 # (journalctl -u phomemo-bridge) and keep their default.
 # Apply changes with: sudo systemctl restart phomemo-bridge
 
-# Printer auto-off enforced on connect: 0 = never
+# Auto-off set on the printer at each link (5-min steps, 0 = never); unset:
+# the printer keeps its own setting.
 #auto_off_minutes = 5
 
 # Minutes without a command before the link is dropped (0 = until printer off).

@@ -28,7 +28,7 @@ from phomemo.bridge.testpage import (
 from phomemo.registry import get_profile
 from PIL import Image
 
-A4 = get_profile("M08F-A4")
+A4 = get_profile("m08f")
 
 
 def _info() -> PageInfo:

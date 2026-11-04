@@ -66,3 +66,23 @@ def test_spec_and_makefile_install_the_conf_file() -> None:
     assert "%config(noreplace) %{_sysconfdir}/phomemo-printer-app.conf" in spec
     makefile = (REPO / "Makefile").read_text()
     assert "packaging/config/phomemo-printer-app.conf" in makefile
+
+
+def test_wheel_and_sdist_carry_the_model_descriptions(tmp_path: Path) -> None:
+    import subprocess
+    import tarfile
+    import zipfile
+
+    subprocess.run(
+        ["uv", "build", str(REPO / "src" / "phomemo"), "--out-dir", str(tmp_path)],
+        check=True,
+        capture_output=True,
+    )
+    wheel = next(tmp_path.glob("phomemo-*.whl"))
+    names = set(zipfile.ZipFile(wheel).namelist())
+    for name in ("model.json", "icon-48.png", "icon-128.png", "icon-512.png"):
+        assert f"phomemo/models/m08f/{name}" in names
+    sdist = next(tmp_path.glob("phomemo-*.tar.gz"))
+    with tarfile.open(sdist) as archive:
+        members = archive.getnames()
+    assert any(m.endswith("src/phomemo/models/m08f/model.json") for m in members)

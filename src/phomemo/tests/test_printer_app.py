@@ -53,7 +53,7 @@ PRINTER = "phomemo"
 
 SOURCE_PDF = Path("/usr/share/cups/ipptool/onepage-a4.pdf.gz")
 MULTIPAGE_PDF = Path("/usr/share/cups/ipptool/document-a4.pdf.gz")
-A4_ROWS = get_profile("M08F-A4").rows_for(297.0)
+A4_ROWS = get_profile("m08f").rows_for(297.0)
 
 if not BINARY.exists():
     pytest.skip(f"{BINARY} not built", allow_module_level=True)
@@ -517,9 +517,7 @@ async def test_a5_portrait_raster_is_rotated(
     page = printer.bridge.page_begins[0]
     assert page["rotate"] is True
     assert page["media_length_mm"] == 148.0
-    assert printer.bridge.printer.printed[0][1] == get_profile("M08F-A4").rows_for(
-        148.0
-    )
+    assert printer.bridge.printer.printed[0][1] == get_profile("m08f").rows_for(148.0)
 
 
 async def test_a5_landscape_raster_is_not_rotated_twice(

@@ -66,7 +66,7 @@ class BridgeConfig:
     """
 
     socket_path: Path
-    profile: str = "M08F-A4"
+    profile: str = "m08f"
     idle_disconnect_minutes: float = 30.0
     auto_off_minutes: int | None = None
     settle_seconds: float = 3.0

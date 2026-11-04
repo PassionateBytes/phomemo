@@ -55,7 +55,7 @@ async def main():
         print("No printers found")
         return
 
-    async with Printer("M08F-A4", devices[0]) as printer:
+    async with Printer("m08f", devices[0]) as printer:
         await printer.connect()
 
         # Block until lid closed and a sheet is loaded
@@ -93,7 +93,7 @@ The `Printer` class manages the BLE connection lifecycle. Pass a profile name or
 ```python
 from phomemo import Printer
 
-async with Printer("M08F-A4", "AA:BB:CC:DD:EE:FF") as printer:
+async with Printer("m08f", "AA:BB:CC:DD:EE:FF") as printer:
     await printer.connect()
     # ... use the printer ...
 # automatically disconnects on exit
@@ -256,7 +256,7 @@ Configuration is TOML, `/etc/phomemo/bridge.toml` overridden by `$XDG_CONFIG_HOM
 | `band_height` | profile (256) | Rows per `GS v 0` band; on cancel the band in progress is finished with white rows (up to this many). |
 | `top_margin_mm`, `bottom_margin_mm`, `dpi`, `print_width_px` | profile | Geometry overrides. |
 | `profile` | `M08F-A4` | Printer model profile (Bluetooth name pattern, head width, resolution, sheet geometry); `M08F-A4` is the only one so far. |
-| `auto_off_minutes` | unset (the packaged file sets `5`) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
+| `auto_off_minutes` | unset (also in the packaged file) | Auto-off timer the bridge sets on the printer at each new link, written only when the printer reports another value: a multiple of 5 up to 1275, `0` = never switch off; another number is rounded to the nearest step (at least 5). Unset, or a value that is no number, leaves the printer's own setting alone. |
 
 The bridge has no fixed printer: the printer application names one in every `open`. Commands without an address use the printer linked or used last (kept in memory until the bridge restarts), else the only M08F a scan finds; with several in range they refuse and list them.
 
