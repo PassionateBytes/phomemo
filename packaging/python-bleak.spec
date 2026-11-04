@@ -1,9 +1,11 @@
 # Fedora does not package bleak; phomemo needs it. Built in the
-# phomemo-driver COPR project only.
+# phomemo-driver COPR project only. COPR's build replaces Version with the
+# bleak version locked in uv.lock (.copr/Makefile); to update, run
+# `uv lock --upgrade-package bleak` and commit the lockfile.
 %global pypi_name bleak
 
 Name:           python-%{pypi_name}
-Version:        3.0.2
+Version:        3.0.1
 Release:        1%{?dist}
 Summary:        Cross-platform Bluetooth Low Energy client for Python
 
@@ -50,5 +52,5 @@ Requires:       bluez
 %doc README.rst
 
 %changelog
-* Wed Nov 04 2026 Paul Bütof - 3.0.2-1
-- Package for the phomemo-driver COPR project
+* Wed Nov 04 2026 Paul Bütof - 3.0.1-1
+- Package for the phomemo-driver COPR project (version follows uv.lock)
