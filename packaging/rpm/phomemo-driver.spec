@@ -119,5 +119,5 @@ fi
 - Start the services on first installation
 - Register printers in range when the system service starts
 
-* Mon Nov 03 2026 Paul Bütof - 0.1.0-1
+* Tue Nov 03 2026 Paul Bütof - 0.1.0-1
 - First package

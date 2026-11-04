@@ -35,18 +35,23 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install uv
         run: pip install uv
-      - name: Python environment
-        run: uv sync
-      - name: Lint
+      # The suite runs as an ordinary user, as on a developer machine: as
+      # root, the printer application's test servers would use the system
+      # socket and state paths instead of the per-test ones.
+      - name: Create the test user
         run: |
-          uv run ruff check .
-          uv run ruff format --check .
+          useradd --create-home tester
+          chown -R tester "$GITHUB_WORKSPACE"
+      - name: Python environment
+        run: su tester -c "uv sync"
+      - name: Lint
+        run: su tester -c "uv run ruff check . && uv run ruff format --check ."
       - name: Build the printer application
-        run: make -C printer-app
+        run: su tester -c "make -C printer-app"
       - name: C unit tests
-        run: make -C printer-app test
+        run: su tester -c "make -C printer-app test"
       - name: Python tests (library, bridge, end-to-end against the built application)
-        run: uv run pytest -q
+        run: su tester -c "uv run pytest -q"
 
   rpm:
     name: RPM build (Fedora 44)
@@ -70,10 +75,14 @@ jobs:
           defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
                 --define "_srcrpmdir $PWD/dist")
           dnf builddep -y packaging/rpm/phomemo-driver.spec
-          # The spec generates the Python build requirements at build time:
-          # resolve them into a nosrc RPM, install those, then build for real.
-          rpmbuild -br "${defs[@]}" packaging/rpm/phomemo-driver.spec || true
-          dnf builddep -y dist/*.buildreqs.nosrc.rpm
+          # The spec generates its Python build requirements in rounds (the
+          # build backend first, then the package's own requirements); keep
+          # installing them until rpmbuild -br finds nothing missing.
+          for round in 1 2 3 4 5; do
+            rm -f dist/*.buildreqs.nosrc.rpm
+            rpmbuild -br "${defs[@]}" packaging/rpm/phomemo-driver.spec && break
+            dnf builddep -y dist/*.buildreqs.nosrc.rpm
+          done
           rpmbuild -ba "${defs[@]}" packaging/rpm/phomemo-driver.spec
           ls -R dist
         shell: bash
