@@ -170,7 +170,13 @@ page = Image.open("page.png")   # e.g. a rendered 8-bit gray page
 sheet = prepare_page(page, printer.profile, length_mm=297.0, tone=ToneMode.DIFFUSION)
 ```
 
-`prepare_page()` maps a page raster from a print system (mode `L` with 0 = black, or mode `1`) onto the sheet: an optional quarter turn with `rotate=True` (A5 is fed long edge first), centring on the head width, dropping the rows in the unprintable top lead, and clipping to the sheet. Gray input is converted with a tone mode; 1-bit input keeps its pixels.
+`prepare_page()` maps a page raster from a print system (mode `L` with 0 = black, or mode `1`) onto the sheet: an optional quarter turn with `rotate=True` (A5 is fed long edge first), centring on the head width (a raster wider than the head, such as a Letter page, is cropped to the head's centre), dropping the rows in the unprintable top lead, and clipping to the sheet. Gray input is converted with a tone mode; 1-bit input keeps its pixels. The sheet length for a size comes from the profile:
+
+```python
+letter = printer.profile.medium("na_letter_8.5x11in")
+length_mm = printer.profile.sheet_length_for(letter)   # 279.4
+rotate = printer.profile.rotates(letter)               # False; True for A5
+```
 
 | `ToneMode` | Result |
 |---|---|
@@ -287,8 +293,9 @@ async with Printer("m02s") as printer:
 | `supports_escpos_queries` | `False` | Standard ESC/POS queries answer |
 | `service_uuid`, `write_uuid`, `notify_uuid`, `status_uuid` | `ff00`, `ff02`, `ff01`, `ff03` | GATT service and characteristics |
 | `make`, `model_name` | `"Phomemo"`, `""` | Names as users see them |
-| `media`, `default_media` | `()`, `None` | PWG names of the sheet sizes, and the default |
+| `media`, `default_media` | `()`, `None` | The sheet sizes as `MediaSize` entries (PWG name, width and length in mm, `tested`), and the default's PWG name |
 | `max_rows` (property) | derived | Rows between the margins of the default sheet; A4: 2253 |
+| `medium(pwg)`, `sheet_length_for(size)`, `rotates(size)` | | A size by PWG name; its length along the feed (A4: 297, A5: 148, Letter: 279.4); whether it is fed with its length across the head |
 
 ## Next steps
 

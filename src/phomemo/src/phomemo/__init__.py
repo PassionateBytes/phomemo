@@ -50,6 +50,7 @@ from phomemo.imaging import DitherMode, ImageFit, image_to_bitmap, prepare_image
 from phomemo.printer import Printer
 from phomemo.protocol import Density
 from phomemo.registry import (
+    MediaSize,
     PrinterProfile,
     get_profile,
     list_profiles,
@@ -66,6 +67,7 @@ __all__ = [
     "ImageFit",
     "LidEvent",
     "LidState",
+    "MediaSize",
     "MotorStopEvent",
     "PaperEvent",
     "PaperState",

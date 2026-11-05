@@ -127,3 +127,27 @@ def test_prepare_page_mode_1_passthrough() -> None:
     assert out.size == (1680, 220)
     assert out.getpixel((7, 10)) == 0
     assert out.getpixel((8, 10)) == 255
+
+
+def test_prepare_page_crops_a_wide_raster_to_the_centre() -> None:
+    # A Letter page rendered at 203 dpi is 1725 px wide; the 1680 px head
+    # sits centred on the sheet, so 22 columns go on the left, 23 on the right.
+    img = _gray(1725, 2233)
+    for y in range(2233):
+        for x in (21, 22, 1701, 1702):
+            img.putpixel((x, y), 0)
+    out = prepare_page(img, A4, 279.4, ToneMode.THRESHOLD)
+    assert out.size == (1680, 2113)
+    assert out.getpixel((0, 0)) == 0
+    assert out.getpixel((1, 0)) == 255
+    assert out.getpixel((1678, 0)) == 255
+    assert out.getpixel((1679, 0)) == 0
+
+
+def test_prepare_page_a4_raster_unchanged_by_letter_support() -> None:
+    img = _gray(1678, 2374)
+    img.putpixel((0, 80), 0)
+    out = prepare_page(img, A4, 297.0, ToneMode.THRESHOLD)
+    assert out.size == (1680, 2253)
+    assert out.getpixel((1, 0)) == 0
+    assert out.getpixel((0, 0)) == 255

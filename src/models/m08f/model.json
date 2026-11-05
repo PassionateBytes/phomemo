@@ -12,7 +12,8 @@
   "density": {"low": 1, "medium": 5, "high": 6},
   "media": [
     {"pwg": "iso_a4_210x297mm", "default": true},
-    {"pwg": "iso_a5_148x210mm"}
+    {"pwg": "iso_a5_148x210mm"},
+    {"pwg": "na_letter_8.5x11in", "tested": false}
   ],
   "ble": {
     "max_chunk_bytes": 244,

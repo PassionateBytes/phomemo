@@ -125,3 +125,73 @@ def test_rows_for_rejects_length_inside_margins() -> None:
 
     with pytest.raises(ValueError, match="margin"):
         get_profile("m08f").rows_for(10.0)
+
+
+def test_media_size_from_pwg_name_in_millimetres() -> None:
+    from phomemo.registry import MediaSize
+
+    size = MediaSize.from_pwg("iso_a4_210x297mm")
+    assert size == MediaSize("iso_a4_210x297mm", 210.0, 297.0)
+    assert size.tested
+
+
+def test_media_size_from_pwg_name_in_inches() -> None:
+    from phomemo.registry import MediaSize
+
+    size = MediaSize.from_pwg("na_letter_8.5x11in", tested=False)
+    assert size.pwg == "na_letter_8.5x11in"
+    assert (size.width_mm, size.length_mm) == (
+        pytest.approx(215.9),
+        pytest.approx(279.4),
+    )
+    assert not size.tested
+
+
+@pytest.mark.parametrize("name", ["letter", "iso_a4_210x297", "na_letter_8.5x11cm"])
+def test_media_size_rejects_names_without_dimensions(name: str) -> None:
+    from phomemo.registry import MediaSize
+
+    with pytest.raises(ValueError, match="PWG"):
+        MediaSize.from_pwg(name)
+
+
+def test_sheet_length_is_the_dimension_along_the_feed() -> None:
+    import phomemo.profiles  # noqa: F401, registers built-in profiles
+    from phomemo.registry import get_profile
+
+    profile = get_profile("m08f")
+    a4, a5, letter = (
+        profile.medium(name)
+        for name in ("iso_a4_210x297mm", "iso_a5_148x210mm", "na_letter_8.5x11in")
+    )
+    assert profile.sheet_length_for(a4) == 297.0
+    assert profile.sheet_length_for(a5) == 148.0
+    assert profile.sheet_length_for(letter) == pytest.approx(279.4)
+    assert not profile.rotates(a4)
+    assert profile.rotates(a5)
+    assert not profile.rotates(letter)
+
+
+def test_medium_rejects_a_size_the_model_does_not_take() -> None:
+    import phomemo.profiles  # noqa: F401, registers built-in profiles
+    from phomemo.registry import get_profile
+
+    with pytest.raises(KeyError, match="iso_b5"):
+        get_profile("m08f").medium("iso_b5_176x250mm")
+
+
+def test_rows_for_letter() -> None:
+    import phomemo.profiles  # noqa: F401, registers built-in profiles
+    from phomemo.registry import get_profile
+
+    assert get_profile("m08f").rows_for(279.4) == 2113
+
+
+def test_lead_rows_do_not_depend_on_the_sheet() -> None:
+    import phomemo.profiles  # noqa: F401, registers built-in profiles
+    from phomemo.registry import get_profile
+
+    profile = get_profile("m08f")
+    assert profile.lead_rows == 80
+    assert profile.rows_for(297.0) == 2253
+    assert profile.rows_for(148.0) == 1062

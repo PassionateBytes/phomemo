@@ -28,6 +28,7 @@ from phomemo.bridge.protocol import encode_message, read_message
 MEDIA = {
     "a4": (297.0, False),
     "a5": (148.0, True),
+    "letter": (279.4, False),
     "roll": (None, False),
 }
 QUALITY = {"draft": "low", "normal": "medium", "high": "high"}
@@ -267,7 +268,8 @@ class BridgeClient:
 
         Args:
             path: Image file readable by Pillow.
-            media: ``a4``, ``a5`` (fed long edge first, page rotated) or ``roll``.
+            media: ``a4``, ``a5`` (fed long edge first, page rotated), ``letter``
+                or ``roll``.
             tone: ``auto`` or a ``ToneMode`` value.
             quality: ``draft``, ``normal`` or ``high`` (maps to density).
             content: ``auto``, ``text``, ``graphic`` or ``photo``.

@@ -27,7 +27,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from phomemo.protocol import Density
 
@@ -35,6 +35,54 @@ _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
     re.IGNORECASE,
 )
+# PWG 5101.1 self-describing media size name: class, name, width x length, unit.
+_PWG_SIZE_RE = re.compile(
+    r"^[a-z]+_[a-z0-9.-]+_(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)(mm|in)$"
+)
+
+
+@dataclass(frozen=True, slots=True)
+class MediaSize:
+    """A sheet size a printer model takes.
+
+    Attributes:
+        pwg: The PWG self-describing name (``"iso_a4_210x297mm"``).
+        width_mm: Width of the sheet as the name states it.
+        length_mm: Length of the sheet as the name states it.
+        tested: Whether the size has been printed on real hardware; an
+            untested size ships with its geometry taken from documentation.
+    """
+
+    pwg: str
+    width_mm: float
+    length_mm: float
+    tested: bool = True
+
+    @classmethod
+    def from_pwg(cls, pwg: str, tested: bool = True) -> Self:
+        """Read the dimensions out of a PWG self-describing name.
+
+        Args:
+            pwg: A name such as ``"iso_a4_210x297mm"`` or
+                ``"na_letter_8.5x11in"``.
+            tested: Whether the size has been printed on real hardware.
+
+        Returns:
+            The size with its dimensions in millimetres.
+
+        Raises:
+            ValueError: If the name does not carry dimensions and a unit.
+        """
+        match = _PWG_SIZE_RE.match(pwg)
+        if not match:
+            raise ValueError(f"{pwg!r} is not a PWG media size name")
+        factor = 25.4 if match.group(3) == "in" else 1.0
+        return cls(
+            pwg,
+            float(match.group(1)) * factor,
+            float(match.group(2)) * factor,
+            tested,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,8 +136,8 @@ class PrinterProfile:
         make: Manufacturer as shown to users.
         model_name: Model as the vendor writes it (``"M08F"``); ``name`` is
             the lower-case identifier.
-        media: PWG names of the sheet sizes the model takes.
-        default_media: The medium jobs get when they name none.
+        media: The sheet sizes the model takes.
+        default_media: PWG name of the medium jobs get when they name none.
     """
 
     name: str
@@ -112,7 +160,7 @@ class PrinterProfile:
     supports_escpos_queries: bool = False
     make: str = "Phomemo"
     model_name: str = ""
-    media: tuple[str, ...] = ()
+    media: tuple[MediaSize, ...] = ()
     default_media: str | None = None
 
     def __post_init__(self) -> None:
@@ -140,6 +188,56 @@ class PrinterProfile:
             value = getattr(self, field_name)
             if not _UUID_RE.match(value):
                 raise ValueError(f"{field_name} is not a valid UUID: {value!r}")
+
+    def medium(self, pwg: str) -> MediaSize:
+        """The model's sheet size with this PWG name.
+
+        Args:
+            pwg: PWG self-describing name.
+
+        Returns:
+            The matching entry of ``media``.
+
+        Raises:
+            KeyError: If the model does not take that size.
+        """
+        for size in self.media:
+            if size.pwg == pwg:
+                return size
+        raise KeyError(f"{self.name} does not take {pwg!r}")
+
+    @property
+    def head_width_mm(self) -> float:
+        """Width of the print head in millimetres."""
+        return self.print_width_px / self.dpi * 25.4
+
+    def rotates(self, size: MediaSize) -> bool:
+        """Whether a sheet of this size is fed with its length across the head.
+
+        The dimension closer to the head width lies across the head; when
+        that is the sheet's length, a portrait page is printed rotated (A5
+        on an A4 printer).
+
+        Args:
+            size: One of the model's sheet sizes.
+
+        Returns:
+            ``True`` when the sheet's length lies across the head.
+        """
+        head = self.head_width_mm
+        return abs(size.width_mm - head) > abs(size.length_mm - head)
+
+    def sheet_length_for(self, size: MediaSize) -> float:
+        """Length of a sheet of this size along the feed direction.
+
+        Args:
+            size: One of the model's sheet sizes.
+
+        Returns:
+            The dimension that does not lie across the head: 297 mm for A4,
+            148 mm for A5, 279.4 mm for Letter.
+        """
+        return size.width_mm if self.rotates(size) else size.length_mm
 
     def rows_for(self, length_mm: float | None) -> int | None:
         """Dot rows that fit between the margins of a sheet of the given length.
@@ -292,18 +390,24 @@ def _field(where: str, data: dict[str, Any], key: str, kind: Kind) -> Any:
     return value
 
 
-def _media(where: str, entries: list[Any]) -> tuple[tuple[str, ...], str]:
-    names: list[str] = []
+def _media(where: str, entries: list[Any]) -> tuple[tuple[MediaSize, ...], str]:
+    sizes: list[MediaSize] = []
     defaults: list[str] = []
     for entry in entries:
         if not isinstance(entry, dict) or not isinstance(entry.get("pwg"), str):
             raise ValueError(f"{where}: media: expected objects with a pwg name")
-        names.append(entry["pwg"])
+        tested = True
+        if "tested" in entry:
+            tested = _field(f"{where}: media", entry, "tested", bool)
+        try:
+            sizes.append(MediaSize.from_pwg(entry["pwg"], tested))
+        except ValueError as exc:
+            raise ValueError(f"{where}: media: {exc}") from None
         if entry.get("default") is True:
             defaults.append(entry["pwg"])
     if len(defaults) != 1:
         raise ValueError(f"{where}: media: exactly one default medium needed")
-    return tuple(names), defaults[0]
+    return tuple(sizes), defaults[0]
 
 
 def load_manifest(model_dir: Path) -> PrinterProfile:

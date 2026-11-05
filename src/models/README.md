@@ -14,8 +14,11 @@ m08f/
 ```
 
 The directory name is the model's identifier (lower case, also the PAPPL
-driver name). The field reference, how each part reads the manifests and a
-step-by-step guide to adding a model are in the documentation:
+driver name). Sheet sizes are listed under `media` by their PWG names; the
+sheet geometry follows from the name, and `"tested": false` marks a size
+nobody has printed on yet. The field reference, how each part reads the
+manifests and a step-by-step guide to adding a model are in the
+documentation:
 [Printer models](https://passionatebytes.github.io/phomemo-driver/models.html).
 
 **Contributions of new models are very welcome.** A Phomemo model that speaks

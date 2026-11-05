@@ -97,3 +97,12 @@ def test_version_flag_prints_the_package_version(
 
 def test_dash_v_still_means_verbose() -> None:
     assert _parser().parse_args(["-v", "status"]).verbose is True
+
+
+def test_print_takes_letter_media() -> None:
+    from phomemo.bridge.client import MEDIA
+
+    args = _parser().parse_args(["print", "page.png", "--media", "letter"])
+    assert args.media == "letter"
+    assert MEDIA["letter"] == (pytest.approx(279.4), False)
+    assert MEDIA["a5"] == (148.0, True)

@@ -238,10 +238,11 @@ def prepare_page(
 
     The raster is optionally rotated a quarter turn counter-clockwise (an
     A5 portrait page printed on a sheet fed long edge first), centred on
-    the head width when narrower and cropped when wider, stripped of the
-    rows that fall into the unprintable top lead, and clipped to the rows
-    the sheet can hold. Gray input is converted with ``tone``; 1-bit input
-    keeps its pixels.
+    the head width when narrower and cropped to the head's centre when
+    wider (a Letter sheet is wider than the head, which sits centred on
+    it), stripped of the rows that fall into the unprintable top lead, and
+    clipped to the rows the sheet can hold. Gray input is converted with
+    ``tone``; 1-bit input keeps its pixels.
 
     Args:
         img: Page raster, mode ``L`` (0 = black) or mode ``1``.
@@ -258,12 +259,12 @@ def prepare_page(
     if rotate:
         img = img.transpose(Image.Transpose.ROTATE_90)
     width = profile.print_width_px
-    if img.width != width:
+    if img.width > width:
+        left = (img.width - width) // 2
+        img = img.crop((left, 0, left + width, img.height))
+    elif img.width < width:
         canvas = Image.new(img.mode, (width, img.height), 255)
-        canvas.paste(
-            img.crop((0, 0, min(img.width, width), img.height)),
-            (max(0, (width - img.width) // 2), 0),
-        )
+        canvas.paste(img, ((width - img.width) // 2, 0))
         img = canvas
     top = profile.lead_rows
     if img.height <= top:

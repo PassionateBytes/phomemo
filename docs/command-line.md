@@ -207,14 +207,14 @@ Prints an image file (PNG, JPEG, anything Pillow reads) as one page, scaled to t
 |---|---|---|
 | `file` | | Image file to print. |
 | `-a`, `--address ADDRESS` | | Printer to use. |
-| `--media` | `a4` | `a4`, `a5`, `roll` |
+| `--media` | `a4` | `a4`, `a5`, `letter`, `roll` |
 | `--tone` | `auto` (chosen from the content) | `auto`, `threshold`, `ordered`, `diffusion`: how gray becomes dots. |
 | `--quality` | `normal` | `draft`, `normal`, `high`: print density. |
 | `--content` | `auto` | `auto`, `text`, `graphic`, `photo`: content hint for `--tone auto`. |
 | `--abort-after SECONDS` | | Cancel the page this many seconds into the transfer (for testing). |
 
 :::{note}
-An A5 sheet is fed long edge first; the page is rotated so its right edge leads out of the printer.
+An A5 sheet is fed long edge first; the page is rotated so its right edge leads out of the printer. A Letter sheet is wider than the head: the image is scaled to the head width and about 3 mm stay blank at each side. Letter is untested on hardware.
 :::
 
 ### eject

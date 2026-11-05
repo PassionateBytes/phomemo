@@ -41,7 +41,12 @@ def test_m08f_manifest_gives_the_m08f_profile() -> None:
     )
     assert profile.sheet_length_mm == 297.0
     assert (profile.top_margin_mm, profile.bottom_margin_mm) == (10.0, 5.0)
-    assert profile.media == ("iso_a4_210x297mm", "iso_a5_148x210mm")
+    assert [m.pwg for m in profile.media] == [
+        "iso_a4_210x297mm",
+        "iso_a5_148x210mm",
+        "na_letter_8.5x11in",
+    ]
+    assert [m.tested for m in profile.media] == [True, True, False]
     assert profile.default_media == "iso_a4_210x297mm"
     assert profile.max_chunk_bytes == 244
     assert profile.negotiate_mtu and profile.write_with_response
@@ -146,3 +151,27 @@ def test_manifest_density_needs_all_three_levels(tmp_path: Path) -> None:
     _write(target, data)
     with pytest.raises(ValueError, match=r"density: medium: missing"):
         load_manifest(target)
+
+
+def test_manifest_media_needs_a_pwg_name_with_dimensions(tmp_path: Path) -> None:
+    target, data = _copy_model(tmp_path)
+    data["media"] = [{"pwg": "letter", "default": True}]
+    _write(target, data)
+    with pytest.raises(ValueError, match=r"media: 'letter' is not a PWG"):
+        load_manifest(target)
+
+
+def test_manifest_media_tested_must_be_a_boolean(tmp_path: Path) -> None:
+    target, data = _copy_model(tmp_path)
+    data["media"] = [{"pwg": "iso_a4_210x297mm", "default": True, "tested": "no"}]
+    _write(target, data)
+    with pytest.raises(ValueError, match=r"media: tested: expected bool"):
+        load_manifest(target)
+
+
+def test_manifest_media_without_tested_counts_as_tested(tmp_path: Path) -> None:
+    target, data = _copy_model(tmp_path)
+    data["media"] = [{"pwg": "iso_a4_210x297mm", "default": True}]
+    _write(target, data)
+    (medium,) = load_manifest(target).media
+    assert medium.tested

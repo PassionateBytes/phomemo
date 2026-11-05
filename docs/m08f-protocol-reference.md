@@ -690,7 +690,7 @@ data relay — but this was not consistently reproducible.
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Print technology             | Direct thermal                                                                                                          |
 | Print resolution             | 203 DPI                                                                                                                 |
-| Print width                  | 1680 px = 210 bytes/row (A4 variant; Phomemo also sells a Letter variant with a 216 mm head, not tested here)             |
+| Print width                  | 1680 px = 210 bytes/row (the "M08F Letter" SKU is the same hardware sold with Letter paper; Letter is a sheet size, see below) |
 | Paper feed                   | Manual single-sheet insertion (no tray)                                                                                 |
 | Paper sensors (front)        | 2 optical sensors at paper entry — AND logic, both must detect paper. Triggers auto-feed motor. No direct BLE event.    |
 | Paper sensor (rear)          | 1 optical sensor behind print head, center. Detects paper fully loaded. Triggers `1a 06 89` event and stops feed motor. |
@@ -780,6 +780,25 @@ A5 is fed long edge first (210 mm wide, 148 mm long). A client renders A5
 portrait (148 x 210); the driver rotates the raster a quarter turn
 counter-clockwise, so the document's top edge ends up at the sheet's left
 edge. 1062 rows are printable after the 10 mm lead and 5 mm bottom margin.
+
+### Letter on the M08F (untested)
+
+The vendor's Linux driver lists US Letter (8.5 x 11 in, 215.9 x 279.4 mm)
+next to A4 for the M08F and drives both through the same code path, so
+Letter is a sheet size of the M08F, not a different model. Nobody has
+printed on Letter with this driver yet; the manifest marks the size
+`"tested": false`. Geometry as implemented:
+
+| Property       | Value                                                                 |
+| -------------- | --------------------------------------------------------------------- |
+| Sheet length   | 279.4 mm along the feed, short edge first like A4                     |
+| Width          | 1680 px head (210.2 mm) centred on the 215.9 mm sheet: ~2.8 mm blank at each side; a 1725 px raster is cropped to its centre band |
+| Printable rows | 2113 after the 10 mm lead and 5 mm bottom margin (raster rows 80 to 2192 of the 2233-row page) |
+
+To verify with a Letter sheet: print the test page (`phomemo-bridge print`
+with `--media letter`, or a Letter job through the printer app), check that
+the page ends before the sheet runs out (no overrun, see Print Completion)
+and that the side margins are equal.
 
 ### Error Detection During Print
 
