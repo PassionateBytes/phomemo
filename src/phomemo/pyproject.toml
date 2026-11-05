@@ -16,7 +16,7 @@
 
 [project]
 name = "phomemo"
-version = "0.3.0"
+version = "0.4.0"
 description = "Async BLE driver library for Phomemo thermal printers"
 readme = "README.md"
 requires-python = ">=3.13"
