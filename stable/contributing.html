@@ -328,12 +328,11 @@ data-aria-dark="Switch to auto color mode">
 </section>
 <section id="releases">
 <h2>Releases<a class="headerlink" href="#releases" title="Link to this heading">#</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">make<span class="w"> </span>bump<span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>x.y.z
-</span><span data-line="2">make<span class="w"> </span>tag
-</span><span data-line="3">git<span class="w"> </span>push<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>vx.y.z
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">make<span class="w"> </span>release<span class="w"> </span><span class="nv">VERSION</span><span class="o">=</span>minor<span class="w">      </span><span class="c1"># or major, patch, or an explicit x.y.z</span>
+</span><span data-line="2">git<span class="w"> </span>push<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>vx.y.z
 </span></pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">bump</span></code> sets the version in <code class="docutils literal notranslate"><span class="pre">src/phomemo/pyproject.toml</span></code>, the RPM spec and <code class="docutils literal notranslate"><span class="pre">src/printer-app/phomemo.h</span></code>, updates <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code> and commits. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">tag</span></code> creates the annotated tag <code class="docutils literal notranslate"><span class="pre">vx.y.z</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">release</span></code> runs on a clean <code class="docutils literal notranslate"><span class="pre">main</span></code>: it sets the version in <code class="docutils literal notranslate"><span class="pre">src/phomemo/pyproject.toml</span></code>, the RPM spec and <code class="docutils literal notranslate"><span class="pre">src/printer-app/phomemo.h</span></code>, updates <code class="docutils literal notranslate"><span class="pre">uv.lock</span></code>, commits and creates the annotated tag <code class="docutils literal notranslate"><span class="pre">vx.y.z</span></code>. It refuses a tag that exists. The push is yours: pushing the tag publishes.</p>
 <p>Pushing the tag runs <code class="docutils literal notranslate"><span class="pre">.github/workflows/release.yml</span></code>:</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
@@ -398,7 +397,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/documentation_options.js?v=6c02275b"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/shibuya.js?v=50760d75"></script>
