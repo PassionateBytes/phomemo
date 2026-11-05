@@ -17,8 +17,9 @@
 """Rendering of the printer app's test page.
 
 The page covers the imageable A4 area at the printer's resolution so the
-printer app places it 1:1: device details as text, rulers along
-the top and left edges, a gray ramp for the dithering, line and text size
+printer app places it 1:1: device details as text, millimetre rulers
+along the top and left edges, inch rulers along the bottom and right
+edges, a gray ramp for the dithering, line and text size
 samples.
 """
 
@@ -26,6 +27,7 @@ from __future__ import annotations
 
 import datetime as dt
 import importlib.metadata
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -34,6 +36,10 @@ from PIL import Image, ImageDraw, ImageFont
 from phomemo.registry import PrinterProfile
 
 _MM_PER_INCH = 25.4
+_PT_PER_INCH = 72
+# Band along an edge that a ruler's ticks and labels occupy; the
+# perpendicular rulers stop short of it so the corners stay legible.
+_RULER_DEPTH = 72
 
 
 @dataclass(frozen=True)
@@ -128,6 +134,7 @@ def render_test_page(
     small_font = ImageFont.load_default(size=20)
 
     _rulers(draw, width, height, px_per_mm, small_font)
+    _inch_rulers(draw, width, height, profile.dpi, small_font)
 
     x = round(12 * px_per_mm)
     y = round(12 * px_per_mm)
@@ -164,10 +171,12 @@ def render_test_page(
         draw.line((left, y, left + segment - 8, y + drop), fill=0, width=w)
     y += drop + 30
 
-    sample = "The quick brown fox jumps over the lazy dog"
-    for size in (20, 28, 40, 56):
+    sample = "Sphinx of black quartz, judge my vow"
+    # Point sizes as word processors offer them; 1 pt = 1/72 inch.
+    for pt in (8, 10, 12, 14, 18, 24):
+        size = round(pt * profile.dpi / _PT_PER_INCH)
         font = ImageFont.load_default(size=size)
-        draw.text((x, y), f"{size} px: {sample}", font=font, fill=0)
+        draw.text((x, y), f"{pt} pt: {sample}", font=font, fill=0)
         y += size + 16
     return img
 
@@ -179,7 +188,10 @@ def _rulers(
     px_per_mm: float,
     font: ImageFont.FreeTypeFont,
 ) -> None:
-    """Millimetre scales along the top and left edges, labelled every 10 mm."""
+    """Millimetre scales along the top and left edges, labelled every 10 mm.
+
+    Each stops short of the inch scale at its far end.
+    """
 
     def tick(mm: int) -> tuple[int, int]:
         """Length and stroke of a tick: 10 mm, 5 mm and 1 mm marks."""
@@ -193,7 +205,7 @@ def _rulers(
     draw.line((0, 1, width, 1), fill=0, width=3)
     draw.line((0, height - 2, width, height - 2), fill=0, width=3)
     mm = 0
-    while mm * px_per_mm < width:
+    while mm * px_per_mm < width - _RULER_DEPTH:
         x = round(mm * px_per_mm)
         length, stroke = tick(mm)
         draw.line((x, 0, x, length), fill=0, width=stroke)
@@ -201,13 +213,67 @@ def _rulers(
             draw.text((x + 5, length + 2), str(mm), font=font, fill=0)
         mm += 1
     mm = 0
-    while mm * px_per_mm < height:
+    while mm * px_per_mm < height - _RULER_DEPTH:
         y = round(mm * px_per_mm)
         length, stroke = tick(mm)
         draw.line((0, y, length, y), fill=0, width=stroke)
         if mm % 10 == 0 and mm:
             draw.text((length + 4, y - 10), str(mm), font=font, fill=0)
         mm += 1
+
+
+def _inch_rulers(
+    draw: ImageDraw.ImageDraw,
+    width: int,
+    height: int,
+    dpi: int,
+    font: ImageFont.FreeTypeFont,
+) -> None:
+    """Inch scales along the bottom and right edges, labelled every inch.
+
+    Measured from the same corner as the millimetre scales, so both
+    read from the top left; each starts past the millimetre scale
+    at its near end.
+    """
+
+    def tick(n: int) -> tuple[int, int]:
+        """Length and stroke of a tick at n sixteenths of an inch."""
+        if n % 16 == 0:
+            return 48, 4
+        if n % 8 == 0:
+            return 36, 3
+        if n % 4 == 0:
+            return 26, 2
+        if n % 2 == 0:
+            return 18, 2
+        return 10, 1
+
+    px_per_tick = dpi / 16
+    first = math.ceil(_RULER_DEPTH / px_per_tick)
+    n = first
+    while n * px_per_tick < width - _RULER_DEPTH:
+        x = round(n * px_per_tick)
+        length, stroke = tick(n)
+        draw.line((x, height - 1 - length, x, height - 1), fill=0, width=stroke)
+        if n % 16 == 0:
+            draw.text(
+                (x + 5, height - length - 2),
+                f"{n // 16} in",
+                font=font,
+                fill=0,
+                anchor="ld",
+            )
+        n += 1
+    n = first
+    while n * px_per_tick < height:
+        y = round(n * px_per_tick)
+        length, stroke = tick(n)
+        draw.line((width - 1 - length, y, width - 1, y), fill=0, width=stroke)
+        if n % 16 == 0:
+            draw.text(
+                (width - length - 4, y), f"{n // 16} in", font=font, fill=0, anchor="rm"
+            )
+        n += 1
 
 
 def save_test_page(img: Image.Image, path: Path, dpi: int = 203) -> Path:
