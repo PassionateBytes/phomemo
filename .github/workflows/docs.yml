@@ -14,11 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
-name: Docs
+# Docs: builds the documentation site and deploys it to GitHub Pages. Runs on
+# pushes to main, on v* tags and by hand.
+#
+# The site is versioned and kept on the gh-pages branch: latest/ is built from
+# main, x.y.z/ from each v* tag, and stable/ is a copy of the newest release,
+# where the site root and the unversioned page URLs redirect (to latest/ until
+# there is a release). docs/publish.py places one build into the site and
+# regenerates versions.json (read by the version menu) and the root redirects.
+#
+# Jobs:
+#   build   Sphinx build of one version, committed into gh-pages; retried
+#           when another run pushed to gh-pages first.
+#   deploy  uploads gh-pages to Pages. Queued, never cancelled: each run
+#           deploys the branch as it is when the run starts, so the last run
+#           includes every publish.
+#
+# A manual run with a tag (e.g. v0.3.0) rebuilds that release; without one it
+# rebuilds latest from main.
 
-# Versioned site: main builds latest/, each v* tag builds its release
-# directory and, when it is the newest release, stable/. The site is kept on
-# the gh-pages branch (docs/publish.py) and deployed from there to Pages.
+name: Docs
+run-name: Docs ${{ inputs.ref || (github.ref_type == 'tag' && github.ref_name) || 'latest' }}
 
 on:
   push:
@@ -60,6 +76,7 @@ jobs:
           DOCS_VERSION: ${{ steps.version.outputs.name }}
         run: uv run --package phomemo-docs sphinx-build -W --keep-going -b html docs docs/_build/html
       - name: Publish into the gh-pages branch
+        id: publish
         env:
           VERSION: ${{ steps.version.outputs.name }}
         run: |
@@ -76,12 +93,47 @@ jobs:
             fi
             uv run --package phomemo-docs python docs/publish.py "$site" docs/_build/html "$VERSION"
             git -C "$site" add -A
-            git -C "$site" diff --cached --quiet && exit 0
+            if git -C "$site" diff --cached --quiet; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             git -C "$site" commit -q -m "docs: publish $VERSION (${GITHUB_SHA::7})"
-            git -C "$site" push origin gh-pages && exit 0
+            if git -C "$site" push origin gh-pages; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              echo "commit=$(git -C "$site" rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             sleep $((attempt * 5))
           done
           exit 1
+      - name: Summary
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+          CHANGED: ${{ steps.publish.outputs.changed }}
+          COMMIT: ${{ steps.publish.outputs.commit }}
+        run: |
+          base=https://passionatebytes.github.io/phomemo-driver
+          if [ "$CHANGED" != true ]; then
+            echo "No changes, gh-pages left as it was" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          versions="$RUNNER_TEMP/site/versions.json"
+          stable=$(jq -r '.stable // empty' "$versions")
+          if [ -n "$stable" ]; then
+            stable="$stable, $base/stable/"
+          else
+            stable="none yet"
+          fi
+          {
+            echo "### Published $VERSION"
+            echo
+            echo "| Site | Value |"
+            echo "|---|---|"
+            echo "| This version | $base/$VERSION/ |"
+            echo "| Stable | $stable |"
+            echo "| All versions | $(jq -r '.versions | join(", ")' "$versions") |"
+            echo "| gh-pages commit | \`$COMMIT\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     needs: build
@@ -89,8 +141,6 @@ jobs:
     permissions:
       pages: write
       id-token: write
-    # Queued, never cancelled mid-deploy: each run deploys the branch as it
-    # is when the run starts, so the last one includes every publish.
     concurrency:
       group: pages
       cancel-in-progress: false

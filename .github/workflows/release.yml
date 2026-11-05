@@ -14,7 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
+# Release: publishes a version. Runs on v* tags, made with
+#   make bump VERSION=x.y.z
+#   make tag
+#   git push && git push origin vx.y.z
+#
+# Jobs:
+#   python          checks that the tag matches the package version, builds
+#                   wheel and sdist.
+#   srpm            source RPM and source tarball (make srpm).
+#   pypi            uploads wheel and sdist to PyPI by trusted publishing
+#                   (environment "pypi").
+#   github-release  GitHub release with generated notes and every artefact;
+#                   0.x versions are published as pre-releases. Waits for
+#                   pypi only to report its result: a failed upload does not
+#                   block the release.
+#
+# COPR (through its webhook) and the versioned docs (docs.yml) build from the
+# same tag through their own triggers.
+
 name: Release
+run-name: Release ${{ github.ref_name }}
 
 on:
   push:
@@ -73,7 +93,8 @@ jobs:
 
   github-release:
     name: GitHub release
-    needs: [python, srpm]
+    needs: [python, srpm, pypi]
+    if: ${{ !cancelled() && needs.python.result == 'success' && needs.srpm.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -83,6 +104,7 @@ jobs:
         with:
           path: artifacts/
       - name: Create the release with generated notes
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
         # Versions before 1.0 are beta releases: published as pre-releases.
@@ -92,3 +114,32 @@ jobs:
           --generate-notes
           $([[ "${GITHUB_REF_NAME}" == v0.* ]] && echo --prerelease)
           artifacts/python/* artifacts/srpm/*
+      - name: Summary
+        if: always()
+        env:
+          PYPI: ${{ needs.pypi.result }}
+          RELEASE: ${{ steps.release.outcome }}
+          REPO: ${{ github.repository }}
+        run: |
+          result() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              *) echo "${1:-skipped}" ;;
+            esac
+          }
+          version=${GITHUB_REF_NAME#v}
+          kind=release
+          [[ "$GITHUB_REF_NAME" == v0.* ]] && kind=pre-release
+          {
+            echo "### phomemo-driver $version"
+            echo
+            echo "| Target | Link | Result |"
+            echo "|---|---|---|"
+            echo "| PyPI | https://pypi.org/project/phomemo/$version/ | $(result "$PYPI") |"
+            echo "| GitHub $kind | https://github.com/$REPO/releases/tag/$GITHUB_REF_NAME | $(result "$RELEASE") |"
+            echo "| Docs | https://passionatebytes.github.io/phomemo-driver/$version/ | built by the Docs workflow |"
+            echo
+            # shellcheck disable=SC2016  # literal backticks: Markdown code
+            echo "Artefacts: $(find artifacts -type f -printf '`%f`\n' 2>/dev/null | sort | paste -sd ' ')"
+          } >> "$GITHUB_STEP_SUMMARY"
