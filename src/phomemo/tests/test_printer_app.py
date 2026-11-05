@@ -365,6 +365,7 @@ async def test_printer_attributes(app_server: AppServer, tmp_path: Path) -> None
     assert set(attrs["media-supported"].split(",")) == {
         "iso_a4_210x297mm",
         "iso_a5_148x210mm",
+        "na_letter_8.5x11in",
     }
     assert attrs["media-default"] == "iso_a4_210x297mm"
     assert attrs["media-type-supported"] == "thermal"
@@ -589,6 +590,21 @@ async def test_a5_landscape_raster_is_not_rotated_twice(
     page = printer.bridge.page_begins[0]
     assert page["rotate"] is False
     assert page["media_length_mm"] == 148.0
+
+
+async def test_letter_raster_feeds_the_sheet_length_unrotated(
+    printer: AppServer, tmp_path: Path
+) -> None:
+    raster = await make_raster(tmp_path, "letter.pwg", 612, 792)
+    attrs = await finish_job(
+        start_job(printer, tmp_path, raster, media="na_letter_8.5x11in")
+    )
+    assert attrs["job-state"] == "completed", attrs
+    page = printer.bridge.page_begins[0]
+    assert page["rotate"] is False
+    assert page["media_length_mm"] == pytest.approx(279.4)
+    assert page["width"] == 1725
+    assert printer.bridge.printer.printed[0][1] == get_profile("m08f").rows_for(279.4)
 
 
 async def test_cancel_while_waiting_for_sheet(

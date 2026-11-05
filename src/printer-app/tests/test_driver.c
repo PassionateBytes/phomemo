@@ -74,9 +74,10 @@ main(void)
   assert(m08f->dpi == 203 && m08f->width_px == 1680);
   assert(m08f->top_margin == 1000 && m08f->bottom_margin == 500);
   assert(m08f->head_width == 21020);
-  assert(m08f->num_media == 2 && m08f->default_media == 0);
+  assert(m08f->num_media == 3 && m08f->default_media == 0);
   assert(!strcmp(m08f->media[0], "iso_a4_210x297mm"));
   assert(!strcmp(m08f->media[1], "iso_a5_148x210mm"));
+  assert(!strcmp(m08f->media[2], "na_letter_8.5x11in"));
   assert(strstr(m08f->icons[2], "/m08f/icon-512.png") && !m08f->icon_data[2]);
   assert(phomemo_model_for_device_id("MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;") ==
          m08f);
@@ -91,14 +92,20 @@ main(void)
     options_for("iso_a5_148x210mm", 14800, 21000, 1678, 1182);
   pappl_pr_options_t a4 =
     options_for("iso_a4_210x297mm", 21000, 29700, 1678, 2374);
+  // Letter is wider than the head: the raster is 1725 px, the bridge keeps
+  // its centre.
+  pappl_pr_options_t letter =
+    options_for("na_letter_8.5x11in", 21590, 27940, 1725, 2233);
   int head = m08f->head_width;
   assert(phomemo_should_rotate(&a5_portrait, head));
   assert(!phomemo_should_rotate(&a5_landscape, head));
   assert(!phomemo_should_rotate(&a4, head));
+  assert(!phomemo_should_rotate(&letter, head));
 
   assert(phomemo_media_length_mm(&a4, head) == 297.0);
   assert(phomemo_media_length_mm(&a5_portrait, head) == 148.0);
   assert(phomemo_media_length_mm(&a5_landscape, head) == 148.0);
+  assert(phomemo_media_length_mm(&letter, head) == 279.4);
 
   char info[64];
   phomemo_device_info(m08f, "AA:BB:CC:DD:EE:FF", info, sizeof(info));

@@ -60,6 +60,8 @@ sudo make
 |-------|----|--------|
 | Phomemo M08F (A4) | `m08f` | Tested |
 
+Sheet sizes: A4, A5 (fed long edge first) and US Letter (untested so far, [details](https://passionatebytes.github.io/phomemo-driver/models.html#sheet-sizes)).
+
 Each model is described once in [`src/models/`](src/models/), shared by the whole stack. A Phomemo model that speaks the same protocol needs only a new model manifest there.   
 **Contributions of new models are very welcome**, see [Printer models](https://passionatebytes.github.io/phomemo-driver/models.html) for more details and feel free to file an Issue or PR.
 

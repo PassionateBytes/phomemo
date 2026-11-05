@@ -12,7 +12,7 @@ Every option also appears in the print dialog of your application and in the pri
 
 | Option | Values | Effect |
 |---|---|---|
-| `media` | `iso_a4_210x297mm` (default), `iso_a5_148x210mm` | Sheet size. |
+| `media` | `iso_a4_210x297mm` (default), `iso_a5_148x210mm`, `na_letter_8.5x11in` | Sheet size. |
 | `print-quality` | `3` draft, `4` normal (default), `5` high | Printer density: low, medium, high. |
 | `phomemo-tone` | see below | How the printer driver renders a document for the print job. |
 | `print-content-optimize` | `auto`, `text`, `graphic`, `photo` | Guides `phomemo-tone=auto`. |
@@ -20,6 +20,14 @@ Every option also appears in the print dialog of your application and in the pri
 ### A5 sheets
 
 A5 sheets go in long edge first. A portrait A5 page is rotated so its right edge leads out of the printer; you do not need to rotate anything yourself.
+
+### US Letter sheets
+
+Letter sheets go in like A4, short edge first. The sheet is 6 mm wider than the print head, so the page is printed on the sheet's centre band and about 3 mm at each side stay blank; print dialogs still offer the whole width, keep that in mind for content near the edges.
+
+```{warning}
+Letter is untested: the size comes from the vendor's driver, not from a print with this driver. If you have Letter paper, please [report](https://github.com/PassionateBytes/phomemo-driver/issues) how it went, especially whether the page ends cleanly before the sheet does.
+```
 
 ### Rendering (`phomemo-tone`)
 
@@ -31,7 +39,7 @@ A5 sheets go in long edge first. A portrait A5 page is rotated so its right edge
 | `diffusion` | Diffusion dither | Photos. |
 
 ```{note}
-The printer prints grayscale only, one page per sheet, no duplex. The only media type is thermal paper. Margins are 10 mm at the top and bottom of the sheet and 0 mm at the sides.
+The printer prints grayscale only, one page per sheet, no duplex. The only media type is thermal paper. Margins are 10 mm at the top and bottom of the sheet and 0 mm at the sides (Letter: about 3 mm at the sides, see above).
 ```
 
 ## Loading sheets
