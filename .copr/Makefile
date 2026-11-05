@@ -38,7 +38,8 @@ srpm:
 	    tag=$$(git tag --list 'v*' --sort=-version:refname | head -n 1); \
 	    test -n "$$tag" || { echo "no v* tag to build"; exit 1; }; \
 	    echo "phomemo-driver $$tag (newest tag)"; \
-	    git show "$$tag:$$spec" > "$(outdir)/phomemo-driver.spec"; \
+	    path=$$(realpath --relative-to="$$(git rev-parse --show-toplevel)" "$$spec"); \
+	    git show "$$tag:$$path" > "$(outdir)/phomemo-driver.spec"; \
 	    spec="$(outdir)/phomemo-driver.spec"; \
 	    version=$$(sed -n 's/^Version:[[:space:]]*//p' "$$spec"); \
 	    git archive --format=tar.gz --prefix=phomemo-driver-$$version/ \
