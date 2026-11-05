@@ -34,6 +34,7 @@ from PIL import Image, ImageDraw, ImageFont
 from phomemo.registry import PrinterProfile
 
 _MM_PER_INCH = 25.4
+_PT_PER_INCH = 72
 
 
 @dataclass(frozen=True)
@@ -165,9 +166,11 @@ def render_test_page(
     y += drop + 30
 
     sample = "The quick brown fox jumps over the lazy dog"
-    for size in (20, 28, 40, 56):
+    # Point sizes as word processors offer them; 1 pt = 1/72 inch.
+    for pt in (8, 10, 12, 14, 18, 24):
+        size = round(pt * profile.dpi / _PT_PER_INCH)
         font = ImageFont.load_default(size=size)
-        draw.text((x, y), f"{size} px: {sample}", font=font, fill=0)
+        draw.text((x, y), f"{pt} pt: {sample}", font=font, fill=0)
         y += size + 16
     return img
 
