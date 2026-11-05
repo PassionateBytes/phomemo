@@ -166,4 +166,4 @@ Pushing the tag runs `.github/workflows/release.yml`:
 
 COPR builds the RPMs through its webhook, from every push to `main` and from the tag.
 
-For local artefacts: `make dist` (wheel and sdist), `make tarball` (source tarball named like the GitHub archive), `make srpm` (source RPM, needs rpm-build), all into `dist/`.
+For local artefacts: `make dist` (wheel and sdist), `make tarball` (source tarball named like the GitHub archive), `make srpm` (source RPM, needs rpm-build), all into `dist/`. `make help` lists every target.

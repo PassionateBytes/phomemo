@@ -14,21 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
-# Build and install the whole printer driver from a fresh clone:
-#
-#   sudo make               build everything and install it as system services
-#                           (PREFIX=/usr/local; services enabled and started)
-#   make build              build only (the printer app)
-#   sudo make uninstall     remove what install put in place
-#
-# Development and release targets:
-#
-#   make check              lint, Python tests, C tests (what CI runs)
-#   make dist               wheel and sdist of the phomemo package into dist/
-#   make tarball            source tarball named like the GitHub release archive
-#   make srpm               source RPM into dist/ (needs rpm-build)
-#   make bump VERSION=x.y.z set the version everywhere and commit it
-#   make tag                tag the current commit as v$(VERSION)
+# Build and install the whole printer driver from a fresh clone with
+# `sudo make`. `make help` lists every target.
 
 .DEFAULT_GOAL := install
 
@@ -44,14 +31,20 @@ SYSCONF   ?= /etc
 PYTHON    ?= python3
 VENV       = $(PREFIX)/lib/phomemo
 
-.PHONY: build install uninstall check dist tarball srpm bump tag clean
+.PHONY: help build install uninstall check dist tarball srpm bump tag clean
 
-build:
+help:  ## List the targets
+	@echo "Usage: make [target] [VAR=value]"
+	@echo
+	@grep -E '^[a-z-]+:.*## ' $(firstword $(MAKEFILE_LIST)) | \
+	  sed -E 's/^([a-z-]+):.*## (.*)/  \1\t\2/' | expand -t 14
+
+build:  ## Build only (the printer app)
 	$(MAKE) -C src/printer-app
 
 # The Python package goes into its own virtual environment under PREFIX
 # (system Pythons refuse direct installs); the units point at PREFIX.
-install: build
+install: build  ## Build and install as system services (default; run with sudo, PREFIX=/usr/local)
 	$(MAKE) -C src/printer-app install PREFIX=$(PREFIX) DESTDIR=$(DESTDIR) \
 	  UNITDIR=$(UNITDIR) PRESETDIR=$(PRESETDIR)
 	$(PYTHON) -m venv --clear $(DESTDIR)$(VENV)
@@ -76,7 +69,7 @@ ifeq ($(DESTDIR),)
 	@echo "installed; printer app at http://localhost:8000/"
 endif
 
-uninstall:
+uninstall:  ## Remove what install put in place (run with sudo; keeps configuration)
 	-systemctl disable --now phomemo-printer-app phomemo-bridge
 	rm -f $(UNITDIR)/phomemo-bridge.service $(UNITDIR)/phomemo-printer-app.service
 	rm -f $(PRESETDIR)/90-phomemo-bridge.preset $(PRESETDIR)/90-phomemo-printer-app.preset
@@ -86,25 +79,25 @@ uninstall:
 	systemctl daemon-reload
 	@echo "kept: $(SYSCONF)/phomemo/bridge.toml, $(SYSCONF)/phomemo-printer-app.conf and the printer app's state in /var/lib"
 
-check:
+check:  ## Lint, Python tests, C tests (what CI runs)
 	uv run ruff check .
 	uv run ruff format --check .
 	uv run pytest -q src/phomemo/tests
 	$(MAKE) -C src/printer-app test
 
-dist:
+dist:  ## Wheel and sdist of the phomemo package into dist/
 	uv build src/phomemo --out-dir $(DIST)
 
-tarball:
+tarball:  ## Source tarball named like the GitHub release archive
 	mkdir -p $(DIST)
 	git archive --format=tar.gz --prefix=$(NAME)-$(VERSION)/ \
 	  -o $(DIST)/$(NAME)-$(VERSION).tar.gz HEAD
 
-srpm: tarball
+srpm: tarball  ## Source RPM into dist/ (needs rpm-build)
 	rpmbuild -bs --define "_sourcedir $(CURDIR)/$(DIST)" \
 	  --define "_srcrpmdir $(CURDIR)/$(DIST)" packaging/rpm/phomemo-driver.spec
 
-bump:
+bump:  ## Set the version everywhere and commit it (VERSION=x.y.z)
 	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
 	sed -i 's/^version = ".*"/version = "$(VERSION)"/' src/phomemo/pyproject.toml
 	sed -i 's/^Version:        .*/Version:        $(VERSION)/' packaging/rpm/phomemo-driver.spec
@@ -114,10 +107,10 @@ bump:
 	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock
 	git commit -m "chore: version $(VERSION)"
 
-tag:
-	git tag -a v$(VERSION) -m "phomemo-driver $(VERSION)"
+tag:  ## Tag the current commit as v$(VERSION)
+	git tag -a v$(VERSION) -m "phomemo-driver v$(VERSION)"
 	@echo "now: git push && git push origin v$(VERSION)"
 
-clean:
+clean:  ## Remove build output
 	rm -rf $(DIST)
 	$(MAKE) -C src/printer-app clean

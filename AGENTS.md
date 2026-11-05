@@ -24,6 +24,7 @@ make -C src/printer-app test              # C unit tests
 uv run pytest src/phomemo/tests/test_printer_app.py   # end-to-end, needs the built binary, ipptool, ghostscript
 uv run --package phomemo-docs sphinx-build -W -b html docs docs/_build/html   # documentation site
 make check                                # all of the above, as CI runs it
+make help                                 # list the Makefile targets
 make dist | tarball | srpm                # release artefacts into dist/
 make bump VERSION=x.y.z && make tag       # release: version everywhere, commit, tag
 ```
