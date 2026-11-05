@@ -103,8 +103,8 @@ _COMMANDS: dict[str, tuple[str, str]] = {
     ),
     "testpage": (
         "print the test page",
-        "Print the test page: device details, millimetre scales, a gray ramp, "
-        "line widths and text samples.\n\n" + _PRINTER_CHOICE,
+        "Print the test page: device details, millimetre and inch scales, a gray ramp, "
+        "line widths and text samples in point sizes.\n\n" + _PRINTER_CHOICE,
     ),
 }
 
