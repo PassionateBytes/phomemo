@@ -63,7 +63,7 @@ The published site is versioned. `.github/workflows/docs.yml` builds `latest/` f
 
 CI (`.github/workflows/ci.yml`) runs on every Fedora release that still gets updates (it asks Fedora's Bodhi which ones, from `MIN_FEDORA` on), each in its own container: the checks as an ordinary user, and the RPM packages as COPR builds them, `python-bleak` at the locked bleak version and `phomemo-driver` against it, both installed. Lint and the documentation build run on the newest release only.
 
-Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files and bumps the GitHub Actions. The runtime dependencies are capped below their next major version (`bleak>=3.0.0,<4`, `pillow>=12.1.0,<13`); a new major comes as a pull request that raises the cap and waits for review, their minor and patch updates arrive with the weekly lock refresh. Development and documentation tools are uncapped. Everything else merges on its own once CI is green; GitHub Actions majors also wait for review.
+Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files and bumps the GitHub Actions. The runtime dependencies are capped below their next major version (`bleak>=3.0.0,<4`, `pillow>=12.1.0,<14`); a new major comes as a pull request that raises the cap and waits for review, their minor and patch updates arrive with the weekly lock refresh. Development and documentation tools are uncapped. Everything else merges on its own once CI is green; GitHub Actions majors also wait for review.
 
 ## Tests
 
