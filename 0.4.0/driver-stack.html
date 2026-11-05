@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Driver stack - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Print flow" href="print-flow.html" /><link rel="prev" title="API reference" href="api.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Driver stack"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="first-steps.html">First steps</a></li><li class="link"><a href="library.html">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="0.4.0">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.4.0</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#printer-app">Printer app</a></li>
+<li><a class="reference internal" href="#bridge">Bridge</a></li>
+<li><a class="reference internal" href="#library">Library</a></li>
+<li><a class="reference internal" href="#model-manifests">Model manifests</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Driver stack</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="driver-stack">
+<h1>Driver stack<a class="headerlink" href="#driver-stack" title="Link to this heading">#</a></h1>
+<p>A print job passes through three programs on its way to the printer. Each one has a single job and knows only what that job needs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">application
+</span><span data-line="2">    │  IPP (lp, a print dialog, ...)
+</span><span data-line="3">    ▼
+</span><span data-line="4">CUPS queue                 temporary (from DNS-SD) or permanent
+</span><span data-line="5">    │  IPP
+</span><span data-line="6">    ▼
+</span><span data-line="7">phomemo-printer-app        PAPPL: job queue, raster callbacks
+</span><span data-line="8">    │  unix socket: JSON lines + raw rows
+</span><span data-line="9">    ▼
+</span><span data-line="10">phomemo-bridge             one session per client
+</span><span data-line="11">    │  Bluetooth LE (through the phomemo library)
+</span><span data-line="12">    ▼
+</span><span data-line="13">printer (M08F)
+</span></pre></div>
+</div>
+<p>The model manifests sit beside the chain: every part reads its printer models from them.</p>
+<p>How the parts work together on a job is in <a class="reference internal" href="print-flow.html"><span class="std std-doc">Print flow</span></a>.</p>
+<section id="printer-app">
+<h2>Printer app<a class="headerlink" href="#printer-app" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">phomemo-printer-app</span></code>, in <code class="docutils literal notranslate"><span class="pre">src/printer-app/</span></code>: C, built on <a class="reference external" href="https://www.msweet.org/pappl/">PAPPL</a>.</p>
+<p><strong>Place in the chain.</strong> It receives print jobs over IPP, from CUPS or any other IPP client, and announces its printers on the network with DNS-SD. It sends each page on to the bridge over the bridge’s unix socket, as commands and raw raster rows. Events coming back from the bridge (waiting for a sheet, lid open, progress) end up as <code class="docutils literal notranslate"><span class="pre">printer-state-reasons</span></code> and job messages, which the IPP clients show.</p>
+<p><strong>What it does.</strong> It presents each registered printer as an IPP Everywhere printer: job queue, rendering of the documents to an 8-bit gray raster, a web interface for adding printers and printing a test page, and a command line for the same.</p>
+<p><strong>What it knows.</strong></p>
+<ul>
+<li><p>The registered printers, each with its device URI:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo://AA-BB-CC-DD-EE-FF?model=m08f
+</span></pre></div>
+</div>
+<p>Dashes replace the colons, because a URI host cannot hold colons.</p>
+</li>
+<li><p>The model manifests built into its binary: media, resolution, margins, names, icons.</p></li>
+<li><p>Where the bridge listens: <code class="docutils literal notranslate"><span class="pre">PHOMEMO_BRIDGE_SOCKET</span></code>, else <code class="docutils literal notranslate"><span class="pre">$XDG_RUNTIME_DIR/phomemo-bridge.sock</span></code>, else <code class="docutils literal notranslate"><span class="pre">/run/phomemo/bridge.sock</span></code> (the system services).</p></li>
+</ul>
+<p>It knows nothing about Bluetooth.</p>
+</section>
+<section id="bridge">
+<h2>Bridge<a class="headerlink" href="#bridge" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span></code>, in <code class="docutils literal notranslate"><span class="pre">src/phomemo/src/phomemo/bridge/</span></code>: Python.</p>
+<p><strong>Place in the chain.</strong> It takes commands on a unix socket, one client at a time: the printer app, or the <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span></code> <a class="reference internal" href="command-line.html"><span class="std std-doc">command line</span></a>. It talks to the printer over Bluetooth LE through the library, and answers its client with replies and pushed events.</p>
+<p><strong>What it does.</strong> It owns the Bluetooth connection, to one printer at a time. For each page it connects if needed, waits until a sheet is loaded, fits the page to the sheet, streams it to the printer and ejects the sheet. An interrupted page is printed again (see <a class="reference internal" href="print-flow.html#interrupted-pages"><span class="std std-ref">Print flow</span></a>). It also scans for printers, reports their sensors and prints the test page.</p>
+<p>The bridge drops the connection after <code class="docutils literal notranslate"><span class="pre">idle_disconnect_minutes</span></code> without a command (default 30; <code class="docutils literal notranslate"><span class="pre">0</span></code> keeps it until the printer switches off or leaves range). When <code class="docutils literal notranslate"><span class="pre">auto_off_minutes</span></code> is set, the bridge writes that auto-off timer to the printer on each new connection, and only when the printer reports another value.</p>
+<p><strong>What it knows.</strong></p>
+<ul class="simple">
+<li><p>The printer it is connected to, if any.</p></li>
+<li><p>The printer connected or used last, kept in memory until the bridge stops.</p></li>
+<li><p>The values last read from each printer (battery, lid, paper, auto-off) with the time they were read; <code class="docutils literal notranslate"><span class="pre">status</span></code> reports them as <code class="docutils literal notranslate"><span class="pre">last_seen</span></code>.</p></li>
+<li><p>Its own settings: <code class="docutils literal notranslate"><span class="pre">idle_disconnect_minutes</span></code>, <code class="docutils literal notranslate"><span class="pre">auto_off_minutes</span></code> and a few timeouts (see <a class="reference internal" href="configuration.html"><span class="std std-doc">Configuration</span></a>).</p></li>
+</ul>
+<p>It has no fixed printer and does not know which printers are registered: each client names the printer it wants, or the bridge picks one (see <a class="reference internal" href="print-flow.html#how-the-printer-is-chosen"><span class="std std-ref">Print flow</span></a>).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>While the bridge holds the connection, the printer does not advertise, so no other host can connect to it. <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">disconnect</span></code> releases it.</p>
+</div>
+</section>
+<section id="library">
+<h2>Library<a class="headerlink" href="#library" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">phomemo</span></code>, in <code class="docutils literal notranslate"><span class="pre">src/phomemo/src/phomemo/</span></code>: Python, on <a class="reference external" href="https://github.com/hbldh/bleak">bleak</a> and <a class="reference external" href="https://python-pillow.github.io/">Pillow</a>.</p>
+<p><strong>Place in the chain.</strong> The bridge runs on top of it; your own Python programs can use it directly (see the <a class="reference internal" href="library.html"><span class="std std-doc">library guide</span></a>). It takes images or prepared bitmaps and turns them into Bluetooth writes to the printer; notifications from the printer come back as events.</p>
+<p><strong>What it does.</strong> BLE transport (MTU, chunking, write-with-response), encoding of the printing protocol, image preparation, scanning, and parsing of the printer’s notifications into events.</p>
+<p><strong>What it knows.</strong></p>
+<ul class="simple">
+<li><p>The profiles built from the model manifests.</p></li>
+</ul>
+<p>It knows nothing about sockets, jobs or CUPS.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Raster data goes out as one continuous stream of ATT writes with response. The printer delays its response while its buffer is full, so the print head paces the stream. Writes without response overflow the buffer on full A4 pages, and sending the page in bursts makes the printer feed blank paper between them. The measurements are in the <a class="reference internal" href="m08f-protocol-reference.html"><span class="std std-doc">Protocol reference</span></a>.</p>
+</div>
+</section>
+<section id="model-manifests">
+<h2>Model manifests<a class="headerlink" href="#model-manifests" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">src/models/</span></code>: JSON and PNG, one directory per printer model.</p>
+<p>Each manifest describes one model for the whole stack: geometry, media, Bluetooth parameters, icons. The manifests are built into the Python package and the printer app’s binary, so nothing extra is installed or looked up at run time. The format, how each part reads them and how to add a model are in <a class="reference internal" href="models.html"><span class="std std-doc">Printer models</span></a>.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="api.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">API reference</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="print-flow.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Print flow</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>

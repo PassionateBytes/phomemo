@@ -27,10 +27,10 @@
       <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
   <input type="text" name="q" placeholder="Search" />
   <kbd>/</kbd>
-</form><div class="nav-versions" id="version-menu" data-version="0.3.0">
+</form><div class="nav-versions" id="version-menu" data-version="0.4.0">
     <button type="button" aria-label="Versions">
       <span class="md:hidden">Versions</span>
-      <span class="hidden md:inline">0.3.0</span>
+      <span class="hidden md:inline">0.4.0</span>
       <i class="i-lucide chevron-down"></i>
     </button>
     <div class="nav-versions-choices"><ul></ul></div>
@@ -184,7 +184,7 @@ Settings → Printers → Add Printer, then pick the printer.</p>
 </span><span data-line="2"><span class="w">  </span>-v<span class="w"> </span><span class="s1">&#39;ipps://Phomemo%20M08F%20(DDEEFF)._ipps._tcp.local/&#39;</span>
 </span></pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">lpinfo</span> <span class="pre">--include-schemes</span> <span class="pre">dnssd</span> <span class="pre">-v</span></code> lists the exact URI for your printer.</p>
+<p><code class="docutils literal notranslate"><span class="pre">driverless</span></code> (from cups-filters) lists the exact URI for your printer. CUPS’ own <code class="docutils literal notranslate"><span class="pre">lpinfo</span> <span class="pre">--include-schemes</span> <span class="pre">dnssd</span> <span class="pre">-v</span></code> may leave the printer out.</p>
 </section>
 <section id="next">
 <h2>Next<a class="headerlink" href="#next" title="Link to this heading">#</a></h2>

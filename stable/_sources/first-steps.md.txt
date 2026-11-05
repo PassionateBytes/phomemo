@@ -52,7 +52,7 @@ sudo lpadmin -p Phomemo_M08F_DDEEFF -E -m everywhere \
   -v 'ipps://Phomemo%20M08F%20(DDEEFF)._ipps._tcp.local/'
 ```
 
-`lpinfo --include-schemes dnssd -v` lists the exact URI for your printer.
+`driverless` (from cups-filters) lists the exact URI for your printer. CUPS' own `lpinfo --include-schemes dnssd -v` may leave the printer out.
 
 ## Next
 

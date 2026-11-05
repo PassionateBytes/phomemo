@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Printer models - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Phomemo M08F Protocol Reference" href="m08f-protocol-reference.html" /><link rel="prev" title="Print flow" href="print-flow.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Printer models"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="first-steps.html">First steps</a></li><li class="link"><a href="library.html">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="0.4.0">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.4.0</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#layout">Layout</a></li>
+<li><a class="reference internal" href="#model-json">model.json</a></li>
+<li><a class="reference internal" href="#how-the-stack-reads-them">How the stack reads them</a></li>
+<li><a class="reference internal" href="#add-a-model">Add a model</a></li>
+<li><a class="reference internal" href="#licence">Licence</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Printer models</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="printer-models">
+<h1>Printer models<a class="headerlink" href="#printer-models" title="Link to this heading">#</a></h1>
+<p>Every printer model the driver supports is described once, in a model manifest, for the whole stack. The library builds its profile from the manifest, the bridge uses that profile for each printer it connects to, and the printer app builds its PAPPL driver (media, resolution, margins, names, icons) from the same files.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Identifier</p></th>
+<th class="head"><p>Head width</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Phomemo M08F (A4)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">m08f</span></code></p></td>
+<td><p>1680 dots at 203 dpi</p></td>
+<td><p>Tested</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Your printer is not listed? A model that speaks the same protocol needs only a new directory, no code. See <a class="reference internal" href="#add-a-model">Add a model</a> below; contributions are very welcome.</p>
+</div>
+<section id="layout">
+<h2>Layout<a class="headerlink" href="#layout" title="Link to this heading">#</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">src</span><span class="o">/</span><span class="n">models</span><span class="o">/</span>
+</span><span data-line="2">  <span class="n">m08f</span><span class="o">/</span>
+</span><span data-line="3">    <span class="n">model</span><span class="o">.</span><span class="n">json</span>      <span class="n">the</span> <span class="n">manifest</span>
+</span><span data-line="4">    <span class="n">icon</span><span class="o">-</span><span class="mf">48.</span><span class="n">png</span>     <span class="n">printer</span> <span class="n">icons</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">three</span> <span class="n">sizes</span> <span class="n">PAPPL</span> <span class="n">uses</span>
+</span><span data-line="5">    <span class="n">icon</span><span class="o">-</span><span class="mf">128.</span><span class="n">png</span>
+</span><span data-line="6">    <span class="n">icon</span><span class="o">-</span><span class="mf">512.</span><span class="n">png</span>
+</span></pre></div>
+</div>
+<p>The directory name is the model identifier: lower case, also the PAPPL driver name and the <code class="docutils literal notranslate"><span class="pre">?model=</span></code> value in the device URI.</p>
+</section>
+<section id="model-json">
+<h2>model.json<a class="headerlink" href="#model-json" title="Link to this heading">#</a></h2>
+<p>Here is the M08F’s manifest:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2"><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;m08f&quot;</span><span class="p">,</span>
+</span><span data-line="3"><span class="w">  </span><span class="nt">&quot;make&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Phomemo&quot;</span><span class="p">,</span>
+</span><span data-line="4"><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M08F&quot;</span><span class="p">,</span>
+</span><span data-line="5"><span class="w">  </span><span class="nt">&quot;ble_name_pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^M08F&quot;</span><span class="p">,</span>
+</span><span data-line="6"><span class="w">  </span><span class="nt">&quot;print_width_px&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1680</span><span class="p">,</span>
+</span><span data-line="7"><span class="w">  </span><span class="nt">&quot;dpi&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">203</span><span class="p">,</span>
+</span><span data-line="8"><span class="w">  </span><span class="nt">&quot;band_height&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span>
+</span><span data-line="9"><span class="w">  </span><span class="nt">&quot;sheet_length_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">297.0</span><span class="p">,</span>
+</span><span data-line="10"><span class="w">  </span><span class="nt">&quot;top_margin_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span>
+</span><span data-line="11"><span class="w">  </span><span class="nt">&quot;bottom_margin_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.0</span><span class="p">,</span>
+</span><span data-line="12"><span class="w">  </span><span class="nt">&quot;density&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;medium&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">},</span>
+</span><span data-line="13"><span class="w">  </span><span class="nt">&quot;media&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span data-line="14"><span class="w">    </span><span class="p">{</span><span class="nt">&quot;pwg&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_a4_210x297mm&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span>
+</span><span data-line="15"><span class="w">    </span><span class="p">{</span><span class="nt">&quot;pwg&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_a5_148x210mm&quot;</span><span class="p">}</span>
+</span><span data-line="16"><span class="w">  </span><span class="p">],</span>
+</span><span data-line="17"><span class="w">  </span><span class="nt">&quot;ble&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="18"><span class="w">    </span><span class="nt">&quot;max_chunk_bytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">244</span><span class="p">,</span>
+</span><span data-line="19"><span class="w">    </span><span class="nt">&quot;negotiate_mtu&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span data-line="20"><span class="w">    </span><span class="nt">&quot;write_with_response&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span data-line="21"><span class="w">    </span><span class="nt">&quot;chunk_delay_s&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+</span><span data-line="22"><span class="w">    </span><span class="nt">&quot;service_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0000ff00-0000-1000-8000-00805f9b34fb&quot;</span><span class="p">,</span>
+</span><span data-line="23"><span class="w">    </span><span class="nt">&quot;write_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff02&quot;</span><span class="p">,</span>
+</span><span data-line="24"><span class="w">    </span><span class="nt">&quot;notify_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff01&quot;</span><span class="p">,</span>
+</span><span data-line="25"><span class="w">    </span><span class="nt">&quot;status_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff03&quot;</span>
+</span><span data-line="26"><span class="w">  </span><span class="p">},</span>
+</span><span data-line="27"><span class="w">  </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="28"><span class="w">    </span><span class="nt">&quot;escpos_queries&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+</span><span data-line="29"><span class="w">  </span><span class="p">}</span>
+</span><span data-line="30"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>And what each field means:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">id</span></code></p></td>
+<td><p>The identifier; must equal the directory name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">make</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>Manufacturer and model as users see them: make-and-model “Phomemo M08F”, device ID <code class="docutils literal notranslate"><span class="pre">MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code></p></td>
+<td><p>Regular expression matched against the name the printer advertises over Bluetooth; it decides which model a printer is</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">print_width_px</span></code>, <code class="docutils literal notranslate"><span class="pre">dpi</span></code></p></td>
+<td><p>Print head width in dots and resolution</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">band_height</span></code></p></td>
+<td><p>Rows per <code class="docutils literal notranslate"><span class="pre">GS</span> <span class="pre">v</span> <span class="pre">0</span></code> raster command</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sheet_length_mm</span></code></p></td>
+<td><p>Default sheet length in the feed direction</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">top_margin_mm</span></code>, <code class="docutils literal notranslate"><span class="pre">bottom_margin_mm</span></code></p></td>
+<td><p>Unprintable lead at the top of a sheet, and the space kept free at its end</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">density</span></code></p></td>
+<td><p>Optional: the <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span> <span class="pre">04</span></code> concentration values for <code class="docutils literal notranslate"><span class="pre">low</span></code>, <code class="docutils literal notranslate"><span class="pre">medium</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code>; without it the model has no density control</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">media</span></code></p></td>
+<td><p>Sheet sizes as PWG names; exactly one has <code class="docutils literal notranslate"><span class="pre">&quot;default&quot;:</span> <span class="pre">true</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ble</span></code></p></td>
+<td><p>Connection parameters: <code class="docutils literal notranslate"><span class="pre">max_chunk_bytes</span></code>, <code class="docutils literal notranslate"><span class="pre">negotiate_mtu</span></code>, <code class="docutils literal notranslate"><span class="pre">write_with_response</span></code>, <code class="docutils literal notranslate"><span class="pre">chunk_delay_s</span></code> and the four characteristic UUIDs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">features</span></code></p></td>
+<td><p>Optional: <code class="docutils literal notranslate"><span class="pre">escpos_queries</span></code> when standard ESC/POS queries answer</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A manifest with a missing or mistyped field is rejected, with the file and the field named in the error.</p>
+</div>
+</section>
+<section id="how-the-stack-reads-them">
+<h2>How the stack reads them<a class="headerlink" href="#how-the-stack-reads-them" title="Link to this heading">#</a></h2>
+<p>The manifests are built into the Python package and the printer app’s binary, so nothing extra is installed or looked up at run time:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">src/models/&lt;id&gt;/model.json + icons
+</span><span data-line="2">    │
+</span><span data-line="3">    ├── hatch build hook (src/phomemo/hatch_build.py)
+</span><span data-line="4">    │       wheel: phomemo/models     sdist: src/phomemo/models
+</span><span data-line="5">    │       → library and bridge load them at import
+</span><span data-line="6">    │
+</span><span data-line="7">    └── embed-models.sh, at build time
+</span><span data-line="8">            → models_data.c, compiled into phomemo-printer-app
+</span></pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Reader</p></th>
+<th class="head"><p>Where it looks, in order</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Library and bridge</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PHOMEMO_MODELS_DIR</span></code> when set; else the copy installed with the package (<code class="docutils literal notranslate"><span class="pre">phomemo/models</span></code>); else <code class="docutils literal notranslate"><span class="pre">src/models/</span></code> of a source checkout</p></td>
+</tr>
+<tr class="row-odd"><td><p>Printer app</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PHOMEMO_MODELS_DIR</span></code> set at start, which replaces the built-in manifests with the directories found there; else the manifests embedded in the binary</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">PHOMEMO_MODELS_DIR</span></code> to try out a new manifest without rebuilding anything.</p>
+</div>
+<p>From Python you can load a manifest directly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_manifest</span><span class="p">,</span> <span class="n">register_profile</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">register_profile</span><span class="p">(</span><span class="n">load_manifest</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;src/models/m08f&quot;</span><span class="p">)))</span>
+</span></pre></div>
+</div>
+<p>More on profiles in the <a class="reference internal" href="library.html#profiles-and-model-manifests"><span class="std std-ref">library guide</span></a>. How the pieces fit together is in <a class="reference internal" href="driver-stack.html"><span class="std std-doc">Driver stack</span></a>.</p>
+</section>
+<section id="add-a-model">
+<h2>Add a model<a class="headerlink" href="#add-a-model" title="Link to this heading">#</a></h2>
+<p>Got a Phomemo printer that speaks the same protocol? Here is how to add it:</p>
+<ol class="arabic">
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">src/models/&lt;id&gt;/</span></code> with a <code class="docutils literal notranslate"><span class="pre">model.json</span></code>, starting from the M08F’s.</p></li>
+<li><p>Find the name it advertises and write <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> for it. <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">devices</span></code> lists only known models; <code class="docutils literal notranslate"><span class="pre">bluetoothctl</span> <span class="pre">scan</span> <span class="pre">on</span></code> shows all devices.</p></li>
+<li><p>Measure the head width and the margins.</p></li>
+<li><p>Pick the density values.</p></li>
+<li><p>Add the three icons.</p></li>
+<li><p>Print the test page:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>testpage<span class="w"> </span>-a<span class="w"> </span>AA:BB:CC:DD:EE:FF
+</span></pre></div>
+</div>
+</li>
+</ol>
+<p>Then open a pull request with the directory and a note on how you tested it. New models are among the contributions we most hope for; see <a class="reference internal" href="contributing.html"><span class="std std-doc">Contributing</span></a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>A model with real protocol differences also needs code in the library. Open an issue first so we can work out the approach together.</p>
+</div>
+</section>
+<section id="licence">
+<h2>Licence<a class="headerlink" href="#licence" title="Link to this heading">#</a></h2>
+<p>Like the library that ships them, the model manifests are licensed under the GNU LGPL, version 3 or later.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="print-flow.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Print flow</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="m08f-protocol-reference.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Phomemo M08F Protocol Reference</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>

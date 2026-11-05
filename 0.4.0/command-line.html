@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Command line - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Troubleshooting" href="troubleshooting.html" /><link rel="prev" title="Configuration" href="configuration.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Command line"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="first-steps.html">First steps</a></li><li class="link"><a href="library.html">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="0.4.0">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.4.0</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#phomemo-bridge">phomemo-bridge</a><ul>
+<li><a class="reference internal" href="#first-steps">First steps</a></li>
+<li><a class="reference internal" href="#global-options">Global options</a></li>
+<li><a class="reference internal" href="#which-printer-a-command-uses">Which printer a command uses</a></li>
+<li><a class="reference internal" href="#commands">Commands</a></li>
+<li><a class="reference internal" href="#server">server</a></li>
+<li><a class="reference internal" href="#devices">devices</a></li>
+<li><a class="reference internal" href="#connect">connect</a></li>
+<li><a class="reference internal" href="#disconnect">disconnect</a></li>
+<li><a class="reference internal" href="#status">status</a></li>
+<li><a class="reference internal" href="#auto-off">auto-off</a></li>
+<li><a class="reference internal" href="#print">print</a></li>
+<li><a class="reference internal" href="#eject">eject</a></li>
+<li><a class="reference internal" href="#identify">identify</a></li>
+<li><a class="reference internal" href="#testpage">testpage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#phomemo-printer-app">phomemo-printer-app</a><ul>
+<li><a class="reference internal" href="#id1">First steps</a></li>
+<li><a class="reference internal" href="#sub-commands">Sub-commands</a></li>
+<li><a class="reference internal" href="#id2">server</a></li>
+<li><a class="reference internal" href="#id3">devices</a></li>
+<li><a class="reference internal" href="#autoadd">autoadd</a></li>
+<li><a class="reference internal" href="#add">add</a></li>
+<li><a class="reference internal" href="#printers">printers</a></li>
+<li><a class="reference internal" href="#drivers">drivers</a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Command line</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="command-line">
+<h1>Command line<a class="headerlink" href="#command-line" title="Link to this heading">#</a></h1>
+<p>Two commands come with the driver:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span></code> runs the bridge and talks to it directly: scan, connect, check the sensors, print an image.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phomemo-printer-app</span></code> runs the printer app and manages its registered printers.</p></li>
+</ul>
+<section id="phomemo-bridge">
+<h2>phomemo-bridge<a class="headerlink" href="#phomemo-bridge" title="Link to this heading">#</a></h2>
+<section id="first-steps">
+<h3>First steps<a class="headerlink" href="#first-steps" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>devices<span class="w">      </span><span class="c1"># scan for printers in range</span>
+</span><span data-line="2">phomemo-bridge<span class="w"> </span>connect<span class="w">      </span><span class="c1"># bring the connection up</span>
+</span><span data-line="3">phomemo-bridge<span class="w"> </span>status<span class="w">       </span><span class="c1"># sensors, battery, firmware, serial, auto-off</span>
+</span><span data-line="4">phomemo-bridge<span class="w"> </span>testpage<span class="w">     </span><span class="c1"># print the test page</span>
+</span></pre></div>
+</div>
+<p>Every command except <code class="docutils literal notranslate"><span class="pre">server</span></code> talks to a running bridge over its socket (the system service, or one you started with <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">server</span></code>). When it cannot reach one, it prints <code class="docutils literal notranslate"><span class="pre">cannot</span> <span class="pre">reach</span> <span class="pre">the</span> <span class="pre">bridge</span> <span class="pre">at</span> <span class="pre">&lt;socket&gt;:</span> <span class="pre">...</span></code> and exits with status 1.</p>
+</section>
+<section id="global-options">
+<h3>Global options<a class="headerlink" href="#global-options" title="Link to this heading">#</a></h3>
+<p>Put these before the command name.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--config</span> <span class="pre">FILE</span></code></p></td>
+<td><p>Read this TOML file instead of the default files. A missing file is an error (exit status 2). See <a class="reference internal" href="configuration.html#bridge"><span class="std std-ref">Configuration</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-v</span></code>, <code class="docutils literal notranslate"><span class="pre">--verbose</span></code></p></td>
+<td><p>Debug logging.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-V</span></code>, <code class="docutils literal notranslate"><span class="pre">--version</span></code></p></td>
+<td><p>Print the version and exit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-h</span></code>, <code class="docutils literal notranslate"><span class="pre">--help</span></code></p></td>
+<td><p>Show the help. <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">COMMAND</span> <span class="pre">-h</span></code> describes one command.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>-V
+</span><span data-line="2"><span class="c1"># phomemo-bridge 0.1.0</span>
+</span></pre></div>
+</div>
+</section>
+<section id="which-printer-a-command-uses">
+<h3>Which printer a command uses<a class="headerlink" href="#which-printer-a-command-uses" title="Link to this heading">#</a></h3>
+<p>Commands that take <code class="docutils literal notranslate"><span class="pre">-a/--address</span></code> pick the printer like this:</p>
+<ol class="arabic simple">
+<li><p>the one given with <code class="docutils literal notranslate"><span class="pre">--address</span></code>,</p></li>
+<li><p>else the printer connected or used last since the bridge started,</p></li>
+<li><p>else the only printer of a known model a scan finds.</p></li>
+</ol>
+<p>With several printers in range and none of these, the command refuses and lists them. Pick one with <code class="docutils literal notranslate"><span class="pre">--address</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>connect<span class="w"> </span>-a<span class="w"> </span>AA:BB:CC:DD:EE:FF
+</span></pre></div>
+</div>
+<p>The model comes from the printer’s advertised name.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">status</span></code> and <code class="docutils literal notranslate"><span class="pre">auto-off</span></code> never connect by themselves. Run <code class="docutils literal notranslate"><span class="pre">connect</span></code> first.</p>
+</div>
+</section>
+<section id="commands">
+<h3>Commands<a class="headerlink" href="#commands" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="#server"><code class="docutils literal notranslate"><span class="pre">server</span></code></a></p></td>
+<td><p>Run the bridge in the foreground.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#devices"><code class="docutils literal notranslate"><span class="pre">devices</span></code></a></p></td>
+<td><p>Scan and list printers in range.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#connect"><code class="docutils literal notranslate"><span class="pre">connect</span></code></a></p></td>
+<td><p>Bring the connection up.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#disconnect"><code class="docutils literal notranslate"><span class="pre">disconnect</span></code></a></p></td>
+<td><p>Drop the connection now.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#status"><code class="docutils literal notranslate"><span class="pre">status</span></code></a></p></td>
+<td><p>Show the connection, sensors and device details.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#auto-off"><code class="docutils literal notranslate"><span class="pre">auto-off</span></code></a></p></td>
+<td><p>Show or set the auto-off timer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#print"><code class="docutils literal notranslate"><span class="pre">print</span></code></a></p></td>
+<td><p>Print one image file as a page.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#eject"><code class="docutils literal notranslate"><span class="pre">eject</span></code></a></p></td>
+<td><p>Eject the sheet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#identify"><code class="docutils literal notranslate"><span class="pre">identify</span></code></a></p></td>
+<td><p>Make the printer show itself.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#testpage"><code class="docutils literal notranslate"><span class="pre">testpage</span></code></a></p></td>
+<td><p>Print the test page.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>While a long command runs, the bridge’s progress and <code class="docutils literal notranslate"><span class="pre">waiting</span></code> events are printed to stderr as JSON lines, for example <code class="docutils literal notranslate"><span class="pre">{&quot;event&quot;:</span> <span class="pre">&quot;waiting&quot;,</span> <span class="pre">&quot;reason&quot;:</span> <span class="pre">&quot;no-sheet&quot;}</span></code>. Errors are printed as <code class="docutils literal notranslate"><span class="pre">error:</span> <span class="pre">...</span></code> with exit status 1.</p>
+</section>
+<section id="server">
+<h3>server<a class="headerlink" href="#server" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>server
+</span></pre></div>
+</div>
+<p>Runs the bridge in the foreground: listens on the socket, owns the connection to the printer and serves the printer app and the command line. The packaged system service runs exactly this. No options.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>For development, run <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">-v</span> <span class="pre">server</span></code> as your user. The socket then lives in <code class="docutils literal notranslate"><span class="pre">$XDG_RUNTIME_DIR/phomemo-bridge.sock</span></code>, unless the system bridge’s socket exists.</p>
+</div>
+</section>
+<section id="devices">
+<h3>devices<a class="headerlink" href="#devices" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>devices
+</span><span data-line="2"><span class="c1"># AA:BB:CC:DD:EE:FF  m08f      M08F</span>
+</span></pre></div>
+</div>
+<p>Scans for printers of every known model. One line per printer: Bluetooth address, model, advertised name. A printer shows up only while it is switched on and not connected to another host. With none in range it prints <code class="docutils literal notranslate"><span class="pre">no</span> <span class="pre">printer</span> <span class="pre">in</span> <span class="pre">range</span></code> to stderr and exits with status 1.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--timeout</span> <span class="pre">SECONDS</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">5</span></code></p></td>
+<td><p>How long to scan.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="connect">
+<h3>connect<a class="headerlink" href="#connect" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>connect
+</span><span data-line="2"><span class="c1"># connected to AA:BB:CC:DD:EE:FF</span>
+</span></pre></div>
+</div>
+<p>Brings the connection up. The bridge keeps it until the printer switches off or leaves range, or until <code class="docutils literal notranslate"><span class="pre">idle_disconnect_minutes</span></code> pass without a command, so later commands and jobs skip the reconnect. At each new connection the bridge sets the printer’s auto-off timer to <code class="docutils literal notranslate"><span class="pre">auto_off_minutes</span></code> when that key is set.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p>Printer to use (<code class="docutils literal notranslate"><span class="pre">AA:BB:CC:DD:EE:FF</span></code>).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>When the printer cannot be reached it prints <code class="docutils literal notranslate"><span class="pre">error:</span> <span class="pre">not</span> <span class="pre">reachable:</span> <span class="pre">&lt;reason&gt;</span></code>.</p>
+</section>
+<section id="disconnect">
+<h3>disconnect<a class="headerlink" href="#disconnect" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>disconnect
+</span><span data-line="2"><span class="c1"># disconnected</span>
+</span></pre></div>
+</div>
+<p>Drops the connection right away instead of after the idle time, so another host (a phone, another computer) can reach the printer. No options.</p>
+</section>
+<section id="status">
+<h3>status<a class="headerlink" href="#status" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>status
+</span></pre></div>
+</div>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2"><span class="w">  </span><span class="nt">&quot;connected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span data-line="3"><span class="w">  </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AA:BB:CC:DD:EE:FF&quot;</span><span class="p">,</span>
+</span><span data-line="4"><span class="w">  </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;m08f&quot;</span><span class="p">,</span>
+</span><span data-line="5"><span class="w">  </span><span class="nt">&quot;lid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;closed&quot;</span><span class="p">,</span>
+</span><span data-line="6"><span class="w">  </span><span class="nt">&quot;paper&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;absent&quot;</span><span class="p">,</span>
+</span><span data-line="7"><span class="w">  </span><span class="nt">&quot;battery&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="p">,</span>
+</span><span data-line="8"><span class="w">  </span><span class="nt">&quot;firmware&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;...&quot;</span><span class="p">,</span>
+</span><span data-line="9"><span class="w">  </span><span class="nt">&quot;serial&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;serial&gt;&quot;</span><span class="p">,</span>
+</span><span data-line="10"><span class="w">  </span><span class="nt">&quot;auto_off_minutes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
+</span><span data-line="11"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Prints a JSON object. With a connection it holds the printer’s address, model, lid (<code class="docutils literal notranslate"><span class="pre">open</span></code>/<code class="docutils literal notranslate"><span class="pre">closed</span></code>), paper (<code class="docutils literal notranslate"><span class="pre">present</span></code>/<code class="docutils literal notranslate"><span class="pre">absent</span></code>), battery, firmware, serial number and auto-off timer. A value the printer did not answer is <code class="docutils literal notranslate"><span class="pre">null</span></code>.</p>
+<p>Without a connection it shows what the bridge read last:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2"><span class="w">  </span><span class="nt">&quot;connected&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+</span><span data-line="3"><span class="w">  </span><span class="nt">&quot;address&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AA:BB:CC:DD:EE:FF&quot;</span><span class="p">,</span>
+</span><span data-line="4"><span class="w">  </span><span class="nt">&quot;last_seen&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="5"><span class="w">    </span><span class="nt">&quot;model&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;m08f&quot;</span><span class="p">,</span>
+</span><span data-line="6"><span class="w">    </span><span class="nt">&quot;lid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;closed&quot;</span><span class="p">,</span>
+</span><span data-line="7"><span class="w">    </span><span class="nt">&quot;paper&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;absent&quot;</span><span class="p">,</span>
+</span><span data-line="8"><span class="w">    </span><span class="nt">&quot;battery&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="p">,</span>
+</span><span data-line="9"><span class="w">    </span><span class="nt">&quot;at&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2026-11-04T10:15:00&quot;</span>
+</span><span data-line="10"><span class="w">  </span><span class="p">}</span>
+</span><span data-line="11"><span class="p">}</span>
+</span></pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>When</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">address</span></code></p></td>
+<td><p>The printer asked about, or the one connected last.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">connected_to</span></code></p></td>
+<td><p>The bridge holds a connection to a different printer than the one asked about.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">last_seen</span></code></p></td>
+<td><p>Values last read from that printer, with the time <code class="docutils literal notranslate"><span class="pre">at</span></code>. Absent until the bridge has read them once since it started.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p>Report on this printer.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Does not connect by itself.</p>
+</section>
+<section id="auto-off">
+<h3>auto-off<a class="headerlink" href="#auto-off" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>auto-off
+</span><span data-line="2"><span class="c1"># AA:BB:CC:DD:EE:FF: auto-off 10 min</span>
+</span><span data-line="3">phomemo-bridge<span class="w"> </span>auto-off<span class="w"> </span><span class="m">30</span>
+</span><span data-line="4"><span class="c1"># AA:BB:CC:DD:EE:FF: auto-off 30 min</span>
+</span><span data-line="5">phomemo-bridge<span class="w"> </span>auto-off<span class="w"> </span><span class="m">0</span>
+</span><span data-line="6"><span class="c1"># AA:BB:CC:DD:EE:FF: auto-off never</span>
+</span></pre></div>
+</div>
+<p>Shows the connected printer’s auto-off timer, or sets it first when you give <code class="docutils literal notranslate"><span class="pre">MINUTES</span></code> (a multiple of 5 up to 1275, <code class="docutils literal notranslate"><span class="pre">0</span></code> = never switch off). The line shows the value the printer reports.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument / option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">minutes</span></code></p></td>
+<td><p>New timer in minutes, <code class="docutils literal notranslate"><span class="pre">0</span></code> = never. Optional.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p>Printer to use.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Needs a connection: without one it prints <code class="docutils literal notranslate"><span class="pre">error:</span> <span class="pre">not</span> <span class="pre">connected;</span> <span class="pre">run</span> <span class="pre">&quot;phomemo-bridge</span> <span class="pre">connect&quot;</span> <span class="pre">first</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">auto_off_minutes</span></code> is set in the <a class="reference internal" href="configuration.html#keys"><span class="std std-ref">configuration</span></a>, the bridge writes that value again at the next connection. Change the key for a lasting setting.</p>
+</div>
+</section>
+<section id="print">
+<h3>print<a class="headerlink" href="#print" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>print<span class="w"> </span>page.png<span class="w"> </span>--media<span class="w"> </span>a4<span class="w"> </span>--quality<span class="w"> </span>high<span class="w"> </span>--tone<span class="w"> </span>diffusion
+</span><span data-line="2"><span class="c1"># printed 1 page(s)</span>
+</span></pre></div>
+</div>
+<p>Prints an image file (PNG, JPEG, anything Pillow reads) as one page, scaled to the media width, then ejects the sheet. The command waits for a sheet when none is loaded.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Values</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">file</span></code></p></td>
+<td><p></p></td>
+<td><p>Image file to print.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p></p></td>
+<td><p>Printer to use.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--media</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">a4</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">a4</span></code>, <code class="docutils literal notranslate"><span class="pre">a5</span></code>, <code class="docutils literal notranslate"><span class="pre">roll</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--tone</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">auto</span></code> (chosen from the content)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">auto</span></code>, <code class="docutils literal notranslate"><span class="pre">threshold</span></code>, <code class="docutils literal notranslate"><span class="pre">ordered</span></code>, <code class="docutils literal notranslate"><span class="pre">diffusion</span></code>: how gray becomes dots.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--quality</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">normal</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">draft</span></code>, <code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">high</span></code>: print density.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--content</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">auto</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">auto</span></code>, <code class="docutils literal notranslate"><span class="pre">text</span></code>, <code class="docutils literal notranslate"><span class="pre">graphic</span></code>, <code class="docutils literal notranslate"><span class="pre">photo</span></code>: content hint for <code class="docutils literal notranslate"><span class="pre">--tone</span> <span class="pre">auto</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">--abort-after</span> <span class="pre">SECONDS</span></code></p></td>
+<td><p></p></td>
+<td><p>Cancel the page this many seconds into the transfer (for testing).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>An A5 sheet is fed long edge first; the page is rotated so its right edge leads out of the printer.</p>
+</div>
+</section>
+<section id="eject">
+<h3>eject<a class="headerlink" href="#eject" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>eject
+</span><span data-line="2"><span class="c1"># ejected</span>
+</span></pre></div>
+</div>
+<p>Ejects the loaded sheet. Prints <code class="docutils literal notranslate"><span class="pre">sheet</span> <span class="pre">still</span> <span class="pre">present</span></code> when the sheet is still sensed afterwards.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p>Printer to use.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="identify">
+<h3>identify<a class="headerlink" href="#identify" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>identify
+</span><span data-line="2"><span class="c1"># identified</span>
+</span></pre></div>
+</div>
+<p>Ejects a loaded sheet, then pulses the paper feed three times so you can tell which printer this is.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p>Printer to use.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="testpage">
+<h3>testpage<a class="headerlink" href="#testpage" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>testpage
+</span><span data-line="2"><span class="c1"># printed 1 page(s)</span>
+</span></pre></div>
+</div>
+<p>Prints the test page: device details, millimetre and inch scales, a gray ramp, line widths and text samples in point sizes.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span></code>, <code class="docutils literal notranslate"><span class="pre">--address</span> <span class="pre">ADDRESS</span></code></p></td>
+<td><p></p></td>
+<td><p>Printer to use.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">--quality</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">normal</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">draft</span></code>, <code class="docutils literal notranslate"><span class="pre">normal</span></code>, <code class="docutils literal notranslate"><span class="pre">high</span></code>: print density.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="phomemo-printer-app">
+<h2>phomemo-printer-app<a class="headerlink" href="#phomemo-printer-app" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">phomemo-printer-app</span></code> is a <a class="reference external" href="https://www.msweet.org/pappl/">PAPPL</a> printer application, so it has PAPPL’s standard sub-commands. Except <code class="docutils literal notranslate"><span class="pre">server</span></code>, each one talks to a running server, and which server depends on who runs it: as root the system service, as your own user a private printer app that the sub-command starts if none runs. So use <code class="docutils literal notranslate"><span class="pre">sudo</span></code> for every sub-command meant for the installed service, listing included.</p>
+<section id="id1">
+<h3>First steps<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>devices<span class="w">            </span><span class="c1"># scan: what is in range</span>
+</span><span data-line="2">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>autoadd<span class="w">            </span><span class="c1"># register every M08F in range</span>
+</span><span data-line="3">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>printers<span class="w">           </span><span class="c1"># confirm what is registered</span>
+</span></pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Without <code class="docutils literal notranslate"><span class="pre">sudo</span></code>, <code class="docutils literal notranslate"><span class="pre">devices</span></code>, <code class="docutils literal notranslate"><span class="pre">printers</span></code> and the other sub-commands reach a private printer app of your user, not the system service; that is useful only for development.</p>
+</div>
+</section>
+<section id="sub-commands">
+<h3>Sub-commands<a class="headerlink" href="#sub-commands" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sub-command</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">server</span></code></p></td>
+<td><p>Run a server.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">devices</span></code></p></td>
+<td><p>List devices (scan).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">autoadd</span></code></p></td>
+<td><p>Register every supported printer found.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">add</span> <span class="pre">PRINTER</span></code></p></td>
+<td><p>Register a printer.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">printers</span></code></p></td>
+<td><p>List registered printers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">drivers</span></code></p></td>
+<td><p>List drivers.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">delete</span></code></p></td>
+<td><p>Delete a printer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">modify</span></code></p></td>
+<td><p>Modify a printer.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">default</span></code></p></td>
+<td><p>Set the default printer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">options</span></code></p></td>
+<td><p>List printer options.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">status</span></code></p></td>
+<td><p>Show server, printer or job status.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jobs</span></code></p></td>
+<td><p>List jobs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">submit</span></code></p></td>
+<td><p>Submit a file for printing.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cancel</span></code></p></td>
+<td><p>Cancel one or more jobs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pause</span></code>, <code class="docutils literal notranslate"><span class="pre">resume</span></code></p></td>
+<td><p>Pause or resume printing for a printer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">shutdown</span></code></p></td>
+<td><p>Shut down a running server.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Common options: <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">PRINTER</span></code> (printer), <code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">DRIVER-NAME</span></code> (driver, for <code class="docutils literal notranslate"><span class="pre">add</span></code>/<code class="docutils literal notranslate"><span class="pre">modify</span></code>), <code class="docutils literal notranslate"><span class="pre">-v</span> <span class="pre">DEVICE-URI</span></code> (device, for <code class="docutils literal notranslate"><span class="pre">add</span></code>/<code class="docutils literal notranslate"><span class="pre">modify</span></code>), <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">NAME=VALUE</span></code> (option, for <code class="docutils literal notranslate"><span class="pre">add</span></code>, <code class="docutils literal notranslate"><span class="pre">modify</span></code>, <code class="docutils literal notranslate"><span class="pre">server</span></code>, <code class="docutils literal notranslate"><span class="pre">submit</span></code>), <code class="docutils literal notranslate"><span class="pre">-u</span> <span class="pre">URI</span></code> (server or printer to talk to), <code class="docutils literal notranslate"><span class="pre">-j</span> <span class="pre">JOB-ID</span></code> and <code class="docutils literal notranslate"><span class="pre">-a</span></code> (for <code class="docutils literal notranslate"><span class="pre">cancel</span></code>), <code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">COPIES</span></code> (for <code class="docutils literal notranslate"><span class="pre">submit</span></code>). <code class="docutils literal notranslate"><span class="pre">phomemo-printer-app</span> <span class="pre">--help</span></code> lists them all.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">-h</span></code> is not help here: PAPPL uses it for a host name. Use <code class="docutils literal notranslate"><span class="pre">--help</span></code>.</p>
+</div>
+</section>
+<section id="id2">
+<h3>server<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-printer-app<span class="w"> </span>server<span class="w"> </span>-o<span class="w"> </span>log-file<span class="o">=</span>-<span class="w"> </span>-o<span class="w"> </span>log-level<span class="o">=</span>debug
+</span></pre></div>
+</div>
+<p>Runs the printer app in the foreground. The system service runs <code class="docutils literal notranslate"><span class="pre">phomemo-printer-app</span> <span class="pre">server</span> <span class="pre">-o</span> <span class="pre">log-file=-</span></code>, so the log goes to the journal. Any <a class="reference internal" href="configuration.html#options"><span class="std std-ref">option</span></a> works as <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">name=value</span></code> and wins over the configuration files.</p>
+<p>At its very first start (no saved state yet) the server registers each M08F in range.</p>
+</section>
+<section id="id3">
+<h3>devices<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>devices
+</span></pre></div>
+</div>
+<p>Scans and lists what is in range, without registering anything.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When it finds no server to talk to, <code class="docutils literal notranslate"><span class="pre">devices</span></code> starts a private one for you, and that server keeps running afterwards (<code class="docutils literal notranslate"><span class="pre">pgrep</span> <span class="pre">-af</span> <span class="pre">'phomemo-printer-app</span> <span class="pre">server'</span></code>).</p>
+</div>
+</section>
+<section id="autoadd">
+<h3>autoadd<a class="headerlink" href="#autoadd" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>autoadd
+</span></pre></div>
+</div>
+<p>Scans and registers every M08F in range (printer on, lid closed). Each printer is named after its model and the last three bytes of its Bluetooth address, for example <strong>Phomemo M08F (DDEEFF)</strong>.</p>
+</section>
+<section id="add">
+<h3>add<a class="headerlink" href="#add" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>add<span class="w"> </span>-d<span class="w"> </span><span class="s2">&quot;Phomemo M08F (DDEEFF)&quot;</span><span class="w"> </span>-m<span class="w"> </span>m08f<span class="w"> </span><span class="se">\</span>
+</span><span data-line="2"><span class="w">  </span>-v<span class="w"> </span><span class="s2">&quot;phomemo://AA-BB-CC-DD-EE-FF?model=m08f&quot;</span>
+</span></pre></div>
+</div>
+<p>Registers a printer you know the address of.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">NAME</span></code></p></td>
+<td><p>Printer name, as DNS-SD advertises it and print dialogs show it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">m08f</span></code></p></td>
+<td><p>Driver: the model identifier (see <code class="docutils literal notranslate"><span class="pre">drivers</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-v</span> <span class="pre">URI</span></code></p></td>
+<td><p>Device URI: <code class="docutils literal notranslate"><span class="pre">phomemo://</span></code> plus the Bluetooth address with dashes instead of colons, and the model as <code class="docutils literal notranslate"><span class="pre">?model=</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>A URI host cannot hold colons, which is why the address uses dashes. A URI without <code class="docutils literal notranslate"><span class="pre">?model=</span></code> still works: the bridge reads the model from the printer’s advertised name.</p>
+</div>
+</section>
+<section id="printers">
+<h3>printers<a class="headerlink" href="#printers" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>printers
+</span></pre></div>
+</div>
+<p>Lists the registered printers.</p>
+</section>
+<section id="drivers">
+<h3>drivers<a class="headerlink" href="#drivers" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>drivers
+</span></pre></div>
+</div>
+<p>Lists the drivers, one per model manifest. The driver name is the model identifier (<code class="docutils literal notranslate"><span class="pre">m08f</span></code>) you pass to <code class="docutils literal notranslate"><span class="pre">add</span> <span class="pre">-m</span></code>.</p>
+</section>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="configuration.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Configuration</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="troubleshooting.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Troubleshooting</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>
