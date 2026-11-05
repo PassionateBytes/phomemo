@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Phomemo M08F Protocol Reference - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Glossary" href="glossary.html" /><link rel="prev" title="Printer models" href="models.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Phomemo M08F Protocol Reference"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="first-steps.html">First steps</a></li><li class="link"><a href="library.html">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="0.3.0">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.3.0</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Printer models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#table-of-contents">Table of Contents</a></li>
+<li><a class="reference internal" href="#methodology-and-acknowledgements">Methodology and Acknowledgements</a><ul>
+<li><a class="reference internal" href="#known-differences-from-m02-m02s-t02">Known differences from M02/M02S/T02</a></li>
+<li><a class="reference internal" href="#tested-device-model">Tested Device Model</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#architecture-overview">Architecture Overview</a></li>
+<li><a class="reference internal" href="#ble-transport-layer">BLE Transport Layer</a><ul>
+<li><a class="reference internal" href="#connection-parameters">Connection Parameters</a></li>
+<li><a class="reference internal" href="#chunking-and-flow-control">Chunking and Flow Control</a></li>
+<li><a class="reference internal" href="#connect-sequence">Connect Sequence</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ble-services-and-characteristics">BLE Services and Characteristics</a><ul>
+<li><a class="reference internal" href="#service-0000ff00-print-service-primary">Service <code class="docutils literal notranslate"><span class="pre">0000ff00</span></code> &#8212; Print Service (primary)</a></li>
+<li><a class="reference internal" href="#service-0000ff80-at-command-interface">Service <code class="docutils literal notranslate"><span class="pre">0000ff80</span></code> &#8212; AT Command Interface</a></li>
+<li><a class="reference internal" href="#other-services">Other Services</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#printing-protocol">Printing Protocol</a><ul>
+<li><a class="reference internal" href="#print-job-structure">Print Job Structure</a></li>
+<li><a class="reference internal" href="#gs-v-0-raster-bit-image">GS v 0 &#8212; Raster Bit Image</a></li>
+<li><a class="reference internal" href="#gs-v-0-scaling-modes">GS v 0 Scaling Modes</a></li>
+<li><a class="reference internal" href="#x0a-lf-byte-handling"><code class="docutils literal notranslate"><span class="pre">0x0A</span></code> (LF) Byte Handling</a></li>
+<li><a class="reference internal" href="#bridge-chip-routing">Bridge Chip Routing</a></li>
+<li><a class="reference internal" href="#print-completion-signal">Print Completion Signal</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#a-06-88-fires-when-the-trailing-edge-passes-the-rear-sensor-which-sits-about-10-mm-80-rows-before-the-print-head-a-raster-that-fits-the-sheet-sees-this-event-shortly-before-its-own-motor-stop-and-the-printer-keeps-answering-queries-when-the-raster-is-taller-than-the-sheet-the-remaining-writes-are-acknowledged-immediately-discarded-1a-0f-0c-follows-about-5-s-after-the-paper-event-and-the-printer-sits-in-an-error-state-in-which-it-ignores-all-1f-11-xx-queries-the-led-is-red-loading-a-new-sheet-and-in-the-tested-case-reconnecting-restores-query-responses-a-driver-that-waits-for-a-sheet-must-therefore-treat-query-timeouts-as-not-ready-rather-than-as-a-transport-failure"><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> fires when the trailing edge passes the rear sensor, which sits
+about 10 mm (~80 rows) before the print head; a raster that fits the sheet
+sees this event shortly before its own motor stop and the printer keeps
+answering queries. When the raster is taller than the sheet, the remaining
+writes are acknowledged immediately (discarded), <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">0f</span> <span class="pre">0c</span></code> follows about 5 s
+after the paper event, and the printer sits in an error state in which it
+<strong>ignores all <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> queries</strong>; the LED is red. Loading a new sheet (and
+in the tested case reconnecting) restores query responses. A driver that waits
+for a sheet must therefore treat query timeouts as &#8220;not ready&#8221; rather than as
+a transport failure.</a></li>
+<li><a class="reference internal" href="#device-information-and-status-queries">Device Information and Status Queries</a><ul>
+<li><a class="reference internal" href="#phomemo-custom-commands-1f-11-xx">Phomemo Custom Commands (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code>)</a></li>
+<li><a class="reference internal" href="#non-responding-query-bytes">Non-Responding Query Bytes</a></li>
+<li><a class="reference internal" href="#standard-esc-pos-queries-non-functional">Standard ESC/POS Queries (Non-Functional)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#device-events">Device Events</a><ul>
+<li><a class="reference internal" href="#event-sub-types">Event Sub-Types</a></li>
+<li><a class="reference internal" href="#spontaneous-events">Spontaneous Events</a></li>
+<li><a class="reference internal" href="#event-byte-format">Event Byte Format</a></li>
+<li><a class="reference internal" href="#batched-notifications">Batched Notifications</a></li>
+<li><a class="reference internal" href="#sensor-behaviour">Sensor Behaviour</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#paper-feed-and-transport">Paper Feed and Transport</a><ul>
+<li><a class="reference internal" href="#paper-eject">Paper Eject</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#the-feed-runs-at-about-21-mm-s-a-full-a4-sheet-cleared-the-rear-sensor-in-13-9-s-so-0-7-s-per-15-mm-section-keeps-the-queue-at-depth-two-without-piling-feeds-up-what-is-still-queued-when-the-sensor-clears-is-the-only-travel-beyond-the-clearance-commands-execute-in-order-so-a-status-query-behind-a-feed-is-answered-once-the-feed-has-run-usable-as-a-completion-signal-no-answer-means-the-overrun-error-state-see-print-completion-signal-in-which-feed-commands-are-also-ignored-until-the-printer-recovers">The feed runs at about 21 mm/s (a full A4 sheet cleared the rear sensor in
+13.9 s), so 0.7 s per 15 mm section keeps the queue at depth two without
+piling feeds up; what is still queued when the sensor clears is the only
+travel beyond the clearance. Commands execute in order, so a status query
+behind a feed is answered once the feed has run (usable as a completion
+signal). No answer means the overrun error state (see Print Completion
+Signal), in which feed commands are also ignored until the printer recovers.</a></li>
+<li><a class="reference internal" href="#density-and-print-quality">Density and Print Quality</a><ul>
+<li><a class="reference internal" href="#esc-n-04-concentration-functional">ESC N 04 &#8212; Concentration (functional)</a></li>
+<li><a class="reference internal" href="#esc-7-heat-settings-non-functional">ESC 7 &#8212; Heat Settings (non-functional)</a></li>
+<li><a class="reference internal" href="#esc-e-emphasis-non-functional">ESC E &#8212; Emphasis (non-functional)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#device-configuration">Device Configuration</a><ul>
+<li><a class="reference internal" href="#auto-off-timer">Auto-Off Timer</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ble-bridge-chip-at-interface">BLE Bridge Chip (AT Interface)</a><ul>
+<li><a class="reference internal" href="#command-format">Command Format</a></li>
+<li><a class="reference internal" href="#known-commands">Known Commands</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#ota-firmware-update-mode">OTA Firmware Update Mode</a></li>
+<li><a class="reference internal" href="#non-functional-esc-pos-commands">Non-Functional ESC/POS Commands</a></li>
+<li><a class="reference internal" href="#other-ble-services">Other BLE Services</a><ul>
+<li><a class="reference internal" href="#service-0000ff10-unknown-possibly-firmware-update">Service <code class="docutils literal notranslate"><span class="pre">0000ff10</span></code>: Unknown (possibly firmware update)</a></li>
+<li><a class="reference internal" href="#service-000018f0-contains-2af0-electric-current-specification">Service <code class="docutils literal notranslate"><span class="pre">000018f0</span></code>: contains <code class="docutils literal notranslate"><span class="pre">2af0</span></code> (&#8220;Electric Current Specification&#8221;)</a></li>
+<li><a class="reference internal" href="#service-0000fee7-tencent-ble-sdk">Service <code class="docutils literal notranslate"><span class="pre">0000fee7</span></code>: Tencent BLE SDK</a></li>
+<li><a class="reference internal" href="#service-49535343-fe7d-issc-ble-uart">Service <code class="docutils literal notranslate"><span class="pre">49535343-fe7d-...</span></code>: ISSC BLE UART</a></li>
+<li><a class="reference internal" href="#service-e7810a71-unknown">Service <code class="docutils literal notranslate"><span class="pre">e7810a71-...</span></code>: Unknown</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#physical-characteristics">Physical Characteristics</a><ul>
+<li><a class="reference internal" href="#sheet-geometry-a4">Sheet Geometry (A4)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#driver-implementation-notes">Driver Implementation Notes</a><ul>
+<li><a class="reference internal" href="#minimum-viable-print-sequence">Minimum Viable Print Sequence</a></li>
+<li><a class="reference internal" href="#key-parameters">Key Parameters</a></li>
+<li><a class="reference internal" href="#pre-print-state-check">Pre-Print State Check</a></li>
+<li><a class="reference internal" href="#short-sheet-detection">Short Sheet Detection</a></li>
+<li><a class="reference internal" href="#a5-on-the-m08f">A5 on the M08F</a></li>
+<li><a class="reference internal" href="#error-detection-during-print">Error Detection During Print</a></li>
+<li><a class="reference internal" href="#printer-application">Printer Application</a></li>
+</ul>
+</li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Phomemo M08F Protocol Reference</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="phomemo-m08f-protocol-reference">
+<h1>Phomemo M08F Protocol Reference<a class="headerlink" href="#phomemo-m08f-protocol-reference" title="Link to this heading">#</a></h1>
+<p>Reverse-engineered protocol specification for the Phomemo M08F portable thermal
+printer.</p>
+<blockquote>
+<div><p>Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+(<a class="reference external" href="https://www.passionate-bytes.com">www.passionate-bytes.com</a>).<br />
+This work is licensed under Creative Commons Attribution-ShareAlike 4.0
+International. To view a copy of this license, visit
+<a class="reference external" href="https://creativecommons.org/licenses/by-sa/4.0/">https://creativecommons.org/licenses/by-sa/4.0/</a>.</p>
+</div></blockquote>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference internal" href="#methodology-and-acknowledgements">Methodology and Acknowledgements</a></p></li>
+<li><p><a class="reference internal" href="#architecture-overview">Architecture Overview</a></p></li>
+<li><p><a class="reference internal" href="#ble-transport-layer">BLE Transport Layer</a></p></li>
+<li><p><a class="reference internal" href="#ble-services-and-characteristics">BLE Services and Characteristics</a></p></li>
+<li><p><a class="reference internal" href="#printing-protocol">Printing Protocol</a></p></li>
+<li><p><a class="reference internal" href="#device-information-and-status-queries">Device Information and Status Queries</a></p></li>
+<li><p><a class="reference internal" href="#device-events">Device Events</a></p></li>
+<li><p><a class="reference internal" href="#paper-feed-and-transport">Paper Feed and Transport</a></p></li>
+<li><p><a class="reference internal" href="#density-and-print-quality">Density and Print Quality</a></p></li>
+<li><p><a class="reference internal" href="#device-configuration">Device Configuration</a></p></li>
+<li><p><a class="reference internal" href="#ble-bridge-chip-at-interface">BLE Bridge Chip (AT Interface)</a></p></li>
+<li><p><a class="reference internal" href="#ota-firmware-update-mode">OTA Firmware Update Mode</a></p></li>
+<li><p><a class="reference internal" href="#non-functional-esc-pos-commands">Non-Functional ESC/POS Commands</a></p></li>
+<li><p><a class="reference internal" href="#other-ble-services">Other BLE Services</a></p></li>
+<li><p><a class="reference internal" href="#physical-characteristics">Physical Characteristics</a></p></li>
+<li><p><a class="reference internal" href="#driver-implementation-notes">Driver Implementation Notes</a></p></li>
+</ol>
+</section>
+<hr class="docutils" />
+<section id="methodology-and-acknowledgements">
+<h2>Methodology and Acknowledgements<a class="headerlink" href="#methodology-and-acknowledgements" title="Link to this heading">#</a></h2>
+<p>These findings were produced through systematic exploratory BLE interactions:
+connecting to the printer, enumerating its services and characteristics,
+sending probe commands across all discovered channels, and observing responses
+and physical behaviour. Testing was performed using the
+<a class="reference external" href="https://github.com/hbldh/bleak">bleak</a> Python BLE library on Linux (BlueZ).</p>
+<p>This work builds on and was informed by prior reverse engineering efforts from
+the Phomemo open-source community:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/vivier/phomemo-tools"><strong>vivier/phomemo-tools</strong></a> — CUPS
+driver with reverse-engineered protocol for M02, M02S, M110, T02. Provided
+the <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> custom command family and print job footer sequences.</p></li>
+<li><p><a class="reference external" href="https://github.com/theacodes/phomemo_m02s"><strong>theacodes/phomemo_m02s</strong></a> —
+Python BLE library for M02S. Provided the <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span></code> concentration command,
+<code class="docutils literal notranslate"><span class="pre">NAK</span> <span class="pre">15</span> <span class="pre">11</span></code> alternative prefix, and <code class="docutils literal notranslate"><span class="pre">0x0A</span></code> byte escaping approach.</p></li>
+<li><p><a class="reference external" href="https://github.com/gbl/phomemo"><strong>gbl/phomemo</strong></a> — Perl CLI utility.
+Provided GS v 0 raster formatting details and multi-block image handling.</p></li>
+</ul>
+<section id="known-differences-from-m02-m02s-t02">
+<h3>Known differences from M02/M02S/T02<a class="headerlink" href="#known-differences-from-m02-m02s-t02" title="Link to this heading">#</a></h3>
+<p>The M08F shares the Phomemo command dialect but differs from smaller models
+(M02, M02S, T02) in several ways. This work was conducted with a single M08F
+unit — findings may apply in part to related Phomemo models, but have not been
+verified on other hardware.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Area</p></th>
+<th class="head"><p>M08F</p></th>
+<th class="head"><p>M02/M02S/T02 (per community projects)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Density control</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span> <span class="pre">04</span></code> works; <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">7</span></code> has no effect</p></td>
+<td><p>Both <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">7</span></code> and <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span> <span class="pre">04</span></code> reported as functional</p></td>
+</tr>
+<tr class="row-odd"><td><p>NAK prefix (<code class="docutils literal notranslate"><span class="pre">15</span> <span class="pre">11</span> <span class="pre">XX</span></code>)</p></td>
+<td><p>No effect (except <code class="docutils literal notranslate"><span class="pre">0a</span></code> = raw LF)</p></td>
+<td><p>Used for concentration setting on some models</p></td>
+</tr>
+<tr class="row-even"><td><p>Text mode</p></td>
+<td><p>Not supported — raster only</p></td>
+<td><p>Not supported on most models</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0x0A</span></code> in raster data</p></td>
+<td><p>Handled correctly (no escaping needed)</p></td>
+<td><p>phomemo_m02s escapes <code class="docutils literal notranslate"><span class="pre">0x0A</span> <span class="pre">→</span> <span class="pre">0x14</span></code> in bitmap data</p></td>
+</tr>
+<tr class="row-even"><td><p>Connectivity</p></td>
+<td><p>BLE only</p></td>
+<td><p>Some models support Bluetooth Classic (RFCOMM)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Print width</p></td>
+<td><p>1680 px (A4 variant; a Letter variant exists, untested)</p></td>
+<td><p>384 px (M02) / 576 px (M02S)</p></td>
+</tr>
+<tr class="row-even"><td><p>Standard ESC/POS queries (GS I, DLE EOT)</p></td>
+<td><p>All return generic <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code></p></td>
+<td><p>Some models may return meaningful status bytes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All findings are based on direct observation unless marked <strong>[assumed]</strong>
+(inferred from context or external references).</p>
+</section>
+<section id="tested-device-model">
+<h3>Tested Device Model<a class="headerlink" href="#tested-device-model" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Device Type: <code class="docutils literal notranslate"><span class="pre">A4</span> <span class="pre">Portable</span> <span class="pre">Printer</span></code></p></li>
+<li><p>Brand: <code class="docutils literal notranslate"><span class="pre">Phomemo</span></code></p></li>
+<li><p>Model: <code class="docutils literal notranslate"><span class="pre">M08F</span></code> / <code class="docutils literal notranslate"><span class="pre">29002-M08F</span></code> / <code class="docutils literal notranslate"><span class="pre">2ASRB-M08F</span></code></p></li>
+<li><p>Manufacturer: <code class="docutils literal notranslate"><span class="pre">Zhuhai</span> <span class="pre">Quin</span> <span class="pre">Technology</span> <span class="pre">Co.,</span> <span class="pre">Ltd.</span></code></p></li>
+<li><p>BLE MAC: per device; examples in this document use <code class="docutils literal notranslate"><span class="pre">AA:BB:CC:DD:EE:FF</span></code></p></li>
+<li><p>Serial: 15 ASCII characters (via <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">09</span></code> → <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">08</span></code> on <code class="docutils literal notranslate"><span class="pre">ff01</span></code>)</p></li>
+<li><p>Firmware: <code class="docutils literal notranslate"><span class="pre">v1.1.3</span></code> (via <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">07</span></code> → <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">07</span> <span class="pre">01</span> <span class="pre">01</span> <span class="pre">03</span></code> on <code class="docutils literal notranslate"><span class="pre">ff01</span></code>)</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="architecture-overview">
+<h2>Architecture Overview<a class="headerlink" href="#architecture-overview" title="Link to this heading">#</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">[Host]  ──BLE──  [BLE-UART Bridge Chip]  ──UART 460800 bps──  [Printer MCU]
+</span><span data-line="2">                 (ff80 AT interface)                          (ESC/POS + Phomemo extensions)
+</span><span data-line="3">                 (ff00 data relay)                            (thermal print head, sensors, motor)
+</span></pre></div>
+</div>
+<p>The M08F contains two processors:</p>
+<ol class="arabic simple">
+<li><p><strong>BLE-UART bridge chip</strong> — handles BLE connectivity, exposes an AT command
+interface on service <code class="docutils literal notranslate"><span class="pre">ff80</span></code>, and relays data between BLE and the printer MCU.
+Runs custom/locked firmware with only <code class="docutils literal notranslate"><span class="pre">AT+NAME?</span></code> and <code class="docutils literal notranslate"><span class="pre">AT+BAUD?</span></code> readable.
+The chip identity cannot be determined via AT commands.</p></li>
+<li><p><strong>Printer MCU</strong> — receives commands over UART at 460800 bps, controls the
+thermal print head, paper feed motor, and sensors. Implements a subset of
+ESC/POS plus Phomemo-specific extensions (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> and <code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4e</span> <span class="pre">XX</span></code>).</p></li>
+</ol>
+<p>The printer is <strong>raster-only</strong> — it has no built-in font and does not support
+ESC/POS text mode. All content must be rendered to 1-bit bitmap images on the
+host.</p>
+</section>
+<hr class="docutils" />
+<section id="ble-transport-layer">
+<h2>BLE Transport Layer<a class="headerlink" href="#ble-transport-layer" title="Link to this heading">#</a></h2>
+<section id="connection-parameters">
+<h3>Connection Parameters<a class="headerlink" href="#connection-parameters" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>BLE name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">M08F</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Negotiated MTU</p></td>
+<td><p>247 bytes</p></td>
+</tr>
+<tr class="row-even"><td><p>Usable ATT payload</p></td>
+<td><p>244 bytes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum write size</p></td>
+<td><p>244 bytes per <code class="docutils literal notranslate"><span class="pre">write_gatt_char</span></code> call</p></td>
+</tr>
+<tr class="row-even"><td><p>Write method</p></td>
+<td><p>Write Request (<code class="docutils literal notranslate"><span class="pre">write_gatt_char(...,</span> <span class="pre">response=True)</span></code>), see Chunking</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Writes larger than 244 bytes fail with <code class="docutils literal notranslate"><span class="pre">org.bluez.Error.Failed</span></code>.</p>
+</section>
+<section id="chunking-and-flow-control">
+<h3>Chunking and Flow Control<a class="headerlink" href="#chunking-and-flow-control" title="Link to this heading">#</a></h3>
+<p>Print data must be split into chunks of at most 244 bytes. Flow control comes
+from the ATT layer: with <strong>Write Request</strong> (<code class="docutils literal notranslate"><span class="pre">response=True</span></code>) the printer delays
+its response while its receive buffer is full, so the sender is paced by the
+print head and needs no artificial delay. Measured throughput on an A4 page:
+~7.4 KiB/s at medium density on sparse content, ~5.7 KiB/s at high density on
+solid black, both steady from the first second. The motor-stop signal arrives
+within about a second of the last acknowledged write.</p>
+<p>Buffer probes (2026-11-02, Write Request, 244-byte writes): white rows with a
+sheet loaded, solid black at high density, and rows sent with the lid open all
+ran at a flat 6.5–7.4 KiB/s with ~30 ms median ACK latency and no slowdown
+up to 430–525 KB. The ACK rate is the ATT round trip on this link, and the
+printer consumed (or, with the lid open or no paper, silently discarded)
+everything at that rate, so the MCU-side buffer never filled and its size
+could not be measured. A real back-pressure from the MCU below that rate
+remains plausible but is unproven; the earlier 5.7 KiB/s on a dense page was
+most likely the weak radio link at the time. Data accepted with the lid open
+is gone: closing the lid afterwards prints nothing.</p>
+<p><strong>Write Command</strong> (<code class="docutils literal notranslate"><span class="pre">response=False</span></code>) is accepted but unsafe for long jobs. The
+printer does not acknowledge writes on <code class="docutils literal notranslate"><span class="pre">ff01</span></code>; <code class="docutils literal notranslate"><span class="pre">ff03</span></code> echoes <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> per write
+(see Service <code class="docutils literal notranslate"><span class="pre">0000ff00</span></code>), but that echo comes from the BLE bridge and lags the
+sender by at most a few chunks even when the printer falls behind, so it is
+not a credit signal. At 244 bytes every 20 ms (~11.3 KiB/s) the printer
+consumes roughly 7.5 KiB/s and a buffer of around 100 KB, most likely in the
+BLE bridge chip, overflows about two thirds into an A4 page. Symptoms of the overflow:</p>
+<ul class="simple">
+<li><p>every row after the loss starts late by the number of bytes dropped, so the
+image shifts right and the overflow wraps to the left edge (a 25 mm shift
+equals six lost 244-byte chunks);</p></li>
+<li><p>the next <code class="docutils literal notranslate"><span class="pre">GS</span> <span class="pre">v</span> <span class="pre">0</span></code> header is misparsed, the job stops, and the LED blinks;</p></li>
+<li><p>the MCU ignores <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> queries until the printer is power-cycled.</p></li>
+</ul>
+<p>A fixed delay cannot fix this: the safe rate depends on content density and
+the printer starves (visible as stutter) on sparse pages at a delay that is
+still too fast for dense ones.</p>
+</section>
+<section id="connect-sequence">
+<h3>Connect Sequence<a class="headerlink" href="#connect-sequence" title="Link to this heading">#</a></h3>
+<p>On BLE connect, the following notifications fire automatically:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Channel</p></th>
+<th class="head"><p>Data</p></th>
+<th class="head"><p>Timing</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ff03</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">07</span></code></p></td>
+<td><p>Immediate</p></td>
+<td><p>Connect greeting. Purpose of <code class="docutils literal notranslate"><span class="pre">07</span></code> unknown <strong>[assumed — version or capability flag]</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ff03</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">02</span> <span class="pre">f4</span> <span class="pre">00</span></code></p></td>
+<td><p>Immediate</p></td>
+<td><p>Fixed constant (<code class="docutils literal notranslate"><span class="pre">f4</span> <span class="pre">00</span></code> = 244 LE). Possibly the printer advertising its max write payload. <strong>[assumed — 244 matches exactly the observed BLE ATT MTU negotiation of 247 (minus 3 bytes ATT overhead -&gt; 244 byte payload)]</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fec8</span></code></p></td>
+<td><p>26-byte protobuf</p></td>
+<td><p>~100ms</p></td>
+<td><p>Tencent SDK identity packet. Last 6 bytes = BLE MAC address. Not required for printing.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Both <code class="docutils literal notranslate"><span class="pre">ff03</span></code> greetings also fire when writes use Write Request; the per-write
+<code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> echo on <code class="docutils literal notranslate"><span class="pre">ff03</span></code> does not (the ATT response takes its place).</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ble-services-and-characteristics">
+<h2>BLE Services and Characteristics<a class="headerlink" href="#ble-services-and-characteristics" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p><strong>UUID format note:</strong> The <code class="docutils literal notranslate"><span class="pre">ff00</span></code>-family service UUIDs use the standard Bluetooth base UUID expansion
+(<code class="docutils literal notranslate"><span class="pre">0000ff00-0000-1000-8000-00805f9b34fb</span></code>). However, the <em>characteristics</em> within those services
+use a non-standard format where the short UUID appears in the last two bytes:
+<code class="docutils literal notranslate"><span class="pre">00000000-0000-0000-0000-00000000ff01</span></code>. This is <strong>not</strong> the standard 16-bit expansion
+(<code class="docutils literal notranslate"><span class="pre">0000ff01-0000-1000-8000-00805f9b34fb</span></code>). Driver code must use the non-standard form or
+Bleak will report “Characteristic not found”.</p>
+</div></blockquote>
+<section id="service-0000ff00-print-service-primary">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">0000ff00</span></code> — Print Service (primary)<a class="headerlink" href="#service-0000ff00-print-service-primary" title="Link to this heading">#</a></h3>
+<p>The main communication channel for printing and status.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Short UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ff02</span></code></p></td>
+<td><p>write-without-response, write</p></td>
+<td><p>41</p></td>
+<td><p><strong>Command/data write channel</strong> — all print data and commands go here</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ff01</span></code></p></td>
+<td><p>notify</p></td>
+<td><p>43</p></td>
+<td><p><strong>Device event channel</strong> — sensor events, query responses, print completion</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ff03</span></code></p></td>
+<td><p>notify</p></td>
+<td><p>46</p></td>
+<td><p><strong>Status echo channel</strong> — returns <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> per unacknowledged (Write Command) write, nothing for Write Request; connect greeting on startup</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="service-0000ff80-at-command-interface">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">0000ff80</span></code> — AT Command Interface<a class="headerlink" href="#service-0000ff80-at-command-interface" title="Link to this heading">#</a></h3>
+<p>Exposes the BLE bridge chip’s configuration. Not the printer MCU.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Short UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ff82</span></code></p></td>
+<td><p>write-without-response, write</p></td>
+<td><p>25</p></td>
+<td><p>AT command write</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ff81</span></code></p></td>
+<td><p>notify</p></td>
+<td><p>27</p></td>
+<td><p>AT response notify</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>See <a class="reference internal" href="#ble-bridge-chip-at-interface">BLE Bridge Chip</a> for command details.</p>
+</section>
+<section id="other-services">
+<h3>Other Services<a class="headerlink" href="#other-services" title="Link to this heading">#</a></h3>
+<p>See <a class="reference internal" href="#other-ble-services">Other BLE Services</a> for details on services that
+were probed but did not produce observable responses relevant to printing.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="printing-protocol">
+<h2>Printing Protocol<a class="headerlink" href="#printing-protocol" title="Link to this heading">#</a></h2>
+<p>The M08F uses <strong>GS v 0</strong> (raster bit image) as the sole printing command.
+Print jobs consist of: initialise → set density (optional) → send raster
+bands → feed paper.</p>
+<section id="print-job-structure">
+<h3>Print Job Structure<a class="headerlink" href="#print-job-structure" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">ESC @                           # 1b 40        — initialise printer state
+</span><span data-line="2">ESC N 04 &lt;density&gt;              # 1b 4e 04 XX  — set print density (optional)
+</span><span data-line="3">┌─ repeat for each band ──────────────────────────────────────────────────────┐
+</span><span data-line="4">│  GS v 0 &lt;mode&gt; &lt;wL&gt; &lt;wH&gt; &lt;hL&gt; &lt;hH&gt;         # - raster header                │
+</span><span data-line="5">│  &lt;bitmap data&gt;                             # - w × h bytes                  │
+</span><span data-line="6">└─────────────────────────────────────────────────────────────────────────────┘
+</span><span data-line="7">ESC d &lt;n&gt;                       # 1b 64 XX     — feed paper (standalone)
+</span></pre></div>
+</div>
+<p>All bytes are written to <code class="docutils literal notranslate"><span class="pre">ff02</span></code> as a single chunked stream. The printer
+processes commands sequentially.</p>
+</section>
+<section id="gs-v-0-raster-bit-image">
+<h3>GS v 0 — Raster Bit Image<a class="headerlink" href="#gs-v-0-raster-bit-image" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Byte(s)</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0–2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">76</span> <span class="pre">30</span></code></p></td>
+<td><p>GS v 0 command prefix</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;mode&gt;</span></code></p></td>
+<td><p>Scale mode (see table below)</p></td>
+</tr>
+<tr class="row-even"><td><p>4–5</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;wL&gt;</span> <span class="pre">&lt;wH&gt;</span></code></p></td>
+<td><p>Width in bytes, 16-bit little-endian (pixels ÷ 8)</p></td>
+</tr>
+<tr class="row-odd"><td><p>6–7</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;hL&gt;</span> <span class="pre">&lt;hH&gt;</span></code></p></td>
+<td><p>Height in rows, 16-bit little-endian</p></td>
+</tr>
+<tr class="row-even"><td><p>8+</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;data&gt;</span></code></p></td>
+<td><p>Raw 1-bit bitmap: <code class="docutils literal notranslate"><span class="pre">width_bytes</span> <span class="pre">×</span> <span class="pre">height</span></code> bytes, MSB-first per byte</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Bitmap format:</strong> 1 bit per pixel. <code class="docutils literal notranslate"><span class="pre">1</span></code> = black, <code class="docutils literal notranslate"><span class="pre">0</span></code> = white. Most significant
+bit of each byte is the leftmost pixel. Rows are sequential top-to-bottom.</p>
+<p><strong>Band height:</strong> The maximum height per GS v 0 command is at least 256 rows
+(tested). For images taller than this, send multiple GS v 0 commands
+back-to-back. Each band needs its own full header.</p>
+</section>
+<section id="gs-v-0-scaling-modes">
+<h3>GS v 0 Scaling Modes<a class="headerlink" href="#gs-v-0-scaling-modes" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Name</p></th>
+<th class="head"><p>Effect</p></th>
+<th class="head"><p>Data impact</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">00</span></code></p></td>
+<td><p>Normal</p></td>
+<td><p>1:1 rendering</p></td>
+<td><p>Full resolution</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">01</span></code></p></td>
+<td><p>Double width</p></td>
+<td><p>Each pixel doubled horizontally</p></td>
+<td><p>Send half-width data for full-width output. Left-edge aligned, expands rightward.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">02</span></code></p></td>
+<td><p>Double height</p></td>
+<td><p>Skips every other scan line</p></td>
+<td><p>Same data size. Draft/low-density mode, NOT actual 2× height.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">03</span></code></p></td>
+<td><p>Quadruple</p></td>
+<td><p>Mode 01 + mode 02 combined</p></td>
+<td><p>Half-width data, draft vertical quality</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Print origin:</strong> Left-aligned. Narrow images are NOT automatically centered.
+Mode 0 may appear centered because the print head width exceeds the image width
+symmetrically.</p>
+</section>
+<section id="x0a-lf-byte-handling">
+<h3><code class="docutils literal notranslate"><span class="pre">0x0A</span></code> (LF) Byte Handling<a class="headerlink" href="#x0a-lf-byte-handling" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Outside raster data:</strong> <code class="docutils literal notranslate"><span class="pre">0x0A</span></code> is ALWAYS interpreted as a line feed (~5mm
+paper advance per instance), even embedded in arbitrary binary data.</p></li>
+<li><p><strong>Inside GS v 0 raster data:</strong> <code class="docutils literal notranslate"><span class="pre">0x0A</span></code> bytes are consumed as raw bitmap data
+— no escaping needed. The printer correctly counts expected bytes from the
+raster header.</p></li>
+</ul>
+</section>
+<section id="bridge-chip-routing">
+<h3>Bridge Chip Routing<a class="headerlink" href="#bridge-chip-routing" title="Link to this heading">#</a></h3>
+<p>Standalone <code class="docutils literal notranslate"><span class="pre">ESC</span></code>-prefix commands (<code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">XX</span></code>) may be intercepted by the BLE bridge
+chip instead of being relayed to the printer MCU. This manifests as an
+<code class="docutils literal notranslate"><span class="pre">\r\nERROR\r\n</span></code> response on <code class="docutils literal notranslate"><span class="pre">ff81</span></code> (the AT channel).</p>
+<p><strong>Workaround:</strong> Prepend <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">&#64;</span></code> (<code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">40</span></code>) before other ESC commands, or embed
+them in a larger write payload. ESC &#64; itself is always relayed correctly.</p>
+</section>
+<section id="print-completion-signal">
+<h3>Print Completion Signal<a class="headerlink" href="#print-completion-signal" title="Link to this heading">#</a></h3>
+<p>The printer fires <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">0f</span> <span class="pre">0c</span></code> on <code class="docutils literal notranslate"><span class="pre">ff01</span></code> the moment the motor stops after a
+print job. This is a <strong>real-time motor-stop signal</strong> that can be used as a
+print-complete indicator.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Condition</p></th>
+<th class="head"><p>Approx. delay after last chunk</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Normal print with paper</p></td>
+<td><p>~1–2s</p></td>
+</tr>
+<tr class="row-odd"><td><p>No paper loaded</p></td>
+<td><p>~1s</p></td>
+</tr>
+<tr class="row-even"><td><p>Lid opened mid-print</p></td>
+<td><p>~2.5s</p></td>
+</tr>
+<tr class="row-odd"><td><p>Paper pulled out mid-print</p></td>
+<td><p>~5s</p></td>
+</tr>
+<tr class="row-even"><td><p>Paper ran out mid-print</p></td>
+<td><p>~5s after <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The third byte (<code class="docutils literal notranslate"><span class="pre">0c</span></code>) is invariant across all tested conditions.</p>
+</section>
+</section>
+<section id="a-06-88-fires-when-the-trailing-edge-passes-the-rear-sensor-which-sits-about-10-mm-80-rows-before-the-print-head-a-raster-that-fits-the-sheet-sees-this-event-shortly-before-its-own-motor-stop-and-the-printer-keeps-answering-queries-when-the-raster-is-taller-than-the-sheet-the-remaining-writes-are-acknowledged-immediately-discarded-1a-0f-0c-follows-about-5-s-after-the-paper-event-and-the-printer-sits-in-an-error-state-in-which-it-ignores-all-1f-11-xx-queries-the-led-is-red-loading-a-new-sheet-and-in-the-tested-case-reconnecting-restores-query-responses-a-driver-that-waits-for-a-sheet-must-therefore-treat-query-timeouts-as-not-ready-rather-than-as-a-transport-failure">
+<h2><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> fires when the trailing edge passes the rear sensor, which sits
+about 10 mm (~80 rows) before the print head; a raster that fits the sheet
+sees this event shortly before its own motor stop and the printer keeps
+answering queries. When the raster is taller than the sheet, the remaining
+writes are acknowledged immediately (discarded), <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">0f</span> <span class="pre">0c</span></code> follows about 5 s
+after the paper event, and the printer sits in an error state in which it
+<strong>ignores all <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> queries</strong>; the LED is red. Loading a new sheet (and
+in the tested case reconnecting) restores query responses. A driver that waits
+for a sheet must therefore treat query timeouts as “not ready” rather than as
+a transport failure.<a class="headerlink" href="#a-06-88-fires-when-the-trailing-edge-passes-the-rear-sensor-which-sits-about-10-mm-80-rows-before-the-print-head-a-raster-that-fits-the-sheet-sees-this-event-shortly-before-its-own-motor-stop-and-the-printer-keeps-answering-queries-when-the-raster-is-taller-than-the-sheet-the-remaining-writes-are-acknowledged-immediately-discarded-1a-0f-0c-follows-about-5-s-after-the-paper-event-and-the-printer-sits-in-an-error-state-in-which-it-ignores-all-1f-11-xx-queries-the-led-is-red-loading-a-new-sheet-and-in-the-tested-case-reconnecting-restores-query-responses-a-driver-that-waits-for-a-sheet-must-therefore-treat-query-timeouts-as-not-ready-rather-than-as-a-transport-failure" title="Link to this heading">#</a></h2>
+</section>
+<section id="device-information-and-status-queries">
+<h2>Device Information and Status Queries<a class="headerlink" href="#device-information-and-status-queries" title="Link to this heading">#</a></h2>
+<section id="phomemo-custom-commands-1f-11-xx">
+<h3>Phomemo Custom Commands (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code>)<a class="headerlink" href="#phomemo-custom-commands-1f-11-xx" title="Link to this heading">#</a></h3>
+<p>The primary information API. These are Phomemo-specific extensions (NOT standard
+ESC/POS). Write to <code class="docutils literal notranslate"><span class="pre">ff02</span></code>; responses arrive on <strong><code class="docutils literal notranslate"><span class="pre">ff01</span></code></strong> in <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">&lt;sub-type&gt;</span> <span class="pre">&lt;data&gt;</span></code> format. <code class="docutils literal notranslate"><span class="pre">ff03</span></code> echoes <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> for every command sent as Write Command
+(uninformative; silent for Write Request).</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>Label</p></th>
+<th class="head"><p>Response format</p></th>
+<th class="head"><p>Example</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">08</span></code></p></td>
+<td><p>Battery</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">04</span> <span class="pre">&lt;pct&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">04</span> <span class="pre">41</span></code> = 65%</p></td>
+<td><p>Live value, changes with charge state</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">07</span></code></p></td>
+<td><p>Firmware</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">07</span> <span class="pre">&lt;maj&gt;</span> <span class="pre">&lt;min&gt;</span> <span class="pre">&lt;patch&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">07</span> <span class="pre">01</span> <span class="pre">01</span> <span class="pre">03</span></code> = v1.1.3</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">09</span></code></p></td>
+<td><p>Serial (ASCII)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">08</span> <span class="pre">&lt;string&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">08</span> <span class="pre">&lt;15</span> <span class="pre">ASCII</span> <span class="pre">chars&gt;</span></code></p></td>
+<td><p>Full serial number</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">13</span></code></p></td>
+<td><p>Serial (short)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">03</span> <span class="pre">&lt;byte&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">03</span> <span class="pre">a8</span></code></p></td>
+<td><p>Possibly hardware revision</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">11</span></code></p></td>
+<td><p>Paper state</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">&lt;state&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">88</span></code>=absent, <code class="docutils literal notranslate"><span class="pre">89</span></code>=present</p></td>
+<td><p>Reports the <strong>combined</strong> state of all three optical sensors (see Physical Characteristics). <code class="docutils literal notranslate"><span class="pre">89</span></code> means paper is fully loaded past the print head. <strong>Unreliable with lid open</strong> — reports present even without paper. Query lid first.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">12</span></code></p></td>
+<td><p>Lid state</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">05</span> <span class="pre">&lt;state&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">98</span></code>=closed, <code class="docutils literal notranslate"><span class="pre">99</span></code>=open</p></td>
+<td><p>Reliable in all conditions</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">0e</span></code></p></td>
+<td><p>Device timer</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">09</span> <span class="pre">&lt;value&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">09</span> <span class="pre">00</span></code> = disabled</p></td>
+<td><p>Auto-off timer setting. See <a class="reference internal" href="#device-configuration">Device Configuration</a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Response routing:</strong> The sub-type byte in the response does NOT always match
+the query parameter. Parsers must identify responses by the <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">&lt;sub-type&gt;</span></code>
+prefix, not by which query was sent.</p>
+</section>
+<section id="non-responding-query-bytes">
+<h3>Non-Responding Query Bytes<a class="headerlink" href="#non-responding-query-bytes" title="Link to this heading">#</a></h3>
+<p>Full sweep of <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> for <code class="docutils literal notranslate"><span class="pre">XX</span></code> = <code class="docutils literal notranslate"><span class="pre">00</span></code>–<code class="docutils literal notranslate"><span class="pre">1f</span></code> confirmed the following values
+produce no <code class="docutils literal notranslate"><span class="pre">ff01</span></code> response: <code class="docutils literal notranslate"><span class="pre">00</span></code>, <code class="docutils literal notranslate"><span class="pre">01</span></code>, <code class="docutils literal notranslate"><span class="pre">02</span></code>, <code class="docutils literal notranslate"><span class="pre">03</span></code>, <code class="docutils literal notranslate"><span class="pre">04</span></code>, <code class="docutils literal notranslate"><span class="pre">05</span></code>, <code class="docutils literal notranslate"><span class="pre">06</span></code>, <code class="docutils literal notranslate"><span class="pre">0a</span></code>,
+<code class="docutils literal notranslate"><span class="pre">0b</span></code>, <code class="docutils literal notranslate"><span class="pre">0c</span></code>, <code class="docutils literal notranslate"><span class="pre">0d</span></code>, <code class="docutils literal notranslate"><span class="pre">10</span></code>, <code class="docutils literal notranslate"><span class="pre">14</span></code>–<code class="docutils literal notranslate"><span class="pre">1f</span></code>.</p>
+<p>Note: <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">02</span></code> (3 bytes) is non-responding, but the 4-byte variant
+<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">02</span> <span class="pre">XX</span></code> is a separate sub-command space. A sweep of <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">02</span> <span class="pre">00</span></code> through
+<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">02</span> <span class="pre">0f</span></code> produced no <code class="docutils literal notranslate"><span class="pre">ff01</span></code> responses — these are either write-only
+settings or unimplemented. The phomemo-tools init sequence uses <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">02</span> <span class="pre">04</span></code>
+(suspected concentration-related setting).</p>
+</section>
+<section id="standard-esc-pos-queries-non-functional">
+<h3>Standard ESC/POS Queries (Non-Functional)<a class="headerlink" href="#standard-esc-pos-queries-non-functional" title="Link to this heading">#</a></h3>
+<p>The following standard ESC/POS information commands produce nothing but the
+<code class="docutils literal notranslate"><span class="pre">ff03</span></code> write echo (<code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code>, Write Command only) and no data on <code class="docutils literal notranslate"><span class="pre">ff01</span></code>. The MCU does not implement them. The <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> commands
+provide this information instead.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>Bytes</p></th>
+<th class="head"><p>Standard purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>GS I n=1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">49</span> <span class="pre">01</span></code></p></td>
+<td><p>Model ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>GS I n=2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">49</span> <span class="pre">02</span></code></p></td>
+<td><p>Type ID</p></td>
+</tr>
+<tr class="row-even"><td><p>GS I n=65</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">49</span> <span class="pre">41</span></code></p></td>
+<td><p>Firmware version</p></td>
+</tr>
+<tr class="row-odd"><td><p>GS I n=67</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">49</span> <span class="pre">43</span></code></p></td>
+<td><p>Printer name</p></td>
+</tr>
+<tr class="row-even"><td><p>GS I n=68</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">49</span> <span class="pre">44</span></code></p></td>
+<td><p>Serial number</p></td>
+</tr>
+<tr class="row-odd"><td><p>DLE EOT n=1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">04</span> <span class="pre">01</span></code></p></td>
+<td><p>Printer status</p></td>
+</tr>
+<tr class="row-even"><td><p>DLE EOT n=2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">04</span> <span class="pre">02</span></code></p></td>
+<td><p>Offline status</p></td>
+</tr>
+<tr class="row-odd"><td><p>DLE EOT n=4</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">04</span> <span class="pre">04</span></code></p></td>
+<td><p>Error status</p></td>
+</tr>
+<tr class="row-even"><td><p>DLE EOT n=5</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">04</span> <span class="pre">05</span></code></p></td>
+<td><p>Near-end paper sensor</p></td>
+</tr>
+<tr class="row-odd"><td><p>DLE EOT n=6</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">04</span> <span class="pre">06</span></code></p></td>
+<td><p>Paper present sensor</p></td>
+</tr>
+<tr class="row-even"><td><p>GS r 1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">72</span> <span class="pre">01</span></code></p></td>
+<td><p>Paper sensor status</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>DLE EOT queries return <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> even under error conditions (no paper, lid open,
+mid-print errors). They do not reflect actual device state on this printer.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="device-events">
+<h2>Device Events<a class="headerlink" href="#device-events" title="Link to this heading">#</a></h2>
+<p>All events arrive on <code class="docutils literal notranslate"><span class="pre">ff01</span></code> as <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">&lt;sub-type&gt;</span> <span class="pre">&lt;data&gt;</span></code> messages. Events can be
+<strong>spontaneous</strong> (triggered by physical state changes) or <strong>solicited</strong> (responses
+to <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> queries). Both use the same format.</p>
+<section id="event-sub-types">
+<h3>Event Sub-Types<a class="headerlink" href="#event-sub-types" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Sub-type</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>Spontaneous</p></th>
+<th class="head"><p>Queryable via</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">03</span></code></p></td>
+<td><p>Serial (short)</p></td>
+<td><p>No</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">13</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">04</span></code></p></td>
+<td><p>Battery level</p></td>
+<td><p>No</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">08</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">05</span></code></p></td>
+<td><p>Lid state</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">12</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">06</span></code></p></td>
+<td><p>Paper sensor</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">11</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">07</span></code></p></td>
+<td><p>Firmware version</p></td>
+<td><p>No</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">07</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">08</span></code></p></td>
+<td><p>Serial (ASCII)</p></td>
+<td><p>No</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">09</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">09</span></code></p></td>
+<td><p>Device timer</p></td>
+<td><p>No</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">0e</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0f</span></code></p></td>
+<td><p>Motor stop / print complete</p></td>
+<td><p>Yes</p></td>
+<td><p>—</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="spontaneous-events">
+<h3>Spontaneous Events<a class="headerlink" href="#spontaneous-events" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Bytes</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">05</span> <span class="pre">99</span></code></p></td>
+<td><p>Lid opened</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">05</span> <span class="pre">98</span></code></p></td>
+<td><p>Lid closed</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code></p></td>
+<td><p>Paper inserted / gripped by roller</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code></p></td>
+<td><p>Paper removed / absent</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">0f</span> <span class="pre">0c</span></code></p></td>
+<td><p>Motor stopped (print complete)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="event-byte-format">
+<h3>Event Byte Format<a class="headerlink" href="#event-byte-format" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Byte 1: <code class="docutils literal notranslate"><span class="pre">1a</span></code> — fixed message type</p></li>
+<li><p>Byte 2: sub-type (see table above)</p></li>
+<li><p>Byte 3: state/data</p>
+<ul>
+<li><p>Sub-types <code class="docutils literal notranslate"><span class="pre">05</span></code>/<code class="docutils literal notranslate"><span class="pre">06</span></code>: bit 0 = state (<code class="docutils literal notranslate"><span class="pre">1</span></code>=active, <code class="docutils literal notranslate"><span class="pre">0</span></code>=inactive). Upper bits
+differ by sub-type (<code class="docutils literal notranslate"><span class="pre">0x98</span></code> base for lid, <code class="docutils literal notranslate"><span class="pre">0x88</span></code> base for paper).</p></li>
+<li><p>Sub-type <code class="docutils literal notranslate"><span class="pre">0f</span></code>: always <code class="docutils literal notranslate"><span class="pre">0c</span></code> (invariant across all tested conditions).</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="batched-notifications">
+<h3>Batched Notifications<a class="headerlink" href="#batched-notifications" title="Link to this heading">#</a></h3>
+<p>Multiple 3-byte events can arrive concatenated in a single BLE notification.
+Parsers must consume 3 bytes at a time. Observed batch sizes: 6 bytes (2 events)
+and 9 bytes (3 events).
+Example: <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">05</span> <span class="pre">98</span>&#160; <span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> = lid closed + paper absent (single notification).</p>
+</section>
+<section id="sensor-behaviour">
+<h3>Sensor Behaviour<a class="headerlink" href="#sensor-behaviour" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Three optical paper sensors:</strong> Two front sensors at the paper entry detect
+insertion and trigger the auto-feed motor (AND logic — both must detect paper).
+One rear sensor behind the print head detects paper fully loaded. The BLE
+<code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code> event fires only when the <strong>rear sensor</strong> is triggered, confirming
+paper is positioned and ready to print.- <strong>Auto-feed sequence:</strong> Front sensors detect paper → motor starts pulling →
+paper reaches rear sensor → motor stops → <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code> fires. If paper is held
+just out of roller reach, the motor spins continuously until paper is released
+or withdrawn.- <strong>Motor inhibit with lid open:</strong> The auto-feed motor does not start when the
+lid is open, even if front sensors are covered. Safety interlock. Manually
+covering all three sensors with lid open still triggers <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code> (the event
+is sensor-based, not motor-based).- <strong>AND logic on front sensors:</strong> Both front sensors must detect paper before the
+motor starts. Both lid buttons must be depressed before lid-closed fires. No
+individual left/right bits.- <strong>Lid-close snapshot:</strong> Closing the lid always triggers a paper state report
+in the same notification batch.- <strong>Paper sensor unreliable with lid open:</strong> Reports paper-present even when no
+paper is loaded (front sensor false positive). Always query lid state before
+trusting paper state.</p></li>
+<li><p><strong>Paper events suppressed while lid is open:</strong> Removing paper while the lid is
+open may not fire a <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> event immediately. The paper-absent event
+appears later, batched with the lid-closed event when the lid is subsequently
+closed.</p></li>
+<li><p><strong>Spurious lid events during paper pull:</strong> Forcefully pulling paper out
+mid-print can trigger a <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">05</span> <span class="pre">98</span></code> (lid-closed) event even though the lid was
+not physically touched — likely due to mechanical coupling between the paper
+tension and the lid switch mechanism. Drivers should not assume a lid event
+during printing reflects actual lid state.</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="paper-feed-and-transport">
+<h2>Paper Feed and Transport<a class="headerlink" href="#paper-feed-and-transport" title="Link to this heading">#</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>Bytes</p></th>
+<th class="head"><p>Behaviour</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ESC d <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">64</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p><strong>Feed <code class="docutils literal notranslate"><span class="pre">n</span></code> lines.</strong> Works standalone. 1 line ≈ 1 dot row (0.125mm at 203 DPI). Max 255 per call. ESC d 255 ≈ 32mm.</p></td>
+</tr>
+<tr class="row-odd"><td><p>ESC J <code class="docutils literal notranslate"><span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4a</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Feed <code class="docutils literal notranslate"><span class="pre">n</span></code> dots. <strong>Non-functional standalone</strong> — no motor movement. Works only embedded in a print data stream.</p></td>
+</tr>
+<tr class="row-even"><td><p>GS V 1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">56</span> <span class="pre">01</span></code></p></td>
+<td><p>Cut command. <strong>Non-functional</strong> — no cutter hardware.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">0x0A</span></code> (raw)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0a</span></code></p></td>
+<td><p>Line feed. Triggers ~5mm paper advance per byte. Works standalone outside raster data.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="paper-eject">
+<h3>Paper Eject<a class="headerlink" href="#paper-eject" title="Link to this heading">#</a></h3>
+<p>To eject a sheet, keep a couple of short feeds queued so the motor runs
+without pauses, and stop on the printer’s own paper-absent event:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">1f 11 11            # → 1a 06 88 absent, or no answer: a few feeds, done
+</span><span data-line="2">1b 64 78 ×2         # two 15mm feeds queued
+</span><span data-line="3">loop:
+</span><span data-line="4">  wait ≤0.7 s for 1a 06 88   # trailing edge passed the rear sensor
+</span><span data-line="5">  no event: 1b 64 78         # keep the queue two deep
+</span><span data-line="6">1b 64 a0            # 20mm clears the rollers
+</span></pre></div>
+</div>
+</section>
+</section>
+<section id="the-feed-runs-at-about-21-mm-s-a-full-a4-sheet-cleared-the-rear-sensor-in-13-9-s-so-0-7-s-per-15-mm-section-keeps-the-queue-at-depth-two-without-piling-feeds-up-what-is-still-queued-when-the-sensor-clears-is-the-only-travel-beyond-the-clearance-commands-execute-in-order-so-a-status-query-behind-a-feed-is-answered-once-the-feed-has-run-usable-as-a-completion-signal-no-answer-means-the-overrun-error-state-see-print-completion-signal-in-which-feed-commands-are-also-ignored-until-the-printer-recovers">
+<h2>The feed runs at about 21 mm/s (a full A4 sheet cleared the rear sensor in
+13.9 s), so 0.7 s per 15 mm section keeps the queue at depth two without
+piling feeds up; what is still queued when the sensor clears is the only
+travel beyond the clearance. Commands execute in order, so a status query
+behind a feed is answered once the feed has run (usable as a completion
+signal). No answer means the overrun error state (see Print Completion
+Signal), in which feed commands are also ignored until the printer recovers.<a class="headerlink" href="#the-feed-runs-at-about-21-mm-s-a-full-a4-sheet-cleared-the-rear-sensor-in-13-9-s-so-0-7-s-per-15-mm-section-keeps-the-queue-at-depth-two-without-piling-feeds-up-what-is-still-queued-when-the-sensor-clears-is-the-only-travel-beyond-the-clearance-commands-execute-in-order-so-a-status-query-behind-a-feed-is-answered-once-the-feed-has-run-usable-as-a-completion-signal-no-answer-means-the-overrun-error-state-see-print-completion-signal-in-which-feed-commands-are-also-ignored-until-the-printer-recovers" title="Link to this heading">#</a></h2>
+</section>
+<section id="density-and-print-quality">
+<h2>Density and Print Quality<a class="headerlink" href="#density-and-print-quality" title="Link to this heading">#</a></h2>
+<section id="esc-n-04-concentration-functional">
+<h3>ESC N 04 — Concentration (functional)<a class="headerlink" href="#esc-n-04-concentration-functional" title="Link to this heading">#</a></h3>
+<p>The <strong>only working density command</strong> on the M08F.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Bytes</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4e</span> <span class="pre">04</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Set print concentration. Persistent until ESC &#64; reset or another ESC N 04 call.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Value range</p></th>
+<th class="head"><p>Visual density</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0–4</p></td>
+<td><p>Light</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>Medium</p></td>
+</tr>
+<tr class="row-even"><td><p>6+</p></td>
+<td><p>Dark (saturated, no further increase)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Tested density mappings: low=1, medium=5, high=6.</p>
+<p><strong>Must be preceded by ESC &#64;</strong> or embedded in a larger write to avoid bridge chip
+interception.</p>
+</section>
+<section id="esc-7-heat-settings-non-functional">
+<h3>ESC 7 — Heat Settings (non-functional)<a class="headerlink" href="#esc-7-heat-settings-non-functional" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">37</span> <span class="pre">&lt;max_dots&gt;</span> <span class="pre">&lt;heat_time&gt;</span> <span class="pre">&lt;heat_interval&gt;</span></code> — standard ESC/POS heat command.
+<strong>Has no visible effect on the M08F.</strong> Tested heat_time values 40–200 with no
+change in print density.</p>
+</section>
+<section id="esc-e-emphasis-non-functional">
+<h3>ESC E — Emphasis (non-functional)<a class="headerlink" href="#esc-e-emphasis-non-functional" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">45</span> <span class="pre">&lt;n&gt;</span></code> — standard ESC/POS bold mode. <strong>Has no visible effect on the M08F.</strong></p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="device-configuration">
+<h2>Device Configuration<a class="headerlink" href="#device-configuration" title="Link to this heading">#</a></h2>
+<section id="auto-off-timer">
+<h3>Auto-Off Timer<a class="headerlink" href="#auto-off-timer" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Operation</p></th>
+<th class="head"><p>Command</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Query</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">0e</span></code> → response <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">09</span> <span class="pre">&lt;value&gt;</span></code> on <code class="docutils literal notranslate"><span class="pre">ff01</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p>Set</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4e</span> <span class="pre">07</span> <span class="pre">&lt;value&gt;</span></code></p></td>
+<td><p>Must be preceded by ESC &#64;</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Value <code class="docutils literal notranslate"><span class="pre">00</span></code> = disabled. Non-zero values set the auto-off timeout in <strong>5-minute
+increments</strong> (value <code class="docutils literal notranslate"><span class="pre">01</span></code> = 5 min, value <code class="docutils literal notranslate"><span class="pre">02</span></code> = 10 min, etc.). Timer counts
+from last activity.</p>
+<p>An open BLE connection without traffic does not count as activity. With the
+timer at 10 minutes, a link left idle after connecting was dropped by the
+printer switching itself off about 9.5 minutes later; with the timer at 5
+minutes, after 5.1 minutes. Holding a connection open therefore does not keep
+the printer awake; a host that keeps the link between jobs sees it end at the
+auto-off.</p>
+<p>Queries do count as activity, each of them on its own: with the timer at 5
+minutes, a link carrying only the battery query (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">08</span></code>), only the lid
+query (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">12</span></code>) or only the paper query (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">11</span></code>) every 30 seconds was
+still up after 8 minutes, and periodic lid, paper and battery queries held a
+link for 14.6 minutes against a 10-minute timer. A host that polls the
+printer keeps it on for as long as it polls.</p>
+<p>The timer setting survives a power cycle: set to 5 minutes, read back as 5
+after the printer was switched off and on again.</p>
+<p>(Measured 2026-11-04.)</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ble-bridge-chip-at-interface">
+<h2>BLE Bridge Chip (AT Interface)<a class="headerlink" href="#ble-bridge-chip-at-interface" title="Link to this heading">#</a></h2>
+<p>Service <code class="docutils literal notranslate"><span class="pre">ff80</span></code>, write to <code class="docutils literal notranslate"><span class="pre">ff82</span></code>, responses on <code class="docutils literal notranslate"><span class="pre">ff81</span></code>.</p>
+<section id="command-format">
+<h3>Command Format<a class="headerlink" href="#command-format" title="Link to this heading">#</a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">AT+COMMAND?\r\n    →    \r\n+COMMAND:VALUE\r\n\r\nOK\r\n
+</span><span data-line="2">                   or   \r\nERROR\r\n
+</span></pre></div>
+</div>
+<p>Query form (<code class="docutils literal notranslate"><span class="pre">?</span></code> suffix) is required. Plain <code class="docutils literal notranslate"><span class="pre">AT</span></code> and action forms return ERROR.
+Both <code class="docutils literal notranslate"><span class="pre">\r</span></code> and <code class="docutils literal notranslate"><span class="pre">\r\n</span></code> terminators are accepted.</p>
+</section>
+<section id="known-commands">
+<h3>Known Commands<a class="headerlink" href="#known-commands" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>Response</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AT+NAME?\r\n</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">+NAME:M08F</span></code></p></td>
+<td><p>BLE device name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AT+BAUD?\r\n</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">+BAUD:460800</span></code></p></td>
+<td><p>Internal UART baud rate</p></td>
+</tr>
+<tr class="row-even"><td><p>All others</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ERROR</span></code></p></td>
+<td><p>Comprehensive sweep of HM-10 and JDY command sets — all return ERROR. Custom/locked firmware.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="ota-firmware-update-mode">
+<h2>OTA Firmware Update Mode<a class="headerlink" href="#ota-firmware-update-mode" title="Link to this heading">#</a></h2>
+<p><strong><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">0f</span></code></strong> triggers an immediate reboot into OTA (Over-The-Air firmware
+update) mode.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Behaviour</p></th>
+<th class="head"><p>Detail</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Response</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> on <code class="docutils literal notranslate"><span class="pre">ff03</span></code>, then BLE disconnect within ~55ms</p></td>
+</tr>
+<tr class="row-odd"><td><p>New BLE name</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">M08F-OTA[XXXXXX]</span></code> (where XXXXXX = last 6 of MAC)</p></td>
+</tr>
+<tr class="row-even"><td><p>New MAC prefix</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">F0:</span></code> instead of normal <code class="docutils literal notranslate"><span class="pre">60:</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Recovery</p></td>
+<td><p>Power cycle (long-hold off, then on) returns to normal mode</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<div><p>The firmware update mode has not been interrogated further at time of writing.
+I suspect the device likely exposes different BLE services not present during
+normal operation when in OTA mode. This might enable ways to access more device
+data, dump vendor firmware, or flash custom firmware.</p>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="non-functional-esc-pos-commands">
+<h2>Non-Functional ESC/POS Commands<a class="headerlink" href="#non-functional-esc-pos-commands" title="Link to this heading">#</a></h2>
+<p>Commands tested and observed to have no effect on the M08F:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>Bytes</p></th>
+<th class="head"><p>Standard purpose</p></th>
+<th class="head"><p>M08F behaviour</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ESC 7</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">37</span> <span class="pre">&lt;n1&gt;</span> <span class="pre">&lt;n2&gt;</span> <span class="pre">&lt;n3&gt;</span></code></p></td>
+<td><p>Heat/density settings</p></td>
+<td><p>No visible effect</p></td>
+</tr>
+<tr class="row-odd"><td><p>ESC a</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">61</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Text alignment</p></td>
+<td><p>No effect on raster images</p></td>
+</tr>
+<tr class="row-even"><td><p>ESC E</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">45</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Bold/emphasis</p></td>
+<td><p>No visible effect</p></td>
+</tr>
+<tr class="row-odd"><td><p>ESC J</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4a</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Feed (dots)</p></td>
+<td><p>Non-functional standalone</p></td>
+</tr>
+<tr class="row-even"><td><p>GS V</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">56</span> <span class="pre">01</span></code></p></td>
+<td><p>Paper cut</p></td>
+<td><p>No effect (no cutter)</p></td>
+</tr>
+<tr class="row-odd"><td><p>GS I</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">49</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Printer info queries</p></td>
+<td><p>Returns generic <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>DLE EOT</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">04</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Status queries</p></td>
+<td><p>Returns <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> in all conditions</p></td>
+</tr>
+<tr class="row-odd"><td><p>GS r</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1d</span> <span class="pre">72</span> <span class="pre">01</span></code></p></td>
+<td><p>Paper sensor status</p></td>
+<td><p>Returns <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Text mode</p></td>
+<td><p>ASCII chars</p></td>
+<td><p>Print text with built-in font</p></td>
+<td><p>No built-in font — chars ignored, only <code class="docutils literal notranslate"><span class="pre">0x0A</span></code> triggers feed</p></td>
+</tr>
+<tr class="row-odd"><td><p>NAK <code class="docutils literal notranslate"><span class="pre">15</span> <span class="pre">11</span> <span class="pre">XX</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">15</span> <span class="pre">11</span> <span class="pre">&lt;n&gt;</span></code></p></td>
+<td><p>Alt. concentration (M02/M02S)</p></td>
+<td><p>No effect except <code class="docutils literal notranslate"><span class="pre">0a</span></code> which triggers LF — the third byte appears to be passed through as a raw control code to the MCU</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<hr class="docutils" />
+<section id="other-ble-services">
+<h2>Other BLE Services<a class="headerlink" href="#other-ble-services" title="Link to this heading">#</a></h2>
+<p>The following services produced no clear or interpretable responses when probed
+with ESC/POS commands, AT commands, and raw bytes. Some channels occasionally
+produced data (noted per-entry), but nothing that could be reliably attributed
+to a specific function. They may serve purposes such as firmware updates, or
+features that require specific activation sequences.</p>
+<section id="service-0000ff10-unknown-possibly-firmware-update">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">0000ff10</span></code>: Unknown (possibly firmware update)<a class="headerlink" href="#service-0000ff10-unknown-possibly-firmware-update" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ff11</span></code></p></td>
+<td><p>write-without-response, notify</p></td>
+<td><p>10</p></td>
+<td><p>Silent — accepts writes, no response</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ff12</span></code></p></td>
+<td><p>write-without-response, notify</p></td>
+<td><p>13</p></td>
+<td><p>Silent — accepts writes, no response</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="service-000018f0-contains-2af0-electric-current-specification">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">000018f0</span></code>: contains <code class="docutils literal notranslate"><span class="pre">2af0</span></code> (“Electric Current Specification”)<a class="headerlink" href="#service-000018f0-contains-2af0-electric-current-specification" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">2af0</span></code> is a standardised Bluetooth GATT UUID that the BLE spec names “Electric
+Current Specification”. This label is assigned by the Bluetooth SIG, not by
+Phomemo — whether it reflects the intended purpose or is a coincidental UUID
+choice is unknown. No charging or current-related data was observed.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">2af1</span></code></p></td>
+<td><p>write-without-response, write</p></td>
+<td><p>31</p></td>
+<td><p>Silent</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">2af0</span></code></p></td>
+<td><p>notify</p></td>
+<td><p>33</p></td>
+<td><p>Fires <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> (paper sensor event) on connect; observed consistently when subscribing to all characteristics simultaneously</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="service-0000fee7-tencent-ble-sdk">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">0000fee7</span></code>: Tencent BLE SDK<a class="headerlink" href="#service-0000fee7-tencent-ble-sdk" title="Link to this heading">#</a></h3>
+<p>UUID <code class="docutils literal notranslate"><span class="pre">fee7</span></code> is assigned to “Tencent Holdings Limited” in the Bluetooth SIG’s
+16-bit UUID registry. This is the <a class="reference external" href="https://github.com/TencentCloud/tencentcloud-iot-explorer-ble-sdk-embedded">Tencent LLSync IoT BLE SDK</a>,
+used for device registration, cloud pairing, and WeChat integration via the
+Tencent “连连” (LianLian) IoT app. The SDK is open source with protocol
+documentation (primarily in Chinese).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">fec7</span></code>/<code class="docutils literal notranslate"><span class="pre">fec8</span></code> pair implements a request/response protocol: command packets
+written to <code class="docutils literal notranslate"><span class="pre">fec7</span></code> produce indication responses on <code class="docutils literal notranslate"><span class="pre">fec8</span></code>. The <code class="docutils literal notranslate"><span class="pre">fec8</span></code> packet
+observed on connect is the device’s identity handshake — a protobuf-encoded
+message containing protocol version, device capabilities, and BLE MAC address:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">fe</span> <span class="mi">01</span> <span class="mi">00</span> <span class="mi">1</span><span class="n">a</span> <span class="mi">27</span> <span class="mi">11</span> <span class="mi">00</span> <span class="mi">01</span> <span class="mi">0</span><span class="n">a</span> <span class="mi">00</span> <span class="mi">18</span> <span class="mi">84</span> <span class="mi">80</span> <span class="mi">04</span> <span class="mi">20</span> <span class="mi">01</span> <span class="mi">28</span> <span class="mi">02</span> <span class="mi">3</span><span class="n">a</span> <span class="mi">06</span> <span class="mi">60</span> <span class="mi">6</span><span class="n">e</span> <span class="mi">41</span> <span class="mi">23</span> <span class="mi">0</span><span class="n">b</span> <span class="n">d6</span>
+</span></pre></div>
+</div>
+<p>Bytes <code class="docutils literal notranslate"><span class="pre">1a</span></code>, <code class="docutils literal notranslate"><span class="pre">27</span></code>, <code class="docutils literal notranslate"><span class="pre">3a</span></code> are valid protobuf field tags. The final 6 bytes
+(<code class="docutils literal notranslate"><span class="pre">60</span> <span class="pre">6e</span> <span class="pre">41</span> <span class="pre">23</span> <span class="pre">0b</span> <span class="pre">d6</span></code>) match the device’s BLE MAC address.
+Interacting with this channel further would require implementing the LLSync
+handshake sequence, which is specific to Phomemo’s app-level registration flow
+and not related to print functionality.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fec7</span></code></p></td>
+<td><p>write</p></td>
+<td><p>17</p></td>
+<td><p>Silent — no response observed to probe writes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fec8</span></code></p></td>
+<td><p>indicate</p></td>
+<td><p>19</p></td>
+<td><p>Fires a 26-byte structured packet on connect (last 6 bytes = BLE MAC address). Not required for printing.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fec9</span></code></p></td>
+<td><p>read</p></td>
+<td><p>22</p></td>
+<td><p>Empty string</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="service-49535343-fe7d-issc-ble-uart">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">49535343-fe7d-...</span></code>: ISSC BLE UART<a class="headerlink" href="#service-49535343-fe7d-issc-ble-uart" title="Link to this heading">#</a></h3>
+<p>The UUID prefix <code class="docutils literal notranslate"><span class="pre">49535343</span></code> is ASCII for “ISSC” — Integrated System Solution
+Corporation, a Taiwanese semiconductor company now part of Microchip Technology.
+ISSC produced BLE chips with a built-in transparent UART-over-BLE service: write
+bytes to one characteristic, receive bytes on another. This UUID profile is
+widely reused across cheap BLE modules, either because they use actual
+ISSC/Microchip silicon or because they cloned the service for app compatibility.</p>
+<p>Its presence on the M08F suggests the BLE bridge chip may be based on
+ISSC/Microchip silicon, or the firmware includes this profile alongside the
+primary <code class="docutils literal notranslate"><span class="pre">ff00</span></code> print service. The <code class="docutils literal notranslate"><span class="pre">1e4d</span></code> notify characteristic fired a delayed
+paper state event on connect in one test, hinting it may act as a secondary
+data relay — but this was not consistently reproducible.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">49535343-6daa-4d02-...</span></code></p></td>
+<td><p>write</p></td>
+<td><p>2</p></td>
+<td><p>Silent</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">49535343-8841-...</span></code></p></td>
+<td><p>write-without-response, write</p></td>
+<td><p>4</p></td>
+<td><p>Silent</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">49535343-1e4d-...</span></code></p></td>
+<td><p>notify</p></td>
+<td><p>6</p></td>
+<td><p>Fired <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> (paper absent) ~1.5s after connect in one test — not reliably reproducible</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="service-e7810a71-unknown">
+<h3>Service <code class="docutils literal notranslate"><span class="pre">e7810a71-...</span></code>: Unknown<a class="headerlink" href="#service-e7810a71-unknown" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>UUID</p></th>
+<th class="head"><p>Properties</p></th>
+<th class="head"><p>Handle</p></th>
+<th class="head"><p>Status</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">bef8d6c9-...</span></code></p></td>
+<td><p>write-without-response, write, notify</p></td>
+<td><p>37</p></td>
+<td><p>Silent</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="physical-characteristics">
+<h2>Physical Characteristics<a class="headerlink" href="#physical-characteristics" title="Link to this heading">#</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Print technology</p></td>
+<td><p>Direct thermal</p></td>
+</tr>
+<tr class="row-odd"><td><p>Print resolution</p></td>
+<td><p>203 DPI</p></td>
+</tr>
+<tr class="row-even"><td><p>Print width</p></td>
+<td><p>1680 px = 210 bytes/row (A4 variant; Phomemo also sells a Letter variant with a 216 mm head, not tested here)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Paper feed</p></td>
+<td><p>Manual single-sheet insertion (no tray)</p></td>
+</tr>
+<tr class="row-even"><td><p>Paper sensors (front)</p></td>
+<td><p>2 optical sensors at paper entry — AND logic, both must detect paper. Triggers auto-feed motor. No direct BLE event.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Paper sensor (rear)</p></td>
+<td><p>1 optical sensor behind print head, center. Detects paper fully loaded. Triggers <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code> event and stops feed motor.</p></td>
+</tr>
+<tr class="row-even"><td><p>Lid sensors</p></td>
+<td><p>2 push buttons (AND logic — both must be depressed)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Connectivity</p></td>
+<td><p>BLE (primary), USB (charging)</p></td>
+</tr>
+<tr class="row-even"><td><p>Power button</p></td>
+<td><p>Long hold (~3s) = power off. No BLE events from button presses.</p></td>
+</tr>
+<tr class="row-odd"><td><p>LED indicator</p></td>
+<td><p>Red/green. Not controllable via BLE. Indicates print-ready state: <strong>green</strong> when lid is closed AND paper is present; <strong>red</strong> otherwise.</p></td>
+</tr>
+<tr class="row-even"><td><p>Charging</p></td>
+<td><p>USB. Charge state not reported over BLE.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="sheet-geometry-a4">
+<h3>Sheet Geometry (A4)<a class="headerlink" href="#sheet-geometry-a4" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Property</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Top margin</p></td>
+<td><p>~10 mm from the leading paper edge to raster row 0 (sensor-to-head distance, hardware)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Bottom edge</p></td>
+<td><p>Row 2300 of a full-width raster lands ~1 mm above the bottom edge</p></td>
+</tr>
+<tr class="row-even"><td><p>Overrun</p></td>
+<td><p>Raster past the sheet end leaves the printer muted (see Print Completion); the driver keeps a 5 mm bottom margin (A4: 2253 rows after the 10 mm lead)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Sheet insertion</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code> fires when the leading edge reaches the rear sensor; the feed motor runs ~1.6 s more, then <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">89</span></code> repeats. No motor-stop event for this feed. Raster sent before the repeat is discarded</p></td>
+</tr>
+<tr class="row-even"><td><p>Verified photo job</p></td>
+<td><p>1680x2178 raster at high density: 457 KB in 79.6 s (5.6 KiB/s), clean, 10 mm margins</p></td>
+</tr>
+<tr class="row-odd"><td><p>Row pitch</p></td>
+<td><p>100 rows = 12.5 mm at 203 dpi (measured: 12–12.5 mm)</p></td>
+</tr>
+<tr class="row-even"><td><p>Oversize raster</p></td>
+<td><p>Paper runs out mid-job, see Print Completion Signal</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="driver-implementation-notes">
+<h2>Driver Implementation Notes<a class="headerlink" href="#driver-implementation-notes" title="Link to this heading">#</a></h2>
+<p>Below are recommendations for implementing a printer driver or script.</p>
+<section id="minimum-viable-print-sequence">
+<h3>Minimum Viable Print Sequence<a class="headerlink" href="#minimum-viable-print-sequence" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># 1. Connect to ff02 write characteristic</span>
+</span><span data-line="2"><span class="c1"># 2. Build and send:</span>
+</span><span data-line="3"><span class="n">init</span>     <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1b\x40</span><span class="s2">&quot;</span>                              <span class="c1"># ESC @</span>
+</span><span data-line="4"><span class="n">density</span>  <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1b\x4e\x04\x05</span><span class="s2">&quot;</span>                      <span class="c1"># ESC N 04 05 (medium)</span>
+</span><span data-line="5"><span class="n">header</span>   <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1d\x76\x30\x00</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">width_le</span> <span class="o">+</span> <span class="n">height_le</span>  <span class="c1"># GS v 0</span>
+</span><span data-line="6"><span class="n">data</span>     <span class="o">=</span> <span class="n">bitmap_bytes</span>                               <span class="c1"># 1-bit raster</span>
+</span><span data-line="7"><span class="n">feed</span>     <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1b\x64\x14</span><span class="s2">&quot;</span>                           <span class="c1"># ESC d 20</span>
+</span><span data-line="8"><span class="n">payload</span>  <span class="o">=</span> <span class="n">init</span> <span class="o">+</span> <span class="n">density</span> <span class="o">+</span> <span class="n">header</span> <span class="o">+</span> <span class="n">data</span> <span class="o">+</span> <span class="n">feed</span>
+</span><span data-line="9"><span class="c1"># 3. Chunk into 244-byte segments, write each to ff02 with response=True</span>
+</span><span data-line="10"><span class="c1"># 4. Listen for 1a 0f 0c on ff01 = print complete</span>
+</span></pre></div>
+</div>
+</section>
+<section id="key-parameters">
+<h3>Key Parameters<a class="headerlink" href="#key-parameters" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Tested value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Chunk size</p></td>
+<td><p>244 bytes (MTU - 3)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Write mode</p></td>
+<td><p>Write Request (<code class="docutils literal notranslate"><span class="pre">response=True</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p>Inter-chunk delay</p></td>
+<td><p>none (ATT response paces sender)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Band height</p></td>
+<td><p>256 rows per GS v 0 command</p></td>
+</tr>
+<tr class="row-even"><td><p>Print-complete signal</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">0f</span> <span class="pre">0c</span></code> on <code class="docutils literal notranslate"><span class="pre">ff01</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Density (low)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4e</span> <span class="pre">04</span> <span class="pre">01</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Density (medium)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4e</span> <span class="pre">04</span> <span class="pre">05</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Density (high)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">4e</span> <span class="pre">04</span> <span class="pre">06</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Paper eject</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">1b</span> <span class="pre">64</span> <span class="pre">78</span></code> queued ×2 until <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code>, +20 mm</p></td>
+</tr>
+<tr class="row-odd"><td><p>Printable A4 rows</p></td>
+<td><p>2253 (10 mm top, 5 mm bottom)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="pre-print-state-check">
+<h3>Pre-Print State Check<a class="headerlink" href="#pre-print-state-check" title="Link to this heading">#</a></h3>
+<p>Before printing, query device state to avoid errors:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># 1. Query lid state</span>
+</span><span data-line="2"><span class="n">write</span><span class="p">(</span><span class="n">ff02</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1f\x11\x12</span><span class="s2">&quot;</span><span class="p">)</span>   <span class="c1"># → expect 1a 05 98 (closed)</span>
+</span><span data-line="3"><span class="c1"># 2. Query paper state (only if lid closed!)</span>
+</span><span data-line="4"><span class="n">write</span><span class="p">(</span><span class="n">ff02</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1f\x11\x11</span><span class="s2">&quot;</span><span class="p">)</span>   <span class="c1"># → expect 1a 06 89 (paper present)</span>
+</span><span data-line="5"><span class="c1"># 3. Query battery</span>
+</span><span data-line="6"><span class="n">write</span><span class="p">(</span><span class="n">ff02</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x1f\x11\x08</span><span class="s2">&quot;</span><span class="p">)</span>   <span class="c1"># → 1a 04 &lt;percent&gt;</span>
+</span></pre></div>
+</div>
+<p>Paper state is <strong>unreliable when lid is open</strong> — always check lid first.</p>
+</section>
+<section id="short-sheet-detection">
+<h3>Short Sheet Detection<a class="headerlink" href="#short-sheet-detection" title="Link to this heading">#</a></h3>
+<p>Two signals tell a driver that the inserted sheet is shorter than the page:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code> arriving while a large part of the raster is still unsent. The
+event normally fires ~80 rows before the end of a page that fits (the
+sensor sits ahead of the head), so only an early event means a short
+sheet; the <code class="docutils literal notranslate"><span class="pre">phomemo</span></code> library uses “more than 25 % of rows unsent”.</p></li>
+<li><p>No answer to a <code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code> query after the motor stop. The overrun error
+state mutes queries; a reconnect clears it.</p></li>
+</ul>
+</section>
+<section id="a5-on-the-m08f">
+<h3>A5 on the M08F<a class="headerlink" href="#a5-on-the-m08f" title="Link to this heading">#</a></h3>
+<p>A5 is fed long edge first (210 mm wide, 148 mm long). A client renders A5
+portrait (148 x 210); the driver rotates the raster a quarter turn
+counter-clockwise, so the document’s top edge ends up at the sheet’s left
+edge. 1062 rows are printable after the 10 mm lead and 5 mm bottom margin.</p>
+</section>
+<section id="error-detection-during-print">
+<h3>Error Detection During Print<a class="headerlink" href="#error-detection-during-print" title="Link to this heading">#</a></h3>
+<p>DLE EOT queries always return <code class="docutils literal notranslate"><span class="pre">01</span> <span class="pre">01</span></code> regardless of state. Monitor <code class="docutils literal notranslate"><span class="pre">ff01</span></code> for
+spontaneous events during print instead:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Event</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>Action</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">05</span> <span class="pre">99</span></code></p></td>
+<td><p>Lid opened</p></td>
+<td><p>Pause/abort — print head exposed</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">06</span> <span class="pre">88</span></code></p></td>
+<td><p>Paper absent</p></td>
+<td><p>Paper ran out or was pulled out</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">0f</span> <span class="pre">0c</span></code></p></td>
+<td><p>Motor stopped</p></td>
+<td><p>Print complete (or aborted)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="printer-application">
+<h3>Printer Application<a class="headerlink" href="#printer-application" title="Link to this heading">#</a></h3>
+<p>The repository’s <span class="xref myst">printer application</span> splits the
+driver in two: a PAPPL application in C speaks IPP and raster to the
+network and hands each page as 8-bit grayscale rows to <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span></code>
+over a unix socket; the bridge (Python, <code class="docutils literal notranslate"><span class="pre">phomemo.bridge</span></code>) owns the BLE link
+and applies everything above: the pre-print state check, continuous
+write-with-response streaming, short sheet and lid detection, and the
+sensor-driven eject.</p>
+</section>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="models.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Printer models</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="glossary.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Glossary</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>

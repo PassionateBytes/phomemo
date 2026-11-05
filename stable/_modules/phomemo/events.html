@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>phomemo.events - phomemo-driver</title><link rel="shortcut icon" href="../../_static/m08f.png"/><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="phomemo.events"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../index.html">
+      <img class="light-logo" src="../../_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../installation.html">Install</a></li><li class="link"><a href="../../first-steps.html">First steps</a></li><li class="link"><a href="../../library.html">Library</a></li><li class="link"><a href="../../contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="0.3.0">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.3.0</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">phomemo.events</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <h1>Source code for phomemo.events</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="c1"># This file is part of phomemo.</span>
+</span><span data-line="2"><span class="c1"># Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions</span>
+</span><span data-line="3"><span class="c1">#</span>
+</span><span data-line="4"><span class="c1"># phomemo is free software: you can redistribute it and/or modify</span>
+</span><span data-line="5"><span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+</span><span data-line="6"><span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+</span><span data-line="7"><span class="c1"># (at your option) any later version.</span>
+</span><span data-line="8"><span class="c1">#</span>
+</span><span data-line="9"><span class="c1"># phomemo is distributed in the hope that it will be useful,</span>
+</span><span data-line="10"><span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+</span><span data-line="11"><span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+</span><span data-line="12"><span class="c1"># GNU Lesser General Public License for more details.</span>
+</span><span data-line="13"><span class="c1">#</span>
+</span><span data-line="14"><span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+</span><span data-line="15"><span class="c1"># along with phomemo.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="sd">&quot;&quot;&quot;Device event parsing for Phomemo printer notifications.</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="sd">All events arrive on the ``ff01`` BLE characteristic as ``1a &lt;sub-type&gt;</span>
+</span><span data-line="20"><span class="sd">&lt;data&gt;`` messages. Events can be spontaneous (triggered by physical</span>
+</span><span data-line="21"><span class="sd">state changes) or solicited (responses to ``1f 11 XX`` queries). Both</span>
+</span><span data-line="22"><span class="sd">use the same ``1a``-prefixed format.</span>
+</span><span data-line="23">
+</span><span data-line="24"><span class="sd">Multiple 3-byte events can arrive concatenated in a single BLE</span>
+</span><span data-line="25"><span class="sd">notification. The parser consumes 3 bytes at a time.</span>
+</span><span data-line="26"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+</span><span data-line="29"><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+</span><span data-line="30"><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">StrEnum</span>
+</span><span data-line="31">
+</span><span data-line="32"><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+</span><span data-line="33">
+</span><span data-line="34">
+<div class="viewcode-block" id="EventKind">
+<a class="viewcode-back" href="../../api.html#phomemo.events.EventKind">[docs]</a>
+</span><span data-line="35"><span class="k">class</span><span class="w"> </span><span class="nc">EventKind</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+</span><span data-line="36"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Event sub-type byte in ``1a &lt;sub-type&gt; &lt;data&gt;`` messages.</span>
+</span><span data-line="37">
+</span><span data-line="38"><span class="sd">    Maps the second byte of each event to its semantic meaning.</span>
+</span><span data-line="39"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="40">
+</span><span data-line="41">    <span class="n">SERIAL_SHORT</span> <span class="o">=</span> <span class="mh">0x03</span>
+</span><span data-line="42">    <span class="n">BATTERY</span> <span class="o">=</span> <span class="mh">0x04</span>
+</span><span data-line="43">    <span class="n">LID</span> <span class="o">=</span> <span class="mh">0x05</span>
+</span><span data-line="44">    <span class="n">PAPER</span> <span class="o">=</span> <span class="mh">0x06</span>
+</span><span data-line="45">    <span class="n">FIRMWARE</span> <span class="o">=</span> <span class="mh">0x07</span>
+</span><span data-line="46">    <span class="n">SERIAL_ASCII</span> <span class="o">=</span> <span class="mh">0x08</span>
+</span><span data-line="47">    <span class="n">DEVICE_TIMER</span> <span class="o">=</span> <span class="mh">0x09</span>
+</span><span data-line="48">    <span class="n">MOTOR_STOP</span> <span class="o">=</span> <span class="mh">0x0F</span></div>
+
+</span><span data-line="49">
+</span><span data-line="50">
+<div class="viewcode-block" id="LidState">
+<a class="viewcode-back" href="../../api.html#phomemo.events.LidState">[docs]</a>
+</span><span data-line="51"><span class="k">class</span><span class="w"> </span><span class="nc">LidState</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+</span><span data-line="52"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Physical lid position.&quot;&quot;&quot;</span>
+</span><span data-line="53">
+</span><span data-line="54">    <span class="n">CLOSED</span> <span class="o">=</span> <span class="s2">&quot;closed&quot;</span>
+</span><span data-line="55">    <span class="n">OPEN</span> <span class="o">=</span> <span class="s2">&quot;open&quot;</span></div>
+
+</span><span data-line="56">
+</span><span data-line="57">
+<div class="viewcode-block" id="PaperState">
+<a class="viewcode-back" href="../../api.html#phomemo.events.PaperState">[docs]</a>
+</span><span data-line="58"><span class="k">class</span><span class="w"> </span><span class="nc">PaperState</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+</span><span data-line="59"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Paper presence as reported by the rear optical sensor.&quot;&quot;&quot;</span>
+</span><span data-line="60">
+</span><span data-line="61">    <span class="n">PRESENT</span> <span class="o">=</span> <span class="s2">&quot;present&quot;</span>
+</span><span data-line="62">    <span class="n">ABSENT</span> <span class="o">=</span> <span class="s2">&quot;absent&quot;</span></div>
+
+</span><span data-line="63">
+</span><span data-line="64">
+</span><span data-line="65"><span class="c1"># ---------------------------------------------------------------------------</span>
+</span><span data-line="66"><span class="c1"># Parsed event types</span>
+</span><span data-line="67"><span class="c1"># ---------------------------------------------------------------------------</span>
+</span><span data-line="68">
+</span><span data-line="69">
+<div class="viewcode-block" id="DeviceEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.DeviceEvent">[docs]</a>
+</span><span data-line="70"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="71"><span class="k">class</span><span class="w"> </span><span class="nc">DeviceEvent</span><span class="p">:</span>
+</span><span data-line="72"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all device events.</span>
+</span><span data-line="73">
+</span><span data-line="74"><span class="sd">    Used directly as a fallback for unrecognised event sub-types.</span>
+</span><span data-line="75">
+</span><span data-line="76"><span class="sd">    Attributes:</span>
+</span><span data-line="77"><span class="sd">        kind: The event sub-type byte.</span>
+</span><span data-line="78"><span class="sd">        raw: The original raw bytes from the notification.</span>
+</span><span data-line="79"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="80">
+</span><span data-line="81">    <span class="n">kind</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="82">    <span class="n">raw</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span></div>
+
+</span><span data-line="83">
+</span><span data-line="84">
+<div class="viewcode-block" id="LidEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.LidEvent">[docs]</a>
+</span><span data-line="85"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="86"><span class="k">class</span><span class="w"> </span><span class="nc">LidEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="87"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Lid state change event.</span>
+</span><span data-line="88">
+</span><span data-line="89"><span class="sd">    Attributes:</span>
+</span><span data-line="90"><span class="sd">        lid: Current lid state.</span>
+</span><span data-line="91"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="92">
+</span><span data-line="93">    <span class="n">lid</span><span class="p">:</span> <span class="n">LidState</span> <span class="o">=</span> <span class="n">LidState</span><span class="o">.</span><span class="n">CLOSED</span></div>
+
+</span><span data-line="94">
+</span><span data-line="95">
+<div class="viewcode-block" id="PaperEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.PaperEvent">[docs]</a>
+</span><span data-line="96"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="97"><span class="k">class</span><span class="w"> </span><span class="nc">PaperEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="98"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Paper presence change event.</span>
+</span><span data-line="99">
+</span><span data-line="100"><span class="sd">    Attributes:</span>
+</span><span data-line="101"><span class="sd">        paper: Current paper state.</span>
+</span><span data-line="102"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="103">
+</span><span data-line="104">    <span class="n">paper</span><span class="p">:</span> <span class="n">PaperState</span> <span class="o">=</span> <span class="n">PaperState</span><span class="o">.</span><span class="n">ABSENT</span></div>
+
+</span><span data-line="105">
+</span><span data-line="106">
+<div class="viewcode-block" id="BatteryEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.BatteryEvent">[docs]</a>
+</span><span data-line="107"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="108"><span class="k">class</span><span class="w"> </span><span class="nc">BatteryEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="109"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Battery level report.</span>
+</span><span data-line="110">
+</span><span data-line="111"><span class="sd">    Attributes:</span>
+</span><span data-line="112"><span class="sd">        percent: Battery charge percentage (0-100).</span>
+</span><span data-line="113"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="114">
+</span><span data-line="115">    <span class="n">percent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="116">
+</span><span data-line="117">    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="118"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Clamp percent to 0-100 to handle corrupt BLE data.&quot;&quot;&quot;</span>
+</span><span data-line="119">        <span class="n">clamped</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">percent</span><span class="p">))</span>
+</span><span data-line="120">        <span class="k">if</span> <span class="n">clamped</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">percent</span><span class="p">:</span>
+</span><span data-line="121">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Battery percent clamped </span><span class="si">%d</span><span class="s2"> -&gt; </span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">percent</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span>
+</span><span data-line="122">        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;percent&quot;</span><span class="p">,</span> <span class="n">clamped</span><span class="p">)</span></div>
+
+</span><span data-line="123">
+</span><span data-line="124">
+<div class="viewcode-block" id="FirmwareEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.FirmwareEvent">[docs]</a>
+</span><span data-line="125"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="126"><span class="k">class</span><span class="w"> </span><span class="nc">FirmwareEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="127"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Firmware version report.</span>
+</span><span data-line="128">
+</span><span data-line="129"><span class="sd">    The version bytes map to ``major.minor.patch``. Example:</span>
+</span><span data-line="130"><span class="sd">    ``1a 07 01 01 03`` → v1.1.3.</span>
+</span><span data-line="131">
+</span><span data-line="132"><span class="sd">    Attributes:</span>
+</span><span data-line="133"><span class="sd">        major: Major version number.</span>
+</span><span data-line="134"><span class="sd">        minor: Minor version number.</span>
+</span><span data-line="135"><span class="sd">        patch: Patch version number.</span>
+</span><span data-line="136"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="137">
+</span><span data-line="138">    <span class="n">major</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="139">    <span class="n">minor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="140">    <span class="n">patch</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+</span><span data-line="141">
+</span><span data-line="142">
+<div class="viewcode-block" id="SerialEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.SerialEvent">[docs]</a>
+</span><span data-line="143"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="144"><span class="k">class</span><span class="w"> </span><span class="nc">SerialEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="145"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Serial number report (ASCII or short form).</span>
+</span><span data-line="146">
+</span><span data-line="147"><span class="sd">    Attributes:</span>
+</span><span data-line="148"><span class="sd">        value: The serial string or hex representation.</span>
+</span><span data-line="149"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="150">
+</span><span data-line="151">    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span></div>
+
+</span><span data-line="152">
+</span><span data-line="153">
+<div class="viewcode-block" id="TimerEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.TimerEvent">[docs]</a>
+</span><span data-line="154"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="155"><span class="k">class</span><span class="w"> </span><span class="nc">TimerEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="156"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Auto-off timer setting report.</span>
+</span><span data-line="157">
+</span><span data-line="158"><span class="sd">    Attributes:</span>
+</span><span data-line="159"><span class="sd">        value: Raw timer byte. 0 = disabled, non-zero = timeout in</span>
+</span><span data-line="160"><span class="sd">            5-minute increments.</span>
+</span><span data-line="161"><span class="sd">        minutes: Computed timeout in minutes (0 = disabled). Derived</span>
+</span><span data-line="162"><span class="sd">            from ``value * 5``; cannot be set independently.</span>
+</span><span data-line="163"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="164">
+</span><span data-line="165">    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="166">    <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="167">
+</span><span data-line="168">    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="169"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Derive minutes from value to enforce the invariant.&quot;&quot;&quot;</span>
+</span><span data-line="170">        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;minutes&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span></div>
+
+</span><span data-line="171">
+</span><span data-line="172">
+<div class="viewcode-block" id="MotorStopEvent">
+<a class="viewcode-back" href="../../api.html#phomemo.events.MotorStopEvent">[docs]</a>
+</span><span data-line="173"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="174"><span class="k">class</span><span class="w"> </span><span class="nc">MotorStopEvent</span><span class="p">(</span><span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="175"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Motor stop / print complete signal.</span>
+</span><span data-line="176">
+</span><span data-line="177"><span class="sd">    Fires when the motor stops after a print job. The third byte</span>
+</span><span data-line="178"><span class="sd">    (``0x0c``) is invariant across all tested conditions.</span>
+</span><span data-line="179"><span class="sd">    &quot;&quot;&quot;</span></div>
+
+</span><span data-line="180">
+</span><span data-line="181">
+</span><span data-line="182"><span class="c1"># ---------------------------------------------------------------------------</span>
+</span><span data-line="183"><span class="c1"># Parsing</span>
+</span><span data-line="184"><span class="c1"># ---------------------------------------------------------------------------</span>
+</span><span data-line="185">
+</span><span data-line="186">
+</span><span data-line="187"><span class="k">def</span><span class="w"> </span><span class="nf">_parse_one</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DeviceEvent</span><span class="p">:</span>
+</span><span data-line="188"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a single 3-byte event from raw notification data.</span>
+</span><span data-line="189">
+</span><span data-line="190"><span class="sd">    Args:</span>
+</span><span data-line="191"><span class="sd">        data: Exactly 3 bytes starting with ``0x1a``.</span>
+</span><span data-line="192">
+</span><span data-line="193"><span class="sd">    Returns:</span>
+</span><span data-line="194"><span class="sd">        A typed event dataclass.</span>
+</span><span data-line="195"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="196">    <span class="n">sub_type</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="197">    <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</span><span data-line="198">
+</span><span data-line="199">    <span class="k">match</span> <span class="n">sub_type</span><span class="p">:</span>
+</span><span data-line="200">        <span class="k">case</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">LID</span><span class="p">:</span>
+</span><span data-line="201">            <span class="n">lid</span> <span class="o">=</span> <span class="n">LidState</span><span class="o">.</span><span class="n">OPEN</span> <span class="k">if</span> <span class="p">(</span><span class="n">value</span> <span class="o">&amp;</span> <span class="mh">0x01</span><span class="p">)</span> <span class="k">else</span> <span class="n">LidState</span><span class="o">.</span><span class="n">CLOSED</span>
+</span><span data-line="202">            <span class="k">return</span> <span class="n">LidEvent</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">LID</span><span class="p">,</span> <span class="n">lid</span><span class="o">=</span><span class="n">lid</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="203">
+</span><span data-line="204">        <span class="k">case</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">PAPER</span><span class="p">:</span>
+</span><span data-line="205">            <span class="n">paper</span> <span class="o">=</span> <span class="n">PaperState</span><span class="o">.</span><span class="n">PRESENT</span> <span class="k">if</span> <span class="p">(</span><span class="n">value</span> <span class="o">&amp;</span> <span class="mh">0x01</span><span class="p">)</span> <span class="k">else</span> <span class="n">PaperState</span><span class="o">.</span><span class="n">ABSENT</span>
+</span><span data-line="206">            <span class="k">return</span> <span class="n">PaperEvent</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">PAPER</span><span class="p">,</span> <span class="n">paper</span><span class="o">=</span><span class="n">paper</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="207">
+</span><span data-line="208">        <span class="k">case</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">BATTERY</span><span class="p">:</span>
+</span><span data-line="209">            <span class="k">return</span> <span class="n">BatteryEvent</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">BATTERY</span><span class="p">,</span> <span class="n">percent</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="210">
+</span><span data-line="211">        <span class="k">case</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">SERIAL_SHORT</span><span class="p">:</span>
+</span><span data-line="212">            <span class="k">return</span> <span class="n">SerialEvent</span><span class="p">(</span>
+</span><span data-line="213">                <span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">SERIAL_SHORT</span><span class="p">,</span>
+</span><span data-line="214">                <span class="n">value</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;0x</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span data-line="215">                <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+</span><span data-line="216">            <span class="p">)</span>
+</span><span data-line="217">
+</span><span data-line="218">        <span class="k">case</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">DEVICE_TIMER</span><span class="p">:</span>
+</span><span data-line="219">            <span class="k">return</span> <span class="n">TimerEvent</span><span class="p">(</span>
+</span><span data-line="220">                <span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">DEVICE_TIMER</span><span class="p">,</span>
+</span><span data-line="221">                <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span>
+</span><span data-line="222">                <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+</span><span data-line="223">            <span class="p">)</span>
+</span><span data-line="224">
+</span><span data-line="225">        <span class="k">case</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">MOTOR_STOP</span><span class="p">:</span>
+</span><span data-line="226">            <span class="k">return</span> <span class="n">MotorStopEvent</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">MOTOR_STOP</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="227">
+</span><span data-line="228">        <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+</span><span data-line="229">            <span class="k">return</span> <span class="n">DeviceEvent</span><span class="p">(</span><span class="n">kind</span><span class="o">=</span><span class="n">sub_type</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="230">
+</span><span data-line="231">
+<div class="viewcode-block" id="parse_notification">
+<a class="viewcode-back" href="../../api.html#phomemo.events.parse_notification">[docs]</a>
+</span><span data-line="232"><span class="k">def</span><span class="w"> </span><span class="nf">parse_notification</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DeviceEvent</span><span class="p">]:</span>
+</span><span data-line="233"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a BLE notification payload into typed events.</span>
+</span><span data-line="234">
+</span><span data-line="235"><span class="sd">    Notifications from ``ff01`` can contain one or more concatenated</span>
+</span><span data-line="236"><span class="sd">    3-byte events. This function splits the payload and parses each</span>
+</span><span data-line="237"><span class="sd">    event individually.</span>
+</span><span data-line="238">
+</span><span data-line="239"><span class="sd">    Args:</span>
+</span><span data-line="240"><span class="sd">        data: Raw bytes from a BLE notification on ``ff01``.</span>
+</span><span data-line="241">
+</span><span data-line="242"><span class="sd">    Returns:</span>
+</span><span data-line="243"><span class="sd">        List of parsed ``DeviceEvent`` instances. Empty list if the</span>
+</span><span data-line="244"><span class="sd">        data doesn&#39;t start with ``0x1a`` or has invalid length.</span>
+</span><span data-line="245"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="246">    <span class="n">events</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DeviceEvent</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="247">
+</span><span data-line="248">    <span class="c1"># Handle variable-length responses (firmware, serial ASCII)</span>
+</span><span data-line="249">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">5</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0x1A</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">FIRMWARE</span><span class="p">:</span>
+</span><span data-line="250">        <span class="n">event</span> <span class="o">=</span> <span class="n">FirmwareEvent</span><span class="p">(</span>
+</span><span data-line="251">            <span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">FIRMWARE</span><span class="p">,</span>
+</span><span data-line="252">            <span class="n">major</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+</span><span data-line="253">            <span class="n">minor</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+</span><span data-line="254">            <span class="n">patch</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+</span><span data-line="255">            <span class="n">raw</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+</span><span data-line="256">        <span class="p">)</span>
+</span><span data-line="257">        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Parsed event: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+</span><span data-line="258">        <span class="k">return</span> <span class="p">[</span><span class="n">event</span><span class="p">]</span>
+</span><span data-line="259">
+</span><span data-line="260">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mh">0x1A</span> <span class="ow">and</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">EventKind</span><span class="o">.</span><span class="n">SERIAL_ASCII</span><span class="p">:</span>
+</span><span data-line="261">        <span class="n">event</span> <span class="o">=</span> <span class="n">SerialEvent</span><span class="p">(</span>
+</span><span data-line="262">            <span class="n">kind</span><span class="o">=</span><span class="n">EventKind</span><span class="o">.</span><span class="n">SERIAL_ASCII</span><span class="p">,</span>
+</span><span data-line="263">            <span class="n">value</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;ascii&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">),</span>
+</span><span data-line="264">            <span class="n">raw</span><span class="o">=</span><span class="nb">bytes</span><span class="p">(</span><span class="n">data</span><span class="p">),</span>
+</span><span data-line="265">        <span class="p">)</span>
+</span><span data-line="266">        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Parsed event: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+</span><span data-line="267">        <span class="k">return</span> <span class="p">[</span><span class="n">event</span><span class="p">]</span>
+</span><span data-line="268">
+</span><span data-line="269">    <span class="c1"># Standard 3-byte event parsing (may be batched)</span>
+</span><span data-line="270">    <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="271">    <span class="k">while</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+</span><span data-line="272">        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">]</span> <span class="o">!=</span> <span class="mh">0x1A</span><span class="p">:</span>
+</span><span data-line="273">            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+</span><span data-line="274">                <span class="s2">&quot;Unexpected byte 0x</span><span class="si">%02x</span><span class="s2"> at offset </span><span class="si">%d</span><span class="s2">, stopping parse&quot;</span><span class="p">,</span>
+</span><span data-line="275">                <span class="n">data</span><span class="p">[</span><span class="n">offset</span><span class="p">],</span>
+</span><span data-line="276">                <span class="n">offset</span><span class="p">,</span>
+</span><span data-line="277">            <span class="p">)</span>
+</span><span data-line="278">            <span class="k">break</span>
+</span><span data-line="279">        <span class="n">chunk</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">3</span><span class="p">])</span>
+</span><span data-line="280">        <span class="n">event</span> <span class="o">=</span> <span class="n">_parse_one</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</span><span data-line="281">        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Parsed event: </span><span class="si">%r</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+</span><span data-line="282">        <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+</span><span data-line="283">        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">3</span>
+</span><span data-line="284">
+</span><span data-line="285">    <span class="k">if</span> <span class="ow">not</span> <span class="n">events</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="286">        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No events parsed from </span><span class="si">%d</span><span class="s2"> bytes: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">hex</span><span class="p">())</span>
+</span><span data-line="287">
+</span><span data-line="288">    <span class="k">return</span> <span class="n">events</span></div>
+
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../_static/versions.js?v=96ae6708"></script></body>
+</html>

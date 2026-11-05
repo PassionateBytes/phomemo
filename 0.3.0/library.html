@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Python library - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="API reference" href="api.html" /><link rel="prev" title="Troubleshooting" href="troubleshooting.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Python library"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="first-steps.html">First steps</a></li><li class="link"><a href="#">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="0.3.0">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">0.3.0</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#install">Install</a></li>
+<li><a class="reference internal" href="#quick-start">Quick start</a></li>
+<li><a class="reference internal" href="#scan-for-printers">Scan for printers</a></li>
+<li><a class="reference internal" href="#connect">Connect</a></li>
+<li><a class="reference internal" href="#print-an-image">Print an image</a><ul>
+<li><a class="reference internal" href="#fit">Fit</a></li>
+<li><a class="reference internal" href="#density-and-dithering">Density and dithering</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#print-a-bitmap">Print a bitmap</a><ul>
+<li><a class="reference internal" href="#when-a-print-stops-early">When a print stops early</a></li>
+<li><a class="reference internal" href="#page-rasters-and-tone-modes">Page rasters and tone modes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#move-the-paper">Move the paper</a></li>
+<li><a class="reference internal" href="#listen-to-events">Listen to events</a></li>
+<li><a class="reference internal" href="#read-device-information">Read device information</a></li>
+<li><a class="reference internal" href="#profiles-and-model-manifests">Profiles and model manifests</a><ul>
+<li><a class="reference internal" href="#profile-fields">Profile fields</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#next-steps">Next steps</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Python library</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="python-library">
+<h1>Python library<a class="headerlink" href="#python-library" title="Link to this heading">#</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">phomemo</span></code> lets you drive a Phomemo thermal printer from any asyncio program: scan, connect, print images, read the sensors. It is built on <a class="reference external" href="https://github.com/hbldh/bleak">bleak</a> and <a class="reference external" href="https://python-pillow.github.io/">Pillow</a>, and the bridge and printer app run on top of it (see <a class="reference internal" href="driver-stack.html"><span class="std std-doc">Driver stack</span></a>).</p>
+<p>Every class and function is listed in the <a class="reference internal" href="api.html"><span class="std std-doc">API reference</span></a>. This page walks you through the parts you need first.</p>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">pip<span class="w"> </span>install<span class="w"> </span>phomemo
+</span></pre></div>
+</div>
+<p>Or with uv, or on Fedora from the COPR repository <code class="docutils literal notranslate"><span class="pre">passionatebytes/phomemo-driver</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">uv<span class="w"> </span>add<span class="w"> </span>phomemo
+</span><span data-line="2">sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>python3-phomemo
+</span></pre></div>
+</div>
+<p>You need Python 3.13 or later and a Bluetooth adapter. Linux with BlueZ is tested; bleak also runs on macOS and Windows.</p>
+</section>
+<section id="quick-start">
+<h2>Quick start<a class="headerlink" href="#quick-start" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Printer</span><span class="p">,</span> <span class="n">Density</span><span class="p">,</span> <span class="n">ImageFit</span><span class="p">,</span> <span class="n">discover</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="5">    <span class="n">devices</span> <span class="o">=</span> <span class="k">await</span> <span class="n">discover</span><span class="p">(</span><span class="n">name_pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^M08F&quot;</span><span class="p">)</span>
+</span><span data-line="6">    <span class="k">if</span> <span class="ow">not</span> <span class="n">devices</span><span class="p">:</span>
+</span><span data-line="7">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No printers found&quot;</span><span class="p">)</span>
+</span><span data-line="8">        <span class="k">return</span>
+</span><span data-line="9">
+</span><span data-line="10">    <span class="k">async</span> <span class="k">with</span> <span class="n">Printer</span><span class="p">(</span><span class="s2">&quot;m08f&quot;</span><span class="p">,</span> <span class="n">devices</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">as</span> <span class="n">printer</span><span class="p">:</span>
+</span><span data-line="11">        <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="12">        <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">wait_for_ready</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+</span><span data-line="13">        <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">print_image</span><span class="p">(</span><span class="s2">&quot;photo.png&quot;</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">Density</span><span class="o">.</span><span class="n">MEDIUM</span><span class="p">,</span> <span class="n">fit</span><span class="o">=</span><span class="n">ImageFit</span><span class="o">.</span><span class="n">FIT_PAGE</span><span class="p">)</span>
+</span><span data-line="14">        <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">eject_paper</span><span class="p">()</span>
+</span><span data-line="15">
+</span><span data-line="16"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Here is what happens:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">discover()</span></code> scans for printers that advertise a name starting with <code class="docutils literal notranslate"><span class="pre">M08F</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Printer(&quot;m08f&quot;,</span> <span class="pre">...)</span></code> picks the <code class="docutils literal notranslate"><span class="pre">m08f</span></code> profile; <code class="docutils literal notranslate"><span class="pre">connect()</span></code> brings up the connection.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_for_ready()</span></code> blocks until the lid is closed and a sheet is seated.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">print_image()</span></code> scales the image to the sheet, dithers it and prints it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eject_paper()</span></code> feeds the sheet out.</p></li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Switch the printer on before you scan. While another host holds a connection, the printer does not advertise and your scan will not find it.</p>
+</div>
+</section>
+<section id="scan-for-printers">
+<h2>Scan for printers<a class="headerlink" href="#scan-for-printers" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">discover</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">devices</span> <span class="o">=</span> <span class="k">await</span> <span class="n">discover</span><span class="p">()</span>                         <span class="c1"># every BLE device in range</span>
+</span><span data-line="4"><span class="n">devices</span> <span class="o">=</span> <span class="k">await</span> <span class="n">discover</span><span class="p">(</span><span class="n">name_pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^M08F&quot;</span><span class="p">)</span>    <span class="c1"># M08F printers only</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">discover()</span></code> scans for <code class="docutils literal notranslate"><span class="pre">timeout</span></code> seconds (default 5) and returns <code class="docutils literal notranslate"><span class="pre">BLEDevice</span></code> objects sorted by name. <code class="docutils literal notranslate"><span class="pre">name_pattern</span></code> is a regular expression searched in the advertised name.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The M08F uses no pairing: any host in range can connect.</p>
+</div>
+</section>
+<section id="connect">
+<h2>Connect<a class="headerlink" href="#connect" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Printer</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">with</span> <span class="n">Printer</span><span class="p">(</span><span class="s2">&quot;m08f&quot;</span><span class="p">,</span> <span class="s2">&quot;AA:BB:CC:DD:EE:FF&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">printer</span><span class="p">:</span>
+</span><span data-line="4">    <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="5">    <span class="o">...</span>
+</span><span data-line="6"><span class="c1"># disconnected here</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Printer</span></code> takes a profile name (<code class="docutils literal notranslate"><span class="pre">&quot;m08f&quot;</span></code> is the default) or a <code class="docutils literal notranslate"><span class="pre">PrinterProfile</span></code>, plus the device:</p>
+<ul class="simple">
+<li><p>a <code class="docutils literal notranslate"><span class="pre">BLEDevice</span></code> from <code class="docutils literal notranslate"><span class="pre">discover()</span></code>,</p></li>
+<li><p>an address string,</p></li>
+<li><p>or nothing, to find a printer by its advertised name on <code class="docutils literal notranslate"><span class="pre">connect()</span></code>.</p></li>
+</ul>
+<p>An address string is resolved through a short targeted scan first, because BlueZ only connects to a device it has seen advertising recently. <code class="docutils literal notranslate"><span class="pre">connect(discovery_timeout=...)</span></code> bounds that scan.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>A connection the printer drops on its own surfaces as <code class="docutils literal notranslate"><span class="pre">ConnectionError</span></code>. Call <code class="docutils literal notranslate"><span class="pre">reconnect()</span></code> to bring it up again.</p>
+</div>
+</section>
+<section id="print-an-image">
+<h2>Print an image<a class="headerlink" href="#print-an-image" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Density</span><span class="p">,</span> <span class="n">DitherMode</span><span class="p">,</span> <span class="n">ImageFit</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">print_image</span><span class="p">(</span>
+</span><span data-line="4">    <span class="s2">&quot;photo.png&quot;</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">density</span><span class="o">=</span><span class="n">Density</span><span class="o">.</span><span class="n">HIGH</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">fit</span><span class="o">=</span><span class="n">ImageFit</span><span class="o">.</span><span class="n">FIT_PAGE</span><span class="p">,</span>
+</span><span data-line="7">    <span class="n">dither</span><span class="o">=</span><span class="n">DitherMode</span><span class="o">.</span><span class="n">FLOYD_STEINBERG</span><span class="p">,</span>
+</span><span data-line="8"><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">print_image()</span></code> accepts a file path or a PIL <code class="docutils literal notranslate"><span class="pre">Image</span></code> and handles the rest: resize, dither, raster encoding, transfer and waiting for the motor to stop.</p>
+<section id="fit">
+<h3>Fit<a class="headerlink" href="#fit" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">ImageFit</span></code></p></th>
+<th class="head"><p>Effect</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FIT_WIDTH</span></code> (default)</p></td>
+<td><p>Scale to the head width</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FIT_PAGE</span></code></p></td>
+<td><p>Scale to the head width, bounded in height by the profile’s <code class="docutils literal notranslate"><span class="pre">max_rows</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FIT_HEIGHT</span></code>, <code class="docutils literal notranslate"><span class="pre">STRETCH</span></code>, <code class="docutils literal notranslate"><span class="pre">ORIGINAL</span></code></p></td>
+<td><p>See the <a class="reference internal" href="api.html"><span class="std std-doc">API reference</span></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code class="docutils literal notranslate"><span class="pre">FIT_PAGE</span></code> for anything taller than a sheet. It guarantees the image cannot run the sheet out mid-print.</p>
+</div>
+</section>
+<section id="density-and-dithering">
+<h3>Density and dithering<a class="headerlink" href="#density-and-dithering" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">Density</span></code></p></th>
+<th class="head"><p>M08F <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span> <span class="pre">04</span></code> value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LOW</span></code></p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MEDIUM</span></code> (default)</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HIGH</span></code></p></td>
+<td><p>6</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The values come from the model manifest; a model without them has no density control.</p>
+<p><code class="docutils literal notranslate"><span class="pre">DitherMode.FLOYD_STEINBERG</span></code> (default) suits photos; <code class="docutils literal notranslate"><span class="pre">DitherMode.THRESHOLD</span></code> splits at 128 without dithering.</p>
+</section>
+</section>
+<section id="print-a-bitmap">
+<h2>Print a bitmap<a class="headerlink" href="#print-a-bitmap" title="Link to this heading">#</a></h2>
+<p>Want full control over the pixels? Prepare the bitmap and send it yourself:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_image</span><span class="p">,</span> <span class="n">image_to_bitmap</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;photo.png&quot;</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">processed</span> <span class="o">=</span> <span class="n">prepare_image</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">target_width</span><span class="o">=</span><span class="n">printer</span><span class="o">.</span><span class="n">profile</span><span class="o">.</span><span class="n">print_width_px</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">bitmap</span> <span class="o">=</span> <span class="n">image_to_bitmap</span><span class="p">(</span><span class="n">processed</span><span class="p">)</span>
+</span><span data-line="7"><span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">print_bitmap</span><span class="p">(</span><span class="n">bitmap</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">processed</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">print_bitmap()</span></code> logs a warning when the raster is taller than <code class="docutils literal notranslate"><span class="pre">max_rows</span></code>. For other sheet lengths, <code class="docutils literal notranslate"><span class="pre">profile.rows_for(length_mm)</span></code> gives the printable rows. <code class="docutils literal notranslate"><span class="pre">printer.rows_sent</span></code> reports progress while the transfer runs.</p>
+<section id="when-a-print-stops-early">
+<h3>When a print stops early<a class="headerlink" href="#when-a-print-stops-early" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Situation</p></th>
+<th class="head"><p>You get</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>The <code class="docutils literal notranslate"><span class="pre">abort</span></code> event passed to <code class="docutils literal notranslate"><span class="pre">print_bitmap(abort=event)</span></code> is set</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PrintAborted(&quot;cancelled&quot;)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>The sheet runs out with more than a quarter of the page unsent, or the printer stops answering after the motor stop</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SheetRanOut</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>The lid is open at the motor stop</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PrintAborted(&quot;lid</span> <span class="pre">opened&quot;)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>A BLE failure, including a dropped connection</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ConnectionError</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>On abort, the band in progress is padded with white rows so the printer’s parser stays in sync.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Raster data goes out with ATT write-with-response as one continuous stream, so the printer paces the transfer itself (roughly 6.5 to 7.4 KiB/s). You never need to add delays. The <a class="reference internal" href="m08f-protocol-reference.html"><span class="std std-doc">Protocol reference</span></a> explains why.</p>
+</div>
+</section>
+<section id="page-rasters-and-tone-modes">
+<h3>Page rasters and tone modes<a class="headerlink" href="#page-rasters-and-tone-modes" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo.imaging</span><span class="w"> </span><span class="kn">import</span> <span class="n">ToneMode</span><span class="p">,</span> <span class="n">prepare_page</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">page</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;page.png&quot;</span><span class="p">)</span>   <span class="c1"># e.g. a rendered 8-bit gray page</span>
+</span><span data-line="5"><span class="n">sheet</span> <span class="o">=</span> <span class="n">prepare_page</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">printer</span><span class="o">.</span><span class="n">profile</span><span class="p">,</span> <span class="n">length_mm</span><span class="o">=</span><span class="mf">297.0</span><span class="p">,</span> <span class="n">tone</span><span class="o">=</span><span class="n">ToneMode</span><span class="o">.</span><span class="n">DIFFUSION</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">prepare_page()</span></code> maps a page raster from a print system (mode <code class="docutils literal notranslate"><span class="pre">L</span></code> with 0 = black, or mode <code class="docutils literal notranslate"><span class="pre">1</span></code>) onto the sheet: an optional quarter turn with <code class="docutils literal notranslate"><span class="pre">rotate=True</span></code> (A5 is fed long edge first), centring on the head width, dropping the rows in the unprintable top lead, and clipping to the sheet. Gray input is converted with a tone mode; 1-bit input keeps its pixels.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">ToneMode</span></code></p></th>
+<th class="head"><p>Result</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">THRESHOLD</span></code></p></td>
+<td><p>Split at mid gray: true black and white, crisp text</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ORDERED</span></code></p></td>
+<td><p>8x8 Bayer pattern: even tone</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DIFFUSION</span></code></p></td>
+<td><p>Floyd-Steinberg error diffusion: photos</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="move-the-paper">
+<h2>Move the paper<a class="headerlink" href="#move-the-paper" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>                              <span class="c1"># 20 dot rows, about 2.5 mm</span>
+</span><span data-line="2"><span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">wait_for_ready</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">settle</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+</span><span data-line="3"><span class="n">ejected</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">eject_paper</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_for_ready()</span></code> blocks until the lid is closed and a sheet is loaded and seated, else raises <code class="docutils literal notranslate"><span class="pre">TimeoutError</span></code>. <code class="docutils literal notranslate"><span class="pre">settle</span></code> caps the wait for the feed motor after the sensor sees the sheet. A printer that stops answering queries is reconnected once.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eject_paper()</span></code> keeps two 15 mm feeds queued until the paper-absent event arrives, then a 20 mm feed clears the rollers. It returns <code class="docutils literal notranslate"><span class="pre">False</span></code> if the sheet is still there after <code class="docutils literal notranslate"><span class="pre">max_feeds</span></code> (64, about 1 m).</p></li>
+</ul>
+</section>
+<section id="listen-to-events">
+<h2>Listen to events<a class="headerlink" href="#listen-to-events" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeviceEvent</span><span class="p">,</span> <span class="n">LidEvent</span><span class="p">,</span> <span class="n">PaperEvent</span><span class="p">,</span> <span class="n">MotorStopEvent</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">def</span><span class="w"> </span><span class="nf">on_event</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">DeviceEvent</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">match</span> <span class="n">event</span><span class="p">:</span>
+</span><span data-line="5">        <span class="k">case</span> <span class="n">LidEvent</span><span class="p">(</span><span class="n">lid</span><span class="o">=</span><span class="n">lid</span><span class="p">):</span>
+</span><span data-line="6">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Lid: </span><span class="si">{</span><span class="n">lid</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="7">        <span class="k">case</span> <span class="n">PaperEvent</span><span class="p">(</span><span class="n">paper</span><span class="o">=</span><span class="n">paper</span><span class="p">):</span>
+</span><span data-line="8">            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Paper: </span><span class="si">{</span><span class="n">paper</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="9">        <span class="k">case</span> <span class="n">MotorStopEvent</span><span class="p">():</span>
+</span><span data-line="10">            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Print complete&quot;</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="n">printer</span><span class="o">.</span><span class="n">on_event</span><span class="p">(</span><span class="n">on_event</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Your callback receives typed events as the printer sends them. The other types are <code class="docutils literal notranslate"><span class="pre">BatteryEvent</span></code>, <code class="docutils literal notranslate"><span class="pre">FirmwareEvent</span></code>, <code class="docutils literal notranslate"><span class="pre">SerialEvent</span></code> and <code class="docutils literal notranslate"><span class="pre">TimerEvent</span></code>.</p>
+</section>
+<section id="read-device-information">
+<h2>Read device information<a class="headerlink" href="#read-device-information" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">battery</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">query_battery</span><span class="p">()</span>       <span class="c1"># int 0-100, or None</span>
+</span><span data-line="2"><span class="n">firmware</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">query_firmware</span><span class="p">()</span>     <span class="c1"># str such as &quot;1.1.3&quot;, or None</span>
+</span><span data-line="3"><span class="n">lid</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">query_lid</span><span class="p">()</span>               <span class="c1"># LidState.CLOSED / .OPEN</span>
+</span><span data-line="4"><span class="n">paper</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">query_paper</span><span class="p">()</span>           <span class="c1"># PaperState.PRESENT / .ABSENT</span>
+</span><span data-line="5"><span class="n">minutes</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">query_auto_off</span><span class="p">()</span>      <span class="c1"># auto-off timer in minutes</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">info</span> <span class="o">=</span> <span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">query_device_info</span><span class="p">()</span>      <span class="c1"># everything at once</span>
+</span><span data-line="8"><span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">battery</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">lid</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">paper</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">firmware</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">serial</span><span class="p">)</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="k">await</span> <span class="n">printer</span><span class="o">.</span><span class="n">set_auto_off_timer</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>          <span class="c1"># 5-minute steps, 0 = never</span>
+</span></pre></div>
+</div>
+<p>A query that gets no answer returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Paper state is unreliable while the lid is open. <code class="docutils literal notranslate"><span class="pre">query_device_info()</span></code> takes care of this and queries paper only when the lid is closed.</p>
+</div>
+</section>
+<section id="profiles-and-model-manifests">
+<h2>Profiles and model manifests<a class="headerlink" href="#profiles-and-model-manifests" title="Link to this heading">#</a></h2>
+<p>A profile (<code class="docutils literal notranslate"><span class="pre">PrinterProfile</span></code>) holds everything model-specific. The built-in profiles are built at import from the <a class="reference internal" href="models.html"><span class="std std-doc">model manifests</span></a>, the same files the printer app embeds.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Adding a printer model? Write a model manifest instead of code; every part of the stack picks it up. See <a class="reference internal" href="models.html"><span class="std std-doc">Printer models</span></a>.</p>
+</div>
+<p>You can also load or register profiles in your own program:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo</span><span class="w"> </span><span class="kn">import</span> <span class="n">Printer</span><span class="p">,</span> <span class="n">register_profile</span>
+</span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrinterProfile</span><span class="p">,</span> <span class="n">load_manifest</span><span class="p">,</span> <span class="n">profile_for_name</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">register_profile</span><span class="p">(</span><span class="n">load_manifest</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;my-models/m02s&quot;</span><span class="p">)))</span>   <span class="c1"># directory with model.json</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">register_profile</span><span class="p">(</span><span class="n">PrinterProfile</span><span class="p">(</span>
+</span><span data-line="8">    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;m02s&quot;</span><span class="p">,</span>
+</span><span data-line="9">    <span class="n">ble_name_pattern</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;^M02S&quot;</span><span class="p">,</span>
+</span><span data-line="10">    <span class="n">print_width_px</span><span class="o">=</span><span class="mi">576</span><span class="p">,</span>
+</span><span data-line="11">    <span class="n">sheet_length_mm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>   <span class="c1"># continuous roll</span>
+</span><span data-line="12"><span class="p">))</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="n">profile_for_name</span><span class="p">(</span><span class="s2">&quot;M08F&quot;</span><span class="p">)</span>    <span class="c1"># profile whose ble_name_pattern matches, or None</span>
+</span><span data-line="15">
+</span><span data-line="16"><span class="k">async</span> <span class="k">with</span> <span class="n">Printer</span><span class="p">(</span><span class="s2">&quot;m02s&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">printer</span><span class="p">:</span>
+</span><span data-line="17">    <span class="o">...</span>
+</span></pre></div>
+</div>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Function</p></th>
+<th class="head"><p>Does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">load_manifest(path)</span></code></p></td>
+<td><p>Builds a profile from a model manifest directory; a missing or mistyped field raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming file and field</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">register_profile(profile)</span></code></p></td>
+<td><p>Adds a profile, replacing one of the same name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_profile(name)</span></code></p></td>
+<td><p>Looks a profile up; <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> lists the known names</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">list_profiles()</span></code></p></td>
+<td><p>Sorted profile names</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">profile_for_name(ble_name)</span></code></p></td>
+<td><p>The profile whose <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> matches an advertised name, or <code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="profile-fields">
+<h3>Profile fields<a class="headerlink" href="#profile-fields" title="Link to this heading">#</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code></p></td>
+<td><p>required</p></td>
+<td><p>Lower-case model identifier (<code class="docutils literal notranslate"><span class="pre">m08f</span></code>), also the manifest’s directory name</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code></p></td>
+<td><p>required</p></td>
+<td><p>Regular expression matched against the advertised name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">print_width_px</span></code></p></td>
+<td><p>required</p></td>
+<td><p>Head width in dots, a multiple of 8</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">dpi</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">203</span></code></p></td>
+<td><p>Resolution</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">write_with_response</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
+<td><p>ATT Write Request; the printer paces the stream. <code class="docutils literal notranslate"><span class="pre">False</span></code> only for models that need Write Command, then with <code class="docutils literal notranslate"><span class="pre">chunk_delay_s</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">chunk_delay_s</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.0</span></code></p></td>
+<td><p>Delay between writes; only meaningful without responses</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">max_chunk_bytes</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">244</span></code></p></td>
+<td><p>Write size when the MTU cannot be read</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">negotiate_mtu</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">True</span></code></p></td>
+<td><p>Derive the write size from the negotiated MTU</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">band_height</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">256</span></code></p></td>
+<td><p>Rows per <code class="docutils literal notranslate"><span class="pre">GS</span> <span class="pre">v</span> <span class="pre">0</span></code> command</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sheet_length_mm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>Sheet length in the feed direction (<code class="docutils literal notranslate"><span class="pre">None</span></code> for roll media)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">top_margin_mm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.0</span></code></p></td>
+<td><p>Unprintable lead at the top of a sheet (sensor-to-head distance)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bottom_margin_mm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0.0</span></code></p></td>
+<td><p>Kept free at the sheet end (M08F: 5 mm)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">density_levels</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span> <span class="pre">04</span></code> values for <code class="docutils literal notranslate"><span class="pre">LOW</span></code>, <code class="docutils literal notranslate"><span class="pre">MEDIUM</span></code>, <code class="docutils literal notranslate"><span class="pre">HIGH</span></code>; <code class="docutils literal notranslate"><span class="pre">None</span></code> means no density control</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">supports_escpos_queries</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p></td>
+<td><p>Standard ESC/POS queries answer</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">service_uuid</span></code>, <code class="docutils literal notranslate"><span class="pre">write_uuid</span></code>, <code class="docutils literal notranslate"><span class="pre">notify_uuid</span></code>, <code class="docutils literal notranslate"><span class="pre">status_uuid</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ff00</span></code>, <code class="docutils literal notranslate"><span class="pre">ff02</span></code>, <code class="docutils literal notranslate"><span class="pre">ff01</span></code>, <code class="docutils literal notranslate"><span class="pre">ff03</span></code></p></td>
+<td><p>GATT service and characteristics</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">make</span></code>, <code class="docutils literal notranslate"><span class="pre">model_name</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&quot;Phomemo&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code></p></td>
+<td><p>Names as users see them</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">media</span></code>, <code class="docutils literal notranslate"><span class="pre">default_media</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">()</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code></p></td>
+<td><p>PWG names of the sheet sizes, and the default</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">max_rows</span></code> (property)</p></td>
+<td><p>derived</p></td>
+<td><p>Rows between the margins of the default sheet; A4: 2253</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>The full API: <a class="reference internal" href="api.html"><span class="std std-doc">API reference</span></a>.</p></li>
+<li><p>How the printer behaves on the wire: <a class="reference internal" href="m08f-protocol-reference.html"><span class="std std-doc">Protocol reference</span></a>.</p></li>
+<li><p>Found a gap or have a new printer model? See <a class="reference internal" href="contributing.html"><span class="std std-doc">Contributing</span></a>.</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="troubleshooting.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Troubleshooting</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="api.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">API reference</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>

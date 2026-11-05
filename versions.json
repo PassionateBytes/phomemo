@@ -1,6 +1,7 @@
 {
-  "stable": null,
+  "stable": "0.3.0",
   "versions": [
-    "latest"
+    "latest",
+    "0.3.0"
   ]
 }
