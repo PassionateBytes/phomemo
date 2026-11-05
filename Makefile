@@ -31,7 +31,7 @@ SYSCONF   ?= /etc
 PYTHON    ?= python3
 VENV       = $(PREFIX)/lib/phomemo
 
-.PHONY: help build install uninstall check dist tarball srpm bump tag clean
+.PHONY: help build install uninstall check dist tarball srpm release clean
 
 help:  ## List the targets
 	@echo "Usage: make [target] [VAR=value]"
@@ -97,19 +97,32 @@ srpm: tarball  ## Source RPM into dist/ (needs rpm-build)
 	rpmbuild -bs --define "_sourcedir $(CURDIR)/$(DIST)" \
 	  --define "_srcrpmdir $(CURDIR)/$(DIST)" packaging/rpm/phomemo-driver.spec
 
-bump:  ## Set the version everywhere and commit it (VERSION=x.y.z)
-	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
-	sed -i 's/^version = ".*"/version = "$(VERSION)"/' src/phomemo/pyproject.toml
-	sed -i 's/^Version:        .*/Version:        $(VERSION)/' packaging/rpm/phomemo-driver.spec
-	sed -i 's/^Release:        .*/Release:        1%{?dist}/' packaging/rpm/phomemo-driver.spec
-	sed -i 's/^#define PHOMEMO_VERSION ".*"/#define PHOMEMO_VERSION "$(VERSION)"/' src/printer-app/phomemo.h
-	uv lock
-	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock
-	git commit -m "chore: version $(VERSION)"
-
-tag:  ## Tag the current commit as v$(VERSION)
-	git tag -a v$(VERSION) -m "phomemo-driver v$(VERSION)"
-	@echo "now: git push && git push origin v$(VERSION)"
+release:  ## Set the version everywhere, commit and tag it (VERSION=x.y.z|major|minor|patch); you push
+	@test -n "$(VERSION)" || { echo "usage: make release VERSION=x.y.z|major|minor|patch"; exit 1; }
+	@test -z "$$(git status --porcelain)" || { echo "working tree not clean"; exit 1; }
+	@test "$$(git branch --show-current)" = main || { echo "release from main, not $$(git branch --show-current)"; exit 1; }
+	@set -e; \
+	current=$$(sed -n 's/^version = "\(.*\)"/\1/p' src/phomemo/pyproject.toml); \
+	IFS=. read -r major minor patch <<< "$$current"; \
+	case "$(VERSION)" in \
+	  major) new="$$((major + 1)).0.0" ;; \
+	  minor) new="$$major.$$((minor + 1)).0" ;; \
+	  patch) new="$$major.$$minor.$$((patch + 1))" ;; \
+	  *) new="$(VERSION)"; echo "$$new" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([a-z]+[0-9]+)?$$' || { echo "not a version: $$new"; exit 1; } ;; \
+	esac; \
+	! git rev-parse -q --verify "refs/tags/v$$new" >/dev/null || { echo "tag v$$new exists"; exit 1; }; \
+	echo "$$current -> $$new"; \
+	sed -i "s/^version = \".*\"/version = \"$$new\"/" src/phomemo/pyproject.toml; \
+	sed -i "s/^Version:        .*/Version:        $$new/" packaging/rpm/phomemo-driver.spec; \
+	sed -i 's/^Release:        .*/Release:        1%{?dist}/' packaging/rpm/phomemo-driver.spec; \
+	sed -i "s/^#define PHOMEMO_VERSION \".*\"/#define PHOMEMO_VERSION \"$$new\"/" src/printer-app/phomemo.h; \
+	uv lock; \
+	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock; \
+	git commit -q -m "chore: version $$new"; \
+	git tag -a "v$$new" -m "phomemo-driver $$new"; \
+	echo; \
+	echo "Version $$new committed and tagged. To publish (PyPI, GitHub release, COPR, docs):"; \
+	echo "  git push && git push origin v$$new"
 
 clean:  ## Remove build output
 	rm -rf $(DIST)
