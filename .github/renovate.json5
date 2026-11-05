@@ -1,0 +1,51 @@
+// Renovate (Mend Renovate GitHub app). Weekly; version ranges in
+// pyproject.toml stay as they are and only uv.lock moves within them.
+// Minor and patch updates merge on their own once CI is green; major updates
+// wait for review. The Fedora releases CI runs on come from Bodhi, not from
+// a pinned version.
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended"],
+  timezone: "Europe/Amsterdam",
+  schedule: ["before 6am on monday"],
+  semanticCommits: "enabled",
+  rangeStrategy: "in-range-only",
+  automergeType: "pr",
+  automergeStrategy: "squash",
+  lockFileMaintenance: {
+    enabled: true,
+    automerge: true,
+    schedule: ["before 6am on monday"],
+  },
+  packageRules: [
+    {
+      description: "Minor and patch updates merge once CI is green.",
+      matchUpdateTypes: ["minor", "patch", "digest"],
+      automerge: true,
+    },
+    {
+      // uv.lock pins the bleak version COPR's python-bleak package is built
+      // at (.copr/Makefile); CI builds and installs that package.
+      description: "bleak in its own pull request.",
+      matchPackageNames: ["bleak"],
+      labels: ["bleak"],
+    },
+    {
+      description: "Development tools in one pull request.",
+      matchManagers: ["pep621"],
+      matchDepTypes: ["dependency-groups"],
+      groupName: "development tools",
+    },
+    {
+      description: "Documentation tooling in one pull request.",
+      matchFileNames: ["docs/pyproject.toml"],
+      groupName: "documentation tooling",
+    },
+    {
+      description: "GitHub Actions in one pull request.",
+      matchManagers: ["github-actions"],
+      matchDepTypes: ["action"],
+      groupName: "GitHub Actions",
+    },
+  ],
+}

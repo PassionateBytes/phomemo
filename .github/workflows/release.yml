@@ -41,7 +41,7 @@ jobs:
   srpm:
     name: Source RPMs
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: fedora:latest
     steps:
       - name: Install packaging tools
         run: dnf install -y --setopt=install_weak_deps=False rpm-build git make
