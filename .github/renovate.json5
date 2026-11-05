@@ -1,8 +1,10 @@
 // Renovate (Mend Renovate GitHub app). Weekly; version ranges in
-// pyproject.toml stay as they are and only uv.lock moves within them.
-// Minor and patch updates merge on their own once CI is green; major updates
-// wait for review. The Fedora releases CI runs on come from Bodhi, not from
-// a pinned version.
+// pyproject.toml stay as they are and only uv.lock moves within them. The
+// ranges cap each direct dependency below its next major version, so the
+// lock never crosses one: a new major means raising the cap by hand. Updates
+// within the ranges merge on their own once CI is green; GitHub Actions
+// majors wait for review. The Fedora releases CI runs on come from Bodhi,
+// not from a pinned version.
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["config:recommended"],
@@ -40,6 +42,12 @@
       description: "Documentation tooling in one pull request.",
       matchFileNames: ["docs/pyproject.toml"],
       groupName: "documentation tooling",
+    },
+    {
+      // Calendar versions: a new year is no breaking change.
+      description: "shibuya (CalVer) merges like a minor update.",
+      matchPackageNames: ["shibuya"],
+      automerge: true,
     },
     {
       description: "GitHub Actions in one pull request.",
