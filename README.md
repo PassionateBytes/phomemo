@@ -71,7 +71,3 @@ Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
 | Documentation (`docs/`, the READMEs) | CC BY-SA 4.0 | [docs/LICENSE](docs/LICENSE) |
 
 Each source file states its licence in its header. Bundled third-party code keeps its own licence: [cJSON](src/printer-app/third_party/cJSON.LICENSE) (MIT) in the printer app, and the documentation's fonts (SIL Open Font License 1.1, see `docs/_static/fonts/`).
-
-## Contact
-
-Paul Bütof, Passionate Bytes Solutions, [www.passionate-bytes.com](https://www.passionate-bytes.com). Bug reports and questions: [GitHub issues](https://github.com/PassionateBytes/phomemo-driver/issues).
