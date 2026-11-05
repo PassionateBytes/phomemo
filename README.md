@@ -20,17 +20,24 @@
   <a href="COPYING"><img src="https://img.shields.io/badge/license-GPL--3.0%20%2F%20LGPL--3.0-blue" alt="License"></a>
 </p>
 
-The Phomemo M08F is an A4 thermal printer that only speaks Bluetooth LE with a custom protocol. The printer normally only works through the manufacturer's phone app.  
-This project provides a **fully featured printer driver stack** for this printer. Once installed, your Phomemo M08F shows up as a regular printer on your system. No vendor app, no phone required.
+phomemo-driver is a complete Linux printer driver stack for the Phomemo M08F, an A4 thermal printer that only speaks Bluetooth Low Energy. Once installed, the printer shows up in CUPS and in the print dialog of every application: pick it, press Print, done. No vendor app, no phone.
+
+```
+your application ──IPP──▶ CUPS ──IPP──▶ printer app ──socket──▶ bridge ──Bluetooth──▶ M08F
+```
+
+> [!NOTE]
+> Beta: version 0.x. Linux only (CUPS, BlueZ); packaged for Fedora, other distributions install from source.
 
 ## Features
 
 - **A real system printer:** an IPP Everywhere printer app (PAPPL) that CUPS finds by DNS-SD, with its own web interface. Print from any application, `lp`, or any IPP client.
+- **A4 and A5,** A5 rotated automatically to the printer's paper path.
 - **Grayscale done right:** documents and photos rendered with ordered or diffusion dithering; print density chosen per job.
-- **Printer state reporting:** battery level as a supply gauge, lid open, out of paper and printer off reported as printer state with messages that say what to do.
-- **Recovers on its own:** a lid opened mid-page, a sheet that runs out or a dropped Bluetooth connection pauses the job; close the lid or insert a sheet and the page prints again automatically.
+- **Printer state where you expect it:** battery level as a supply gauge, lid open, out of paper and printer off reported as printer state with messages that say what to do.
+- **Recovers on its own:** a lid opened mid-page, a sheet that runs out or a dropped Bluetooth connection pauses the job; close the lid or insert a sheet and the page prints again.
 - **Starts with the system:** the printer app and the bridge run as system services, enabled on install.
-- **Several printers** at once, each with its own queue. Identify and test page features available from the web interface.
+- **Several printers** at once, each with its own queue. Identify and test page from the web interface.
 
 ## Install
 
@@ -51,8 +58,18 @@ sudo make
 ```
 
 > [!IMPORTANT]
-> After installing, **register the printer** with the printer app! Turn the printer on, enable Bluetooth on your computer, and run `sudo phomemo-printer-app autoadd`.  
-> See [First steps](https://passionatebytes.github.io/phomemo-driver/first-steps.html) and [Everyday use](https://passionatebytes.github.io/phomemo-driver/everyday-use.html) for more details.
+> After installing, **register the printer** with the printer app: switch it on and run `sudo phomemo-printer-app autoadd`. See [First steps](https://passionatebytes.github.io/phomemo-driver/first-steps.html).
+
+## Print
+
+From any application's print dialog, or from the command line:
+
+```bash
+lp -d Phomemo_M08F_DDEEFF document.pdf
+lp -d Phomemo_M08F_DDEEFF -o media=iso_a5_148x210mm -o phomemo-tone=ordered photo.png
+```
+
+More in [Everyday use](https://passionatebytes.github.io/phomemo-driver/everyday-use.html).
 
 ## Supported printers
 
@@ -60,13 +77,11 @@ sudo make
 |-------|----|--------|
 | Phomemo M08F (A4) | `m08f` | Tested |
 
-Each model is described once in [`src/models/`](src/models/), shared by the whole stack. A Phomemo model that speaks the same protocol needs only a new model manifest there.   
-**Contributions of new models are very welcome**, see [Printer models](https://passionatebytes.github.io/phomemo-driver/models.html) for more details and feel free to file an Issue or PR.
+Each model is described once in [`src/models/`](src/models/), shared by the whole stack. A Phomemo model that speaks the same protocol needs only a new model manifest there: **contributions of new models are very welcome**, see [Printer models](https://passionatebytes.github.io/phomemo-driver/models.html).
 
 ## Python library
 
-At the core of this project sits `phomemo`, an asyncio python library that drives the printer directly via Bluetooth.
-This library handles connectivity, printing images and bitmaps, sensors and events.
+The stack is built on `phomemo`, an asyncio library that drives the printer directly over Bluetooth: scanning, printing images and bitmaps, sensors and events.
 
 ```bash
 pip install phomemo
@@ -90,7 +105,7 @@ See the [library guide](https://passionatebytes.github.io/phomemo-driver/library
 
 ## Acknowledgements
 
-Built on [PAPPL](https://www.msweet.org/pappl/) and [CUPS](https://openprinting.github.io/cups/) from OpenPrinting and on [bleak](https://github.com/hbldh/bleak). The device protocol reverse engineering was informed by [vivier/phomemo-tools](https://github.com/vivier/phomemo-tools), [theacodes/phomemo_m02s](https://github.com/theacodes/phomemo_m02s) and [gbl/phomemo](https://github.com/gbl/phomemo).
+Built on [PAPPL](https://www.msweet.org/pappl/) and [CUPS](https://openprinting.github.io/cups/) from OpenPrinting and on [bleak](https://github.com/hbldh/bleak). The protocol work was informed by [vivier/phomemo-tools](https://github.com/vivier/phomemo-tools), [theacodes/phomemo_m02s](https://github.com/theacodes/phomemo_m02s) and [gbl/phomemo](https://github.com/gbl/phomemo).
 
 ## License
 
