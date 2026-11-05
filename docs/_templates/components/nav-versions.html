@@ -1,0 +1,11 @@
+{#- Version menu. Filled by _static/versions.js from the site's versions.json, so builds of older versions list releases made after them. -#}
+{%- if docs_version -%}
+  <div class="nav-versions" id="version-menu" data-version="{{ docs_version }}">
+    <button type="button" aria-label="{{ _("Versions") }}">
+      <span class="md:hidden">{{ _("Versions") }}</span>
+      <span class="hidden md:inline">{{ docs_version }}</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div>
+{%- endif -%}

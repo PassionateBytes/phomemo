@@ -59,6 +59,8 @@ uv run --package phomemo-docs sphinx-build -W -b html docs docs/_build/html
 Build the docs with `-W` before you push: CI treats every Sphinx warning as an error.
 ```
 
+The published site is versioned. `.github/workflows/docs.yml` builds `latest/` from every push to main and a directory per release (`0.3.0/`, ...) from every `v*` tag; the newest release is also copied to `stable/`, where the site root and the unversioned page links lead. `docs/publish.py` assembles the site on the `gh-pages` branch, and the version menu reads its `versions.json`. Local builds leave the menu out (the workflow sets `DOCS_VERSION`). To rebuild an older release, run the Docs workflow by hand with its tag.
+
 CI (`.github/workflows/ci.yml`) runs everything in a Fedora 44 container as an ordinary user, and lints and builds the RPM packages in a second job.
 
 ## Tests

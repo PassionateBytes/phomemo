@@ -16,12 +16,22 @@
 
 """Sphinx configuration for the phomemo-driver documentation site."""
 
+import os
+from importlib.metadata import version as _package_version
+
 project = "phomemo-driver"
 author = "Paul Bütof"
 copyright = (
     "2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under "
     "CC BY-SA 4.0"
 )
+
+release = _package_version("phomemo")
+version = release
+
+# Set by the docs workflow: "latest" for main, the release number for a tag.
+# Unset (local builds) leaves out the version menu.
+docs_version = os.environ.get("DOCS_VERSION", "")
 
 extensions = [
     "myst_parser",
@@ -49,6 +59,8 @@ html_favicon = "_static/m08f.png"
 html_static_path = ["_static"]
 templates_path = ["_templates"]
 html_css_files = ["custom.css"]
+html_js_files = ["versions.js"] if docs_version else []
+html_context = {"docs_version": docs_version}
 pygments_style = "github-light-default"
 pygments_dark_style = "github-dark"
 html_theme_options = {
