@@ -77,5 +77,24 @@ jobs:
             echo "bleak $BEFORE -> $NOW: COPR not triggered (secret COPR_WEBHOOK unset)" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          curl -fsS -X POST -o /dev/null "${COPR_WEBHOOK%/}/python-bleak/"
-          echo "bleak $BEFORE -> $NOW: [python-bleak build requested](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/builds/)" >> "$GITHUB_STEP_SUMMARY"
+          url=$(printf '%s' "$COPR_WEBHOOK" | tr -d '[:space:]')
+          if ! [[ "$url" =~ ^https://copr\.fedorainfracloud\.org/webhooks/custom/[0-9]+/[0-9a-fA-F-]+/?$ ]]; then
+            echo "::error::COPR_WEBHOOK is not a COPR custom webhook URL (expected https://copr.fedorainfracloud.org/webhooks/custom/<ID>/<UUID>/, without a package name)"
+            exit 1
+          fi
+          # COPR answers with the new build's ID, or with an error token.
+          for attempt in 1 2 3; do
+            reply=$(curl -sS -X POST -w '\n%{http_code}' "${url%/}/python-bleak/") || reply=$'\n000'
+            code=${reply##*$'\n'}
+            body=$(printf '%s' "${reply%$'\n'*}" | head -c 200 | head -n 1)
+            [ "$code" = 200 ] && break
+            echo "::warning::COPR answered HTTP $code (${body:-no body}), attempt $attempt of 3"
+            sleep $((attempt * 20))
+          done
+          if [ "$code" != 200 ]; then
+            echo "::error::COPR did not accept the python-bleak build: HTTP $code (${body:-no body})"
+            echo "bleak $BEFORE -> $NOW: COPR refused the python-bleak build (HTTP $code: ${body:-no body})" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          build=$(printf '%s' "$body" | tr -dc '0-9')
+          echo "bleak $BEFORE -> $NOW: [python-bleak build ${build:-requested}](https://copr.fedorainfracloud.org/coprs/build/${build}/)" >> "$GITHUB_STEP_SUMMARY"
