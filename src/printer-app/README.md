@@ -34,7 +34,7 @@ The model manifests in [`../models/`](../models/) are built into the binary at b
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
 | `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |
 
-How the parts fit together: [Architecture](https://passionatebytes.github.io/phomemo-driver/architecture.html).
+How the parts fit together: [Driver stack](https://passionatebytes.github.io/phomemo-driver/driver-stack.html).
 
 ## License
 

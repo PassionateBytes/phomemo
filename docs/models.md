@@ -80,12 +80,25 @@ And what each field means:
 A manifest with a missing or mistyped field is rejected, with the file and the field named in the error.
 ```
 
-## How each part gets them
+## How the stack reads them
 
-| Part | How |
+The manifests are built into the Python package and the printer app's binary, so nothing extra is installed or looked up at run time:
+
+```
+src/models/<id>/model.json + icons
+    │
+    ├── hatch build hook (src/phomemo/hatch_build.py)
+    │       wheel: phomemo/models     sdist: src/phomemo/models
+    │       → library and bridge load them at import
+    │
+    └── embed-models.sh, at build time
+            → models_data.c, compiled into phomemo-printer-app
+```
+
+| Reader | Where it looks, in order |
 |---|---|
-| Library and bridge | A hatch build hook copies `src/models/` into the wheel and the sdist as package data. At import the library reads `PHOMEMO_MODELS_DIR` when set, else that package copy, else `src/models/` in a source checkout. |
-| Printer app | `embed-models.sh` builds every manifest and its icons into the binary (`models_data.c`, generated at build time). `PHOMEMO_MODELS_DIR` set at start replaces the built-in manifests with the directories found there. |
+| Library and bridge | `PHOMEMO_MODELS_DIR` when set; else the copy installed with the package (`phomemo/models`); else `src/models/` of a source checkout |
+| Printer app | `PHOMEMO_MODELS_DIR` set at start, which replaces the built-in manifests with the directories found there; else the manifests embedded in the binary |
 
 ```{tip}
 Use `PHOMEMO_MODELS_DIR` to try out a new manifest without rebuilding anything.
@@ -100,7 +113,7 @@ from phomemo.registry import load_manifest, register_profile
 register_profile(load_manifest(Path("src/models/m08f")))
 ```
 
-More on profiles in the [library guide](library.md#profiles-and-model-manifests). How the pieces fit together is in [Architecture](architecture.md).
+More on profiles in the [library guide](library.md#profiles-and-model-manifests). How the pieces fit together is in [Driver stack](driver-stack.md).
 
 ## Add a model
 

@@ -1,6 +1,6 @@
 # Python library
 
-`phomemo` lets you drive a Phomemo thermal printer from any asyncio program: scan, connect, print images, read the sensors. It is built on [bleak](https://github.com/hbldh/bleak) and [Pillow](https://python-pillow.github.io/), and the bridge and printer app run on top of it (see [Architecture](architecture.md)).
+`phomemo` lets you drive a Phomemo thermal printer from any asyncio program: scan, connect, print images, read the sensors. It is built on [bleak](https://github.com/hbldh/bleak) and [Pillow](https://python-pillow.github.io/), and the bridge and printer app run on top of it (see [Driver stack](driver-stack.md)).
 
 Every class and function is listed in the [API reference](api.md). This page walks you through the parts you need first.
 

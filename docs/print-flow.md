@@ -1,34 +1,8 @@
-# Architecture
+# Print flow
 
-phomemo-driver is four parts, and each does one job. Once you know which part knows what, the rest of the stack is easy to follow.
+How the parts of the [driver stack](driver-stack.md) work together: what happens during a job, how the bridge picks a printer, and the protocol the printer app and the bridge speak.
 
-| Part | Where | Language | Job |
-|---|---|---|---|
-| Library `phomemo` | `src/phomemo/src/phomemo/` | Python | BLE transport, printing protocol, image preparation, events, profiles |
-| Bridge `phomemo-bridge` | `src/phomemo/src/phomemo/bridge/` | Python | Owns the connection to one printer at a time, waits for sheets, prints pages, answers commands on a unix socket |
-| Printer app `phomemo-printer-app` | `src/printer-app/` | C (PAPPL) | Presents registered printers as IPP Everywhere printers: IPP, DNS-SD, job queue, web interface |
-| Model manifests | `src/models/` | JSON and PNG | One directory per model: geometry, media, Bluetooth parameters, icons; read by all of the above |
-
-## How a job flows
-
-```
-application
-    │  IPP (lp, a print dialog, ...)
-    ▼
-CUPS queue                 temporary (from DNS-SD) or permanent
-    │  IPP
-    ▼
-phomemo-printer-app        PAPPL: job queue, raster callbacks (job.c)
-    │  unix socket: JSON lines + raw rows
-    │  /run/phomemo/bridge.sock for the system services
-    ▼
-phomemo-bridge             one session per client (session.py)
-    │  Bluetooth LE, ATT write-with-response
-    ▼
-printer (M08F)
-```
-
-Step by step:
+## A job, step by step
 
 1. CUPS, or any IPP client, sends the document to the printer app. PAPPL renders it to an `sgray_8` raster.
 2. Opening the device sends `open` with the printer's address and model.
@@ -41,44 +15,9 @@ Step by step:
 Cancelling a job sends `abort`. It is the only command the bridge accepts while another one is pending.
 ```
 
-## Who knows what
+## Interrupted pages
 
-### Printer app
-
-- The registered printers, each with its device URI:
-
-  ```
-  phomemo://AA-BB-CC-DD-EE-FF?model=m08f
-  ```
-
-  Dashes replace the colons, because a URI host cannot hold colons.
-- The model manifests built into its binary: media, resolution, margins, names, icons.
-- Where the bridge listens: `PHOMEMO_BRIDGE_SOCKET`, else `$XDG_RUNTIME_DIR/phomemo-bridge.sock`, else `/run/phomemo/bridge.sock`.
-
-It knows nothing about Bluetooth.
-
-### Bridge
-
-- One connection at a time.
-- The printer connected or used last, kept in memory until the bridge stops.
-- The values last read from each printer (battery, lid, paper, auto-off) with the time they were read; `status` reports them as `last_seen`.
-- Its own settings: `idle_disconnect_minutes`, `auto_off_minutes` and a few timeouts (see [Configuration](configuration.md)).
-
-It has no fixed printer and does not know which printers are registered.
-
-The bridge drops the connection after `idle_disconnect_minutes` without a command (default 30; `0` keeps it until the printer switches off or leaves range). When `auto_off_minutes` is set, the bridge writes that auto-off timer to the printer on each new connection, and only when the printer reports another value.
-
-```{warning}
-While the bridge holds the connection, the printer does not advertise, so no other host can connect to it. `phomemo-bridge disconnect` releases it.
-```
-
-### Library
-
-- The profiles built from the model manifests.
-- The BLE transport: MTU, chunking, write-with-response.
-- Protocol encoding and event parsing.
-
-It knows nothing about sockets, jobs or CUPS.
+Opening the lid or running out of sheet during a page does not lose the page. The bridge keeps the prepared page, reconnects, ejects a sheet it senses right after the lid closes (its position is unknown), waits for a sheet and prints the page again. The job carries on as if nothing happened.
 
 ## How the printer is chosen
 
@@ -145,7 +84,7 @@ While a long command is pending, the bridge pushes events:
 | `wait_ready` | `settle` | Returns once a sheet is seated; waits as long as it takes, pushes `waiting` events |
 | `page_begin` | `width`, `length_rows`, `bits` (1/8), `tone` (`auto` or a tone mode), `content` (`auto`/`text`/`graphic`/`photo`), `density` (`low`/`medium`/`high`), `media_length_mm` (number or null), `rotate` | |
 | `lines` | `count` + payload of `count` rows (`width * bits / 8` bytes each; 8-bit gray 0 = black, 1-bit 1 = black) | `rows` received so far |
-| `page_end` | | Prints and ejects; `impressions: 1`. An opened lid or a sheet that runs out does not end the page (see the design decisions below). `error`: `cancelled`, `connection lost: ...` |
+| `page_end` | | Prints and ejects; `impressions: 1`. An opened lid or a sheet that runs out does not end the page (see [Interrupted pages](#interrupted-pages)). `error`: `cancelled`, `connection lost: ...` |
 | `identify` | | Connects if needed, ejects a loaded sheet, then pulses the feed three times |
 | `test_page` | `printer_name`, `versions` (name to version) | Connects if needed, queries the device and writes a test page PNG to `$XDG_RUNTIME_DIR/phomemo-testpage.png` (else the temp dir); `path` |
 | `eject` | | `ejected` |
@@ -154,36 +93,3 @@ While a long command is pending, the bridge pushes events:
 ```{tip}
 Writing your own client? The framing lives in `phomemo.bridge.protocol`, the commands in `phomemo.bridge.session`, and `phomemo.bridge.client` is the Python client the command line uses. The printer app's C client is `src/printer-app/bridge.c`.
 ```
-
-## How model manifests reach each part
-
-```
-src/models/<id>/model.json + icons
-    │
-    ├── hatch build hook (src/phomemo/hatch_build.py)
-    │       wheel: phomemo/models     sdist: src/phomemo/models
-    │       → library and bridge load them at import
-    │
-    └── embed-models.sh, at build time
-            → models_data.c, compiled into phomemo-printer-app
-```
-
-| Reader | Where it looks, in order |
-|---|---|
-| Library and bridge | `PHOMEMO_MODELS_DIR` when set; else the copy installed with the package (`phomemo/models`); else `src/models/` of a source checkout |
-| Printer app | `PHOMEMO_MODELS_DIR` set at start, which replaces the built-in manifests with the directories found there; else the manifests embedded in the binary |
-
-```{tip}
-Trying out a new model? Point `PHOMEMO_MODELS_DIR` at your directory and you need no rebuild. The format is in [Printer models](models.md).
-```
-
-## Design decisions
-
-| Decision | Why |
-|---|---|
-| Raster data goes out with ATT write-with-response, as one continuous stream | The printer delays its response while its buffer is full, so the print head paces the stream; unacknowledged writes overflow the buffer on full A4 pages, and a burst per band makes the printer feed blank paper at each band end |
-| An interrupted page is printed again | The bridge keeps the prepared page; after an opened lid or a sheet that ran out it reconnects, ejects a sheet it senses right after the lid closes (its position is unknown), waits for a sheet and reprints, so the job survives |
-| One connection at a time, owned by the bridge | While connected the printer does not advertise, so no other host can reach it; a single owner serialises jobs, status queries and commands |
-| Model manifests embedded in the wheel and the binary | Nothing extra to install or find at run time; `PHOMEMO_MODELS_DIR` remains for development |
-
-The measured behaviour behind these decisions is in the [Protocol reference](m08f-protocol-reference.md). The Python side is in the [API reference](api.md).
