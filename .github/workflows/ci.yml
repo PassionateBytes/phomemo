@@ -14,6 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
+# CI: the gate for every change. Runs on pull requests and on pushes to main.
+#
+# Jobs:
+#   releases  asks Fedora's Bodhi for every release that still gets updates,
+#             from MIN_FEDORA on (fedora:latest when Bodhi is unreachable).
+#   test      per release: lint and docs build (newest release only), printer
+#             app build, C unit tests, Python tests including the end-to-end
+#             tests against the built printer app.
+#   rpm       per release: python-bleak built as COPR builds it, at the bleak
+#             version locked in uv.lock, and installed; then phomemo-driver
+#             built against it and installed. Catches a lock update Fedora
+#             cannot satisfy before it reaches main.
+#
+# Renovate automerges dependency updates once this workflow is green: what it
+# does not check, a dependency update can break unnoticed.
+
 name: CI
 
 on:
@@ -22,14 +38,14 @@ on:
   pull_request:
 
 jobs:
-  # Every Fedora release that still gets updates, as Bodhi lists them
-  # (two most of the year, three for a few weeks after a new release), from
-  # MIN_FEDORA on: older releases lack the dependency versions phomemo
-  # requires (Fedora 43 ships Pillow 11.3, phomemo needs 12.1).
+  # Bodhi lists two current releases most of the year, three for a few weeks
+  # after a new release.
   releases:
     name: Fedora releases
     runs-on: ubuntu-latest
     env:
+      # Older releases lack the dependency versions phomemo requires
+      # (Fedora 43 ships Pillow 11.3, phomemo needs 12.1).
       MIN_FEDORA: 44
     outputs:
       all: ${{ steps.bodhi.outputs.all }}
@@ -87,22 +103,53 @@ jobs:
         run: su tester -c "uv sync --all-packages"
       # Lint and docs do not depend on the Fedora release: newest only.
       - name: Lint
+        id: lint
         if: matrix.fedora == needs.releases.outputs.newest
         run: su tester -c "uv run ruff check . && uv run ruff format --check ."
       - name: Build the printer application
         run: su tester -c "make -C src/printer-app"
       - name: C unit tests
+        id: ctests
         run: su tester -c "make -C src/printer-app test"
+      # The output is kept in /tmp/pytest.log for the summary; pipefail keeps
+      # pytest's exit status as the step's.
       - name: Python tests (library, bridge, end-to-end against the built application)
-        run: su tester -c "uv run pytest -q src/phomemo/tests"
+        id: pytests
+        run: su tester -c "set -o pipefail; uv run pytest -q src/phomemo/tests 2>&1 | tee /tmp/pytest.log"
       - name: Documentation
+        id: docs
         if: matrix.fedora == needs.releases.outputs.newest
         run: su tester -c "uv run --package phomemo-docs sphinx-build -W --keep-going -b html docs docs/_build/html"
+      - name: Summary
+        if: always()
+        shell: bash
+        env:
+          FEDORA: ${{ matrix.fedora }}
+          LINT: ${{ steps.lint.outcome }}
+          CTESTS: ${{ steps.ctests.outcome }}
+          PYTESTS: ${{ steps.pytests.outcome }}
+          DOCS: ${{ steps.docs.outcome }}
+        run: |
+          result() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              *) echo "${1:-skipped}" ;;
+            esac
+          }
+          counts=$(tail -n 1 /tmp/pytest.log 2>/dev/null | sed 's/^=* *//; s/ *=*$//')
+          {
+            echo "### Tests (Fedora $FEDORA)"
+            echo
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Lint (ruff) | $(result "$LINT") |"
+            echo "| C unit tests | $(result "$CTESTS") |"
+            echo "| Python tests | $(result "$PYTESTS")${counts:+ $counts} |"
+            echo "| Documentation | $(result "$DOCS") |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-  # Both packages as COPR builds them: python-bleak at the bleak version
-  # locked in uv.lock against Fedora's own dbus-fast (Fedora has no bleak),
-  # then phomemo-driver against that python-bleak. Catches a lock update
-  # Fedora cannot satisfy before it reaches main.
+  # Fedora has no bleak: python-bleak builds against Fedora's own dbus-fast.
   rpm:
     name: RPM packages (Fedora ${{ matrix.fedora }})
     needs: releases
@@ -128,6 +175,7 @@ jobs:
           make tarball
           cp packaging/rpm/phomemo-driver.spec dist/
       - name: Build and install the packages
+        id: build
         shell: bash
         run: |
           defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
@@ -150,3 +198,24 @@ jobs:
           dnf install -y dist/noarch/python3-phomemo-*.rpm dist/x86_64/phomemo-driver-*.rpm
           python3 -c "import bleak, phomemo, importlib.metadata as m; print('bleak', m.version('bleak'), 'phomemo', m.version('phomemo'))"
           ls -R dist
+      - name: Summary
+        if: always()
+        shell: bash
+        env:
+          FEDORA: ${{ matrix.fedora }}
+          BUILD: ${{ steps.build.outcome }}
+        run: |
+          bleak=$(sed -n '/^name = "bleak"$/{n;s/^version = "\(.*\)"$/\1/p;}' uv.lock)
+          {
+            echo "### RPM packages (Fedora $FEDORA)"
+            echo
+            echo "bleak ${bleak:-unknown} (from uv.lock)"
+            echo
+            if [ "$BUILD" = failure ]; then
+              echo "❌ Build or install failed"
+              echo
+            fi
+            # shellcheck disable=SC2016  # literal backticks: Markdown code
+            find dist -name '*.rpm' ! -name '*.src.rpm' ! -name '*.nosrc.rpm' \
+              ! -name '*-debuginfo-*' ! -name '*-debugsource-*' -printf '- `%f`\n' 2>/dev/null | sort
+          } >> "$GITHUB_STEP_SUMMARY"
