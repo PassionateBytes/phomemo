@@ -61,7 +61,7 @@ Build the docs with `-W` before you push: CI treats every Sphinx warning as an e
 
 The published site is versioned. `.github/workflows/docs.yml` builds `latest/` from every push to main and a directory per release (`0.3.0/`, ...) from every `v*` tag; the newest release is also copied to `stable/`, where the site root and the unversioned page links lead. `docs/publish.py` assembles the site on the `gh-pages` branch, and the version menu reads its `versions.json`. Local builds leave the menu out (the workflow sets `DOCS_VERSION`). To rebuild an older release, run the Docs workflow by hand with its tag.
 
-CI (`.github/workflows/ci.yml`) runs on every Fedora release that still gets updates (it asks Fedora's Bodhi which ones, from `MIN_FEDORA` on), each in its own container: the checks as an ordinary user, and the RPM packages as COPR builds them, `python-bleak` at the locked bleak version and `phomemo-driver` against it, both installed. Lint and the documentation build run on the newest release only.
+CI (`.github/workflows/ci.yml`) runs on every Fedora release that still gets updates (it asks Fedora's Bodhi which ones, from `MIN_FEDORA` on) and on Rawhide, each in its own container: the checks as an ordinary user, and the RPM packages as COPR builds them, `python-bleak` at the locked bleak version and `phomemo-driver` against it, both installed. Lint and the documentation build run on the newest release only. Rawhide is informational: a failure there shows in the run's summary and as a warning, but does not fail CI.
 
 Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files and bumps the GitHub Actions. The runtime dependencies are capped below their next major version (`bleak>=3.0.0,<4`, `pillow>=12.1.0,<13`); a new major comes as a pull request that raises the cap and waits for review, their minor and patch updates arrive with the weekly lock refresh. Development and documentation tools are uncapped. Everything else merges on its own once CI is green; GitHub Actions majors also wait for review.
 
@@ -130,7 +130,7 @@ Files shared by every package format live in the format-neutral directories (`sy
 
 The Fedora route:
 
-- The COPR project `passionatebytes/phomemo-driver` builds both specs from git with the `make_srpm` method, which runs `.copr/Makefile`.
+- The COPR project `passionatebytes/phomemo-driver` builds both specs from git with the `make_srpm` method, which runs `.copr/Makefile`. `phomemo-driver` is built from the newest `v*` tag, never from unreleased code on `main`. The builds are started from GitHub through the project's custom webhook (repository secret `COPR_WEBHOOK`): `release.yml` on each tag, `copr-bleak.yml` when a push to `main` changes the locked bleak version.
 - `phomemo-driver.spec` builds from a `git archive` of the repository.
 - Fedora has no bleak, so `python-bleak.spec` is built at the bleak version locked in `uv.lock`. Renovate's weekly lock refresh updates it within the range in `src/phomemo/pyproject.toml`, or by hand: `uv lock --upgrade-package bleak`.
 
@@ -164,6 +164,6 @@ Pushing the tag runs `.github/workflows/release.yml`:
 | Source RPMs | `make srpm` in a Fedora container |
 | GitHub release | Generated notes, with the wheel, sdist, source RPM and tarball attached |
 
-COPR builds the RPMs through its webhook, from every push to `main` and from the tag.
+The tag also starts the COPR build of `phomemo-driver` (job `copr`).
 
 For local artefacts: `make dist` (wheel and sdist), `make tarball` (source tarball named like the GitHub archive), `make srpm` (source RPM, needs rpm-build), all into `dist/`. `make help` lists every target.

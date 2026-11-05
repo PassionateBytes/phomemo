@@ -19,10 +19,12 @@
 # in a checkout of the repository, inside a build environment where
 # packages may be installed and the network is reachable.
 #
-# phomemo-driver.spec builds from this repository, so its source tarball is
-# made with git archive. python-bleak.spec is built at the bleak version
-# locked in uv.lock (the one the test suite runs against), written into a
-# copy of the spec before spectool downloads the sources.
+# phomemo-driver.spec builds the newest release: the highest v* tag, with
+# the spec and the source tarball (git archive) taken from that tag, so a
+# build never ships unreleased code from main. python-bleak.spec is built
+# at the bleak version locked in uv.lock (the one the test suite runs
+# against), written into a copy of the spec before spectool downloads the
+# sources.
 
 srpm:
 	dnf -y install git rpm-build rpmdevtools python3-rpm-macros
@@ -32,9 +34,15 @@ srpm:
 	spec="$(spec)"; \
 	case "$$(basename "$$spec")" in \
 	  phomemo-driver.spec) \
+	    git fetch --quiet --tags origin 2>/dev/null || true; \
+	    tag=$$(git tag --list 'v*' --sort=-version:refname | head -n 1); \
+	    test -n "$$tag" || { echo "no v* tag to build"; exit 1; }; \
+	    echo "phomemo-driver $$tag (newest tag)"; \
+	    git show "$$tag:$$spec" > "$(outdir)/phomemo-driver.spec"; \
+	    spec="$(outdir)/phomemo-driver.spec"; \
 	    version=$$(sed -n 's/^Version:[[:space:]]*//p' "$$spec"); \
 	    git archive --format=tar.gz --prefix=phomemo-driver-$$version/ \
-	      -o "$(outdir)/phomemo-driver-$$version.tar.gz" HEAD ;; \
+	      -o "$(outdir)/phomemo-driver-$$version.tar.gz" "$$tag" ;; \
 	  python-bleak.spec) \
 	    version=$$(python3 -c 'import tomllib; print(next(p["version"] for p in tomllib.load(open("uv.lock", "rb"))["package"] if p["name"] == "bleak"))'); \
 	    echo "bleak $$version (from uv.lock)"; \

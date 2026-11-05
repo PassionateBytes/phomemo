@@ -1,0 +1,81 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# COPR python-bleak: Fedora has no bleak, so the COPR project builds it at
+# the version locked in uv.lock (.copr/Makefile). Runs on pushes to main
+# that change uv.lock and asks COPR to build python-bleak through the
+# project's custom webhook (secret COPR_WEBHOOK) when the locked bleak
+# version differs from the one before the push. Run it by hand to rebuild
+# regardless.
+
+name: COPR python-bleak
+
+on:
+  push:
+    branches: [main]
+    paths: [uv.lock]
+  workflow_dispatch:
+
+jobs:
+  bleak:
+    name: Build python-bleak on a new bleak version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compare the locked bleak version
+        id: version
+        env:
+          BEFORE: ${{ github.event.before }}
+          EVENT: ${{ github.event_name }}
+        shell: python
+        run: |
+          import os, subprocess, tomllib
+
+          def bleak(ref):
+              try:
+                  text = subprocess.run(["git", "show", f"{ref}:uv.lock"], check=True,
+                                        capture_output=True).stdout
+              except subprocess.CalledProcessError:
+                  return None
+              return next((p["version"] for p in tomllib.loads(text.decode())["package"]
+                           if p["name"] == "bleak"), None)
+
+          now = bleak("HEAD")
+          before = bleak(os.environ["BEFORE"]) if os.environ["BEFORE"].strip("0") else None
+          changed = os.environ["EVENT"] == "workflow_dispatch" or now != before
+          print(f"bleak {before} -> {now}; build: {changed}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"now={now}\nbefore={before}\nbuild={str(changed).lower()}\n")
+      - name: Trigger the python-bleak build
+        env:
+          COPR_WEBHOOK: ${{ secrets.COPR_WEBHOOK }}
+          BUILD: ${{ steps.version.outputs.build }}
+          NOW: ${{ steps.version.outputs.now }}
+          BEFORE: ${{ steps.version.outputs.before }}
+        run: |
+          if [ "$BUILD" != true ]; then
+            echo "bleak $NOW unchanged: no COPR build" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ -z "$COPR_WEBHOOK" ]; then
+            echo "::warning::COPR_WEBHOOK is not set; COPR was not asked to build"
+            echo "bleak $BEFORE -> $NOW: COPR not triggered (secret COPR_WEBHOOK unset)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          curl -fsS -X POST -o /dev/null "${COPR_WEBHOOK%/}/python-bleak/"
+          echo "bleak $BEFORE -> $NOW: [python-bleak build requested](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/builds/)" >> "$GITHUB_STEP_SUMMARY"

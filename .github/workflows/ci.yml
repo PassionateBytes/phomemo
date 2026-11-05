@@ -18,7 +18,10 @@
 #
 # Jobs:
 #   releases  asks Fedora's Bodhi for every release that still gets updates,
-#             from MIN_FEDORA on (fedora:latest when Bodhi is unreachable).
+#             from MIN_FEDORA on (fedora:latest when Bodhi is unreachable),
+#             plus Rawhide. Rawhide is informational: its failures show in
+#             the job summary and as a warning but leave the job green, so a
+#             Rawhide breakage outside this project never blocks a merge.
 #   test      per release: lint and docs build (newest release only), printer
 #             app build, C unit tests, Python tests including the end-to-end
 #             tests against the built printer app.
@@ -70,9 +73,9 @@ jobs:
               print(f"::warning::Bodhi unreachable ({error}); testing fedora:latest only")
               versions = []
           names = [str(v) for v in versions] or ["latest"]
-          print("Fedora releases:", ", ".join(names))
+          print("Fedora releases:", ", ".join(names), "+ rawhide")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
-              out.write(f"all={json.dumps(names)}\nnewest={names[-1]}\n")
+              out.write(f"all={json.dumps(names + ['rawhide'])}\nnewest={names[-1]}\n")
 
   test:
     name: Tests (Fedora ${{ matrix.fedora }})
@@ -85,6 +88,7 @@ jobs:
         fedora: ${{ fromJSON(needs.releases.outputs.all) }}
     steps:
       - name: Install build and test dependencies
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: >
           dnf install -y --setopt=install_weak_deps=False
           gcc make pkgconf-pkg-config pappl-devel cjson-devel cups-devel
@@ -100,6 +104,7 @@ jobs:
           useradd --create-home tester
           chown -R tester "$GITHUB_WORKSPACE"
       - name: Python environment
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: su tester -c "uv sync --all-packages"
       # Lint and docs do not depend on the Fedora release: newest only.
       - name: Lint
@@ -107,14 +112,18 @@ jobs:
         if: matrix.fedora == needs.releases.outputs.newest
         run: su tester -c "uv run ruff check . && uv run ruff format --check ."
       - name: Build the printer application
+        id: build
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: su tester -c "make -C src/printer-app"
       - name: C unit tests
         id: ctests
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: su tester -c "make -C src/printer-app test"
       # The output is kept in /tmp/pytest.log for the summary; pipefail keeps
       # pytest's exit status as the step's.
       - name: Python tests (library, bridge, end-to-end against the built application)
         id: pytests
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: su tester -c "set -o pipefail; uv run pytest -q src/phomemo/tests 2>&1 | tee /tmp/pytest.log"
       - name: Documentation
         id: docs
@@ -125,6 +134,7 @@ jobs:
         shell: bash
         env:
           FEDORA: ${{ matrix.fedora }}
+          BUILD: ${{ steps.build.outcome }}
           LINT: ${{ steps.lint.outcome }}
           CTESTS: ${{ steps.ctests.outcome }}
           PYTESTS: ${{ steps.pytests.outcome }}
@@ -144,10 +154,14 @@ jobs:
             echo "| Check | Result |"
             echo "|---|---|"
             echo "| Lint (ruff) | $(result "$LINT") |"
+            echo "| Printer app build | $(result "$BUILD") |"
             echo "| C unit tests | $(result "$CTESTS") |"
             echo "| Python tests | $(result "$PYTESTS")${counts:+ $counts} |"
             echo "| Documentation | $(result "$DOCS") |"
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$FEDORA" = rawhide ] && [[ " $BUILD $CTESTS $PYTESTS " == *" failure "* ]]; then
+            echo "::warning::Rawhide: tests failed (informational, see the summary)"
+          fi
 
   # Fedora has no bleak: python-bleak builds against Fedora's own dbus-fast.
   rpm:
@@ -161,6 +175,7 @@ jobs:
         fedora: ${{ fromJSON(needs.releases.outputs.all) }}
     steps:
       - name: Install packaging tools
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: >
           dnf install -y --setopt=install_weak_deps=False
           rpm-build rpmdevtools rpmlint python3-rpm-macros git make
@@ -170,12 +185,15 @@ jobs:
       - name: Lint the spec file
         run: rpmlint packaging/rpm/phomemo-driver.spec
       - name: Source packages as COPR makes them
+        id: sources
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         run: |
           make -f .copr/Makefile srpm outdir="$PWD/dist" spec=packaging/rpm/python-bleak.spec
           make tarball
           cp packaging/rpm/phomemo-driver.spec dist/
       - name: Build and install the packages
         id: build
+        continue-on-error: ${{ matrix.fedora == 'rawhide' }}
         shell: bash
         run: |
           defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
@@ -203,6 +221,7 @@ jobs:
         shell: bash
         env:
           FEDORA: ${{ matrix.fedora }}
+          SOURCES: ${{ steps.sources.outcome }}
           BUILD: ${{ steps.build.outcome }}
         run: |
           bleak=$(sed -n '/^name = "bleak"$/{n;s/^version = "\(.*\)"$/\1/p;}' uv.lock)
@@ -211,7 +230,7 @@ jobs:
             echo
             echo "bleak ${bleak:-unknown} (from uv.lock)"
             echo
-            if [ "$BUILD" = failure ]; then
+            if [ "$SOURCES" = failure ] || [ "$BUILD" = failure ]; then
               echo "❌ Build or install failed"
               echo
             fi
@@ -219,3 +238,6 @@ jobs:
             find dist -name '*.rpm' ! -name '*.src.rpm' ! -name '*.nosrc.rpm' \
               ! -name '*-debuginfo-*' ! -name '*-debugsource-*' -printf '- `%f`\n' 2>/dev/null | sort
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$FEDORA" = rawhide ] && { [ "$SOURCES" = failure ] || [ "$BUILD" = failure ]; }; then
+            echo "::warning::Rawhide: RPM build failed (informational, see the summary)"
+          fi
