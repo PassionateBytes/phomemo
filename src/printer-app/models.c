@@ -26,7 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 
 static phomemo_model_t models[PHOMEMO_MAX_MODELS];
 static int num_models;

@@ -19,7 +19,7 @@ A driver stack for the Phomemo M08F A4 thermal printer over Bluetooth Low Energy
 uv sync --all-packages                    # workspace: library with test tooling, docs site
 uv run pytest src/phomemo/tests           # Python tests
 uv run ruff check . && uv run ruff format .
-make -C src/printer-app                   # needs pappl-devel and cups-devel
+make -C src/printer-app                   # needs pappl-devel, cjson-devel, cups-devel
 make -C src/printer-app test              # C unit tests
 uv run pytest src/phomemo/tests/test_printer_app.py   # end-to-end, needs the built binary, ipptool, ghostscript
 uv run --package phomemo-docs sphinx-build -W -b html docs docs/_build/html   # documentation site

@@ -27,6 +27,7 @@ BuildRequires:  gcc
 BuildRequires:  make
 BuildRequires:  pkgconf-pkg-config
 BuildRequires:  pappl-devel
+BuildRequires:  pkgconfig(libcjson)
 BuildRequires:  cups-devel
 BuildRequires:  python3-devel
 BuildRequires:  systemd-rpm-macros
@@ -36,8 +37,6 @@ Requires:       avahi
 Requires:       bluez
 Requires:       cups
 Recommends:     cups-browsed
-# cJSON, copied into src/printer-app/third_party/
-Provides:       bundled(cjson) = 1.7.18
 
 %description
 Makes the Phomemo M08F A4 thermal printer a printer like any other: a PAPPL
@@ -102,7 +101,7 @@ fi
 
 %files
 %doc README.md src/printer-app/README.md
-%license src/printer-app/COPYING src/printer-app/third_party/cJSON.LICENSE
+%license src/printer-app/COPYING
 %{_bindir}/phomemo-printer-app
 %{_unitdir}/phomemo-printer-app.service
 %{_unitdir}/phomemo-bridge.service
