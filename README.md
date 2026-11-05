@@ -44,7 +44,7 @@ sudo dnf install phomemo-driver
 Or from source:
 
 ```bash
-sudo dnf install gcc make pkgconf-pkg-config pappl-devel cups-devel python3 cups avahi bluez
+sudo dnf install gcc make pkgconf-pkg-config pappl-devel cjson-devel cups-devel python3 cups avahi bluez
 git clone https://github.com/PassionateBytes/phomemo-driver.git
 cd phomemo-driver
 sudo make

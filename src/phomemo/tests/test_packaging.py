@@ -93,16 +93,6 @@ def test_spec_installs_no_model_directory() -> None:
     assert "phomemo/models" not in spec
 
 
-def test_spec_declares_the_bundled_cjson() -> None:
-    spec = (REPO / "packaging" / "rpm" / "phomemo-driver.spec").read_text()
-    header = (REPO / "src" / "printer-app" / "third_party" / "cJSON.h").read_text()
-    version = ".".join(
-        re.search(rf"#define CJSON_VERSION_{part} (\d+)", header).group(1)
-        for part in ("MAJOR", "MINOR", "PATCH")
-    )
-    assert f"Provides:       bundled(cjson) = {version}" in spec
-
-
 def test_make_install_installs_no_model_directory() -> None:
     makefile = (REPO / "Makefile").read_text()
     assert "phomemo/models" not in makefile
