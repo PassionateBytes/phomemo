@@ -1,10 +1,11 @@
 // Renovate (Mend Renovate GitHub app). Weekly; version ranges in
 // pyproject.toml stay as they are and only uv.lock moves within them. The
-// ranges cap each direct dependency below its next major version, so the
-// lock never crosses one: a new major means raising the cap by hand. Updates
-// within the ranges merge on their own once CI is green; GitHub Actions
-// majors wait for review. The Fedora releases CI runs on come from Bodhi,
-// not from a pinned version.
+// runtime dependencies (bleak, pillow) are capped below their next major
+// version, so the lock never crosses one: a new major means raising the cap
+// by hand. Development and documentation tools are uncapped: CI catches what
+// a new version breaks, and nothing of them reaches users. Updates merge on
+// their own once CI is green; GitHub Actions majors wait for review. The
+// Fedora releases CI runs on come from Bodhi, not from a pinned version.
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["config:recommended"],
@@ -33,20 +34,16 @@
       labels: ["bleak"],
     },
     {
-      description: "Development tools in one pull request.",
+      description: "Development tools in one pull request, majors included.",
       matchManagers: ["pep621"],
       matchDepTypes: ["dependency-groups"],
       groupName: "development tools",
+      automerge: true,
     },
     {
-      description: "Documentation tooling in one pull request.",
+      description: "Documentation tooling in one pull request, majors included.",
       matchFileNames: ["docs/pyproject.toml"],
       groupName: "documentation tooling",
-    },
-    {
-      // Calendar versions: a new year is no breaking change.
-      description: "shibuya (CalVer) merges like a minor update.",
-      matchPackageNames: ["shibuya"],
       automerge: true,
     },
     {

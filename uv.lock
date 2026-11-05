@@ -434,10 +434,10 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pytest", specifier = ">=8.0.0,<10" },
-    { name = "pytest-asyncio", specifier = ">=0.25.0,<2" },
-    { name = "ruff", specifier = ">=0.11.0,<1" },
-    { name = "ty", specifier = ">=0.0.26,<1" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.25.0" },
+    { name = "ruff", specifier = ">=0.11.0" },
+    { name = "ty", specifier = ">=0.0.26" },
 ]
 
 [[package]]
@@ -453,10 +453,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "myst-parser", specifier = ">=4,<6" },
+    { name = "myst-parser", specifier = ">=4" },
     { name = "phomemo", editable = "src/phomemo" },
     { name = "shibuya", specifier = ">=2025.1" },
-    { name = "sphinx", specifier = ">=8,<10" },
+    { name = "sphinx", specifier = ">=8" },
 ]
 
 [[package]]

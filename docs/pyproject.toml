@@ -23,9 +23,9 @@ version = "0.0.0"
 requires-python = ">=3.13"
 dependencies = [
     "shibuya>=2025.1",
-    "myst-parser>=4,<6",
+    "myst-parser>=4",
     "phomemo",
-    "sphinx>=8,<10",
+    "sphinx>=8",
 ]
 
 [tool.uv]
