@@ -43,7 +43,7 @@ The package enables both services and starts them on first installation. Upgrade
 ### Step 1: install the dependencies
 
 ```bash
-sudo dnf install gcc make pkgconf-pkg-config pappl-devel cups-devel python3 cups avahi bluez
+sudo dnf install gcc make pkgconf-pkg-config pappl-devel cjson-devel cups-devel python3 cups avahi bluez
 ```
 
 These are the Fedora package names for everything the build and the services need.

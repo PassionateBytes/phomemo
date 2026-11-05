@@ -163,7 +163,7 @@ data-aria-dark="Switch to auto color mode">
 </div>
 <p>That gives you one environment with the library, its test tooling (pytest, pytest-asyncio, ruff, ty) and the documentation tools.</p>
 <p>To build the printer app you also need its C dependencies. On Fedora:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>gcc<span class="w"> </span>make<span class="w"> </span>pkgconf-pkg-config<span class="w"> </span>pappl-devel<span class="w"> </span>cups-devel
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>gcc<span class="w"> </span>make<span class="w"> </span>pkgconf-pkg-config<span class="w"> </span>pappl-devel<span class="w"> </span>cjson-devel<span class="w"> </span>cups-devel
 </span><span data-line="2">sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>cups-ipptool<span class="w"> </span>ghostscript<span class="w">    </span><span class="c1"># for the end-to-end tests</span>
 </span></pre></div>
 </div>
@@ -295,7 +295,6 @@ data-aria-dark="Switch to auto color mode">
 </tbody>
 </table>
 </div>
-<p>Bundled third-party code keeps its own licence (cJSON, MIT, in the printer app).</p>
 </section>
 </section>
 <section id="packaging">

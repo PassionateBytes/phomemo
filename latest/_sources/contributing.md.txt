@@ -20,7 +20,7 @@ That gives you one environment with the library, its test tooling (pytest, pytes
 To build the printer app you also need its C dependencies. On Fedora:
 
 ```bash
-sudo dnf install gcc make pkgconf-pkg-config pappl-devel cups-devel
+sudo dnf install gcc make pkgconf-pkg-config pappl-devel cjson-devel cups-devel
 sudo dnf install cups-ipptool ghostscript    # for the end-to-end tests
 ```
 
@@ -116,8 +116,6 @@ Every new source file starts with the copyright notice and licence statement (FS
 | Printer app (`src/printer-app/`) | GNU GPL, version 3 or later |
 | Packaging, build files and everything else | GNU GPL, version 3 or later |
 | Documentation (`docs/`, the READMEs) | CC BY-SA 4.0 |
-
-Bundled third-party code keeps its own licence (cJSON, MIT, in the printer app).
 
 ## Packaging
 
