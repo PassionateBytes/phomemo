@@ -106,3 +106,17 @@ h3 {
 .hero ~ h1 {
   text-align: center;
 }
+
+/* Notice on pages of unreleased or older versions (_static/versions.js). */
+.version-notice {
+  margin: 0 0 1.5rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--pb-cyan);
+  border-radius: 6px;
+  background: var(--sy-c-surface);
+  font-size: 0.9rem;
+}
+
+.nav-versions a[aria-current="page"] {
+  font-weight: 600;
+}
