@@ -61,7 +61,9 @@ Build the docs with `-W` before you push: CI treats every Sphinx warning as an e
 
 The published site is versioned. `.github/workflows/docs.yml` builds `latest/` from every push to main and a directory per release (`0.3.0/`, ...) from every `v*` tag; the newest release is also copied to `stable/`, where the site root and the unversioned page links lead. `docs/publish.py` assembles the site on the `gh-pages` branch, and the version menu reads its `versions.json`. Local builds leave the menu out (the workflow sets `DOCS_VERSION`). To rebuild an older release, run the Docs workflow by hand with its tag.
 
-CI (`.github/workflows/ci.yml`) runs everything in a Fedora 44 container as an ordinary user, and lints and builds the RPM packages in a second job.
+CI (`.github/workflows/ci.yml`) runs everything, the documentation build included, in a Fedora 44 container as an ordinary user. Two more jobs build the RPM packages: `phomemo-driver`, and `python-bleak` at the locked bleak version, installed against Fedora's own dependencies.
+
+Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files and bumps the GitHub Actions. Minor and patch updates merge on their own once CI is green; major updates and new Fedora releases wait for review.
 
 ## Tests
 
@@ -132,7 +134,7 @@ The Fedora route:
 
 - The COPR project `passionatebytes/phomemo-driver` builds both specs from git with the `make_srpm` method, which runs `.copr/Makefile`.
 - `phomemo-driver.spec` builds from a `git archive` of the repository.
-- Fedora has no bleak, so `python-bleak.spec` is built at the bleak version locked in `uv.lock`. Update it with `uv lock --upgrade-package bleak`; `src/phomemo/pyproject.toml` caps it below 4.
+- Fedora has no bleak, so `python-bleak.spec` is built at the bleak version locked in `uv.lock`. Renovate updates it within the range in `src/phomemo/pyproject.toml` (below 4), or by hand: `uv lock --upgrade-package bleak`.
 
 ### Add a package format
 

@@ -52,6 +52,39 @@ jobs:
         run: su tester -c "make -C src/printer-app test"
       - name: Python tests (library, bridge, end-to-end against the built application)
         run: su tester -c "uv run pytest -q src/phomemo/tests"
+      - name: Documentation
+        run: su tester -c "uv run --package phomemo-docs sphinx-build -W --keep-going -b html docs docs/_build/html"
+
+  # COPR builds python-bleak at the bleak version locked in uv.lock, against
+  # Fedora's own dbus-fast. Building and installing it here catches a lock
+  # update that Fedora cannot satisfy before it reaches main.
+  bleak-rpm:
+    name: python-bleak RPM (Fedora 44)
+    runs-on: ubuntu-latest
+    container: fedora:44
+    steps:
+      - name: Install packaging tools
+        run: >
+          dnf install -y --setopt=install_weak_deps=False
+          rpm-build rpmdevtools python3-rpm-macros git make
+      - uses: actions/checkout@v4
+      - name: Build the source RPM as COPR does
+        run: make -f .copr/Makefile srpm outdir="$PWD/dist" spec=packaging/rpm/python-bleak.spec
+      - name: Build and install the package
+        run: |
+          spec=dist/python-bleak.spec
+          defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
+                --define "_srcrpmdir $PWD/dist")
+          dnf builddep -y "$spec"
+          for round in 1 2 3 4 5; do
+            rm -f dist/*.buildreqs.nosrc.rpm
+            rpmbuild -br "${defs[@]}" "$spec" && break
+            dnf builddep -y dist/*.buildreqs.nosrc.rpm
+          done
+          rpmbuild -bb "${defs[@]}" "$spec"
+          dnf install -y dist/noarch/python3-bleak-*.rpm
+          python3 -c "import bleak, importlib.metadata as m; print('bleak', m.version('bleak'))"
+        shell: bash
 
   rpm:
     name: RPM build (Fedora 44)
