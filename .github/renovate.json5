@@ -1,11 +1,13 @@
-// Renovate (Mend Renovate GitHub app). Weekly; version ranges in
-// pyproject.toml stay as they are and only uv.lock moves within them. The
-// runtime dependencies (bleak, pillow) are capped below their next major
-// version, so the lock never crosses one: a new major means raising the cap
-// by hand. Development and documentation tools are uncapped: CI catches what
-// a new version breaks, and nothing of them reaches users. Updates merge on
-// their own once CI is green; GitHub Actions majors wait for review. The
-// Fedora releases CI runs on come from Bodhi, not from a pinned version.
+// Renovate (Mend Renovate GitHub app), weekly. Only uv.lock moves within
+// the ranges in pyproject.toml, with one exception: the runtime
+// dependencies (bleak, pillow) are capped below their next major version,
+// and a new major comes as a pull request that raises the cap (lower bound
+// kept) and waits for review. Their minor and patch updates arrive with the
+// weekly lock refresh. Development and documentation tools are uncapped:
+// CI catches what a new version breaks, and none of them reaches users.
+// Everything else merges on its own once CI is green; GitHub Actions
+// majors wait for review. The Fedora releases CI runs on come from Bodhi,
+// not from a pinned version.
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["config:recommended"],
@@ -27,11 +29,15 @@
       automerge: true,
     },
     {
-      // uv.lock pins the bleak version COPR's python-bleak package is built
-      // at (.copr/Makefile); CI builds and installs that package.
-      description: "bleak in its own pull request.",
-      matchPackageNames: ["bleak"],
-      labels: ["bleak"],
+      // Renovate cannot limit a rangeStrategy to major updates, so widen
+      // applies to every update of these two: in-range versions leave the
+      // range alone and come with the lock refresh. uv.lock pins the bleak
+      // version COPR's python-bleak package is built at (.copr/Makefile);
+      // CI builds and installs that package.
+      description: "Runtime dependencies: a new major raises the cap, for review.",
+      matchPackageNames: ["bleak", "pillow"],
+      rangeStrategy: "widen",
+      labels: ["runtime dependency"],
     },
     {
       description: "Development tools in one pull request, majors included.",
