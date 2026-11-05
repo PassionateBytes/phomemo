@@ -30,8 +30,13 @@
 #                   pypi only to report its result: a failed upload does not
 #                   block the release.
 #
-# COPR (through its webhook) and the versioned docs (docs.yml) build from the
-# same tag through their own triggers.
+#   copr            asks COPR to build phomemo-driver (its build picks the
+#                   newest v* tag, .copr/Makefile) through the project's
+#                   custom webhook, secret COPR_WEBHOOK; skipped with a
+#                   warning when the secret is unset.
+#
+# The versioned docs (docs.yml) build from the same tag through their own
+# trigger.
 
 name: Release
 run-name: Release ${{ github.ref_name }}
@@ -143,3 +148,20 @@ jobs:
             # shellcheck disable=SC2016  # literal backticks: Markdown code
             echo "Artefacts: $(find artifacts -type f -printf '`%f`\n' 2>/dev/null | sort | paste -sd ' ')"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  copr:
+    name: COPR build
+    needs: [python, srpm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the phomemo-driver build
+        env:
+          COPR_WEBHOOK: ${{ secrets.COPR_WEBHOOK }}
+        run: |
+          if [ -z "$COPR_WEBHOOK" ]; then
+            echo "::warning::COPR_WEBHOOK is not set; COPR was not asked to build"
+            echo "COPR: not triggered (secret COPR_WEBHOOK unset)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          curl -fsS -X POST -o /dev/null "${COPR_WEBHOOK%/}/phomemo-driver/"
+          echo "COPR: [phomemo-driver build requested](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/builds/)" >> "$GITHUB_STEP_SUMMARY"
