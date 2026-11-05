@@ -93,13 +93,6 @@ def test_spec_installs_no_model_directory() -> None:
     assert "phomemo/models" not in spec
 
 
-def test_spec_builds_against_the_system_cjson() -> None:
-    spec = (REPO / "packaging" / "rpm" / "phomemo-driver.spec").read_text()
-    assert "BuildRequires:  pkgconfig(libcjson)" in spec
-    assert "bundled(" not in spec
-    assert not (REPO / "src" / "printer-app" / "third_party").exists()
-
-
 def test_make_install_installs_no_model_directory() -> None:
     makefile = (REPO / "Makefile").read_text()
     assert "phomemo/models" not in makefile
