@@ -22,10 +22,51 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: Tests (Fedora 44)
+  # Every Fedora release that still gets updates, as Bodhi lists them
+  # (two most of the year, three for a few weeks after a new release), from
+  # MIN_FEDORA on: older releases lack the dependency versions phomemo
+  # requires (Fedora 43 ships Pillow 11.3, phomemo needs 12.1).
+  releases:
+    name: Fedora releases
     runs-on: ubuntu-latest
-    container: fedora:44
+    env:
+      MIN_FEDORA: 44
+    outputs:
+      all: ${{ steps.bodhi.outputs.all }}
+      newest: ${{ steps.bodhi.outputs.newest }}
+    steps:
+      - id: bodhi
+        shell: python
+        run: |
+          import json, os, re, urllib.request
+
+          url = "https://bodhi.fedoraproject.org/releases/?state=current&rows_per_page=50"
+          try:
+              with urllib.request.urlopen(url, timeout=30) as response:
+                  releases = json.load(response)["releases"]
+              minimum = int(os.environ["MIN_FEDORA"])
+              versions = sorted(
+                  v
+                  for r in releases
+                  if (m := re.fullmatch(r"F(\d+)", r["name"])) and (v := int(m[1])) >= minimum
+              )
+          except Exception as error:
+              print(f"::warning::Bodhi unreachable ({error}); testing fedora:latest only")
+              versions = []
+          names = [str(v) for v in versions] or ["latest"]
+          print("Fedora releases:", ", ".join(names))
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"all={json.dumps(names)}\nnewest={names[-1]}\n")
+
+  test:
+    name: Tests (Fedora ${{ matrix.fedora }})
+    needs: releases
+    runs-on: ubuntu-latest
+    container: fedora:${{ matrix.fedora }}
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora: ${{ fromJSON(needs.releases.outputs.all) }}
     steps:
       - name: Install build and test dependencies
         run: >
@@ -44,7 +85,9 @@ jobs:
           chown -R tester "$GITHUB_WORKSPACE"
       - name: Python environment
         run: su tester -c "uv sync --all-packages"
+      # Lint and docs do not depend on the Fedora release: newest only.
       - name: Lint
+        if: matrix.fedora == needs.releases.outputs.newest
         run: su tester -c "uv run ruff check . && uv run ruff format --check ."
       - name: Build the printer application
         run: su tester -c "make -C src/printer-app"
@@ -53,69 +96,57 @@ jobs:
       - name: Python tests (library, bridge, end-to-end against the built application)
         run: su tester -c "uv run pytest -q src/phomemo/tests"
       - name: Documentation
+        if: matrix.fedora == needs.releases.outputs.newest
         run: su tester -c "uv run --package phomemo-docs sphinx-build -W --keep-going -b html docs docs/_build/html"
 
-  # COPR builds python-bleak at the bleak version locked in uv.lock, against
-  # Fedora's own dbus-fast. Building and installing it here catches a lock
-  # update that Fedora cannot satisfy before it reaches main.
-  bleak-rpm:
-    name: python-bleak RPM (Fedora 44)
-    runs-on: ubuntu-latest
-    container: fedora:44
-    steps:
-      - name: Install packaging tools
-        run: >
-          dnf install -y --setopt=install_weak_deps=False
-          rpm-build rpmdevtools python3-rpm-macros git make
-      - uses: actions/checkout@v4
-      - name: Build the source RPM as COPR does
-        run: make -f .copr/Makefile srpm outdir="$PWD/dist" spec=packaging/rpm/python-bleak.spec
-      - name: Build and install the package
-        run: |
-          spec=dist/python-bleak.spec
-          defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
-                --define "_srcrpmdir $PWD/dist")
-          dnf builddep -y "$spec"
-          for round in 1 2 3 4 5; do
-            rm -f dist/*.buildreqs.nosrc.rpm
-            rpmbuild -br "${defs[@]}" "$spec" && break
-            dnf builddep -y dist/*.buildreqs.nosrc.rpm
-          done
-          rpmbuild -bb "${defs[@]}" "$spec"
-          dnf install -y dist/noarch/python3-bleak-*.rpm
-          python3 -c "import bleak, importlib.metadata as m; print('bleak', m.version('bleak'))"
-        shell: bash
-
+  # Both packages as COPR builds them: python-bleak at the bleak version
+  # locked in uv.lock against Fedora's own dbus-fast (Fedora has no bleak),
+  # then phomemo-driver against that python-bleak. Catches a lock update
+  # Fedora cannot satisfy before it reaches main.
   rpm:
-    name: RPM build (Fedora 44)
+    name: RPM packages (Fedora ${{ matrix.fedora }})
+    needs: releases
     runs-on: ubuntu-latest
-    container: fedora:44
+    container: fedora:${{ matrix.fedora }}
+    strategy:
+      fail-fast: false
+      matrix:
+        fedora: ${{ fromJSON(needs.releases.outputs.all) }}
     steps:
       - name: Install packaging tools
         run: >
           dnf install -y --setopt=install_weak_deps=False
-          rpm-build rpmlint git make dnf-plugins-core
-      - name: Enable the project's COPR repository (python3-bleak is not in Fedora)
-        run: dnf copr enable -y passionatebytes/phomemo-driver
+          rpm-build rpmdevtools rpmlint python3-rpm-macros git make
       - uses: actions/checkout@v4
       - name: Mark the checkout safe for git archive
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Lint the spec file
         run: rpmlint packaging/rpm/phomemo-driver.spec
-      - name: Build the packages
+      - name: Source packages as COPR makes them
         run: |
+          make -f .copr/Makefile srpm outdir="$PWD/dist" spec=packaging/rpm/python-bleak.spec
           make tarball
+          cp packaging/rpm/phomemo-driver.spec dist/
+      - name: Build and install the packages
+        shell: bash
+        run: |
           defs=(--define "_sourcedir $PWD/dist" --define "_rpmdir $PWD/dist"
                 --define "_srcrpmdir $PWD/dist")
-          dnf builddep -y packaging/rpm/phomemo-driver.spec
-          # The spec generates its Python build requirements in rounds (the
-          # build backend first, then the package's own requirements); keep
-          # installing them until rpmbuild -br finds nothing missing.
-          for round in 1 2 3 4 5; do
-            rm -f dist/*.buildreqs.nosrc.rpm
-            rpmbuild -br "${defs[@]}" packaging/rpm/phomemo-driver.spec && break
-            dnf builddep -y dist/*.buildreqs.nosrc.rpm
-          done
-          rpmbuild -ba "${defs[@]}" packaging/rpm/phomemo-driver.spec
+          # The specs generate their Python build requirements in rounds
+          # (the build backend first, then the package's own requirements);
+          # keep installing them until rpmbuild -br finds nothing missing.
+          build() {
+            dnf builddep -y "$1"
+            for round in 1 2 3 4 5; do
+              rm -f dist/*.buildreqs.nosrc.rpm
+              rpmbuild -br "${defs[@]}" "$1" && break
+              dnf builddep -y dist/*.buildreqs.nosrc.rpm
+            done
+            rpmbuild -ba "${defs[@]}" "$1"
+          }
+          build dist/python-bleak.spec
+          dnf install -y dist/noarch/python3-bleak-*.rpm
+          build dist/phomemo-driver.spec
+          dnf install -y dist/noarch/python3-phomemo-*.rpm dist/x86_64/phomemo-driver-*.rpm
+          python3 -c "import bleak, phomemo, importlib.metadata as m; print('bleak', m.version('bleak'), 'phomemo', m.version('phomemo'))"
           ls -R dist
-        shell: bash

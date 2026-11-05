@@ -61,7 +61,7 @@ Build the docs with `-W` before you push: CI treats every Sphinx warning as an e
 
 The published site is versioned. `.github/workflows/docs.yml` builds `latest/` from every push to main and a directory per release (`0.3.0/`, ...) from every `v*` tag; the newest release is also copied to `stable/`, where the site root and the unversioned page links lead. `docs/publish.py` assembles the site on the `gh-pages` branch, and the version menu reads its `versions.json`. Local builds leave the menu out (the workflow sets `DOCS_VERSION`). To rebuild an older release, run the Docs workflow by hand with its tag.
 
-CI (`.github/workflows/ci.yml`) runs everything, the documentation build included, in a Fedora 44 container as an ordinary user. Two more jobs build the RPM packages: `phomemo-driver`, and `python-bleak` at the locked bleak version, installed against Fedora's own dependencies.
+CI (`.github/workflows/ci.yml`) runs on every Fedora release that still gets updates (it asks Fedora's Bodhi which ones, from `MIN_FEDORA` on), each in its own container: the checks as an ordinary user, and the RPM packages as COPR builds them, `python-bleak` at the locked bleak version and `phomemo-driver` against it, both installed. Lint and the documentation build run on the newest release only.
 
 Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files and bumps the GitHub Actions. Minor and patch updates merge on their own once CI is green; major updates and new Fedora releases wait for review.
 

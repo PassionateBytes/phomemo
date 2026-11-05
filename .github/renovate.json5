@@ -1,7 +1,8 @@
 // Renovate (Mend Renovate GitHub app). Weekly; version ranges in
 // pyproject.toml stay as they are and only uv.lock moves within them.
 // Minor and patch updates merge on their own once CI is green; major updates
-// and Fedora releases wait for review.
+// wait for review. The Fedora releases CI runs on come from Bodhi, not from
+// a pinned version.
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: ["config:recommended"],
@@ -45,15 +46,6 @@
       matchManagers: ["github-actions"],
       matchDepTypes: ["action"],
       groupName: "GitHub Actions",
-    },
-    {
-      // The CI and release containers set the Fedora release the packages
-      // are built and tested for.
-      description: "Fedora releases need a human.",
-      matchDatasources: ["docker"],
-      matchPackageNames: ["fedora"],
-      groupName: "Fedora",
-      automerge: false,
     },
   ],
 }
