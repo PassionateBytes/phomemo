@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-printer-app.  If not, see <https://www.gnu.org/licenses/>.
 
-# Build the Phomemo printer app against the system PAPPL.
+# Build the Phomemo printer app against the system PAPPL and cJSON.
 #
 #   make            build phomemo-printer-app
 #   make test       build and run the C unit tests
@@ -29,23 +29,22 @@ PRESETDIR ?= /usr/lib/systemd/system-preset
 CC        ?= cc
 CFLAGS    ?= -O2 -g
 ALL_CFLAGS = $(CFLAGS) -std=c99 -D_GNU_SOURCE -Wall -Wextra -Werror \
-             -Wno-unused-parameter -I. -Ithird_party \
-             $(shell pkg-config --cflags pappl) \
+             -Wno-unused-parameter -I. \
+             $(shell pkg-config --cflags pappl libcjson) \
              -DPAPPL_VERSION_STR='"$(shell pkg-config --modversion pappl)"'
-ALL_LDLIBS = $(LDLIBS) $(shell pkg-config --libs pappl) -pthread
+CJSON_LIBS = $(shell pkg-config --libs libcjson)
+ALL_LDLIBS = $(LDLIBS) $(shell pkg-config --libs pappl) $(CJSON_LIBS) -pthread
 
 APP      = phomemo-printer-app
 SRCS     = main.c bridge.c device.c driver.c job.c models.c models_data.c
 MODELS   = ../models
-VENDOR   = third_party/cJSON.c
-VOBJS    = $(VENDOR:.c=.o)
 OBJS     = $(SRCS:.c=.o)
 TESTS    = tests/test_bridge tests/test_driver
 
 all: $(APP)
 
-$(APP): $(OBJS) $(VOBJS)
-	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(VOBJS) $(ALL_LDLIBS)
+$(APP): $(OBJS)
+	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(ALL_LDLIBS)
 
 %.o: %.c phomemo.h bridge.h
 	$(CC) $(ALL_CFLAGS) -c -o $@ $<
@@ -54,13 +53,10 @@ $(APP): $(OBJS) $(VOBJS)
 models_data.c: embed-models.sh $(wildcard $(MODELS)/*/model.json $(MODELS)/*/*.png)
 	sh embed-models.sh $(MODELS) > $@
 
-third_party/%.o: third_party/%.c
-	$(CC) $(ALL_CFLAGS) -Wno-error -c -o $@ $<
+tests/test_bridge: tests/test_bridge.o bridge.o
+	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^ $(CJSON_LIBS)
 
-tests/test_bridge: tests/test_bridge.o bridge.o $(VOBJS)
-	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^
-
-tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o models.o models_data.o $(VOBJS)
+tests/test_driver: tests/test_driver.o driver.o job.o device.o bridge.o models.o models_data.o
 	$(CC) $(ALL_CFLAGS) $(LDFLAGS) -o $@ $^ $(ALL_LDLIBS)
 
 test: $(TESTS)
@@ -79,6 +75,6 @@ install: $(APP)
 	install -m 644 $(PRESET) $(DESTDIR)$(PRESETDIR)/90-phomemo-printer-app.preset
 
 clean:
-	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o third_party/*.o models_data.c
+	rm -f $(APP) $(OBJS) $(TESTS) tests/*.o models_data.c
 
 .PHONY: all test install clean

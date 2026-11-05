@@ -11,7 +11,7 @@ client ──IPP──▶ phomemo-printer-app ──unix socket──▶ phomemo
 
 ## Build and test
 
-Dependencies on Fedora: `pappl-devel`, `cups-devel`, `gcc`, `make`, `pkgconf-pkg-config`; the end-to-end tests also use `ipptool` (package `cups-ipptool`) and Ghostscript.
+Dependencies on Fedora: `pappl-devel`, `cjson-devel`, `cups-devel`, `gcc`, `make`, `pkgconf-pkg-config`; the end-to-end tests also use `ipptool` (package `cups-ipptool`) and Ghostscript.
 
 ```bash
 make -C src/printer-app            # builds src/printer-app/phomemo-printer-app
@@ -32,7 +32,6 @@ The model manifests in [`../models/`](../models/) are built into the binary at b
 | `driver.c` | Printer capabilities from the model (media, resolution, margins, icons) plus `phomemo-tone`, and option mapping helpers. |
 | `job.c` | Raster callbacks: wait for a sheet, stream rows, finish the page, surface errors. |
 | `bridge.c` | Line-oriented JSON client for the bridge protocol. |
-| `third_party/cJSON.*` | [cJSON](https://github.com/DaveGamble/cJSON) 1.7.18, MIT. |
 
 How the parts fit together: [Driver stack](https://passionatebytes.github.io/phomemo-driver/driver-stack.html).
 
@@ -40,4 +39,4 @@ How the parts fit together: [Driver stack](https://passionatebytes.github.io/pho
 
 Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions.
 
-GNU General Public License, version 3 or later: see [COPYING](COPYING). The bundled [cJSON](third_party/cJSON.LICENSE) is MIT-licensed. This README is documentation and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+GNU General Public License, version 3 or later: see [COPYING](COPYING). This README is documentation and licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

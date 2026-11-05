@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#include "cJSON.h"
+#include <cjson/cJSON.h>
 
 #define PHOMEMO_BRIDGE_MAX_LINE (64 * 1024)
 #define PHOMEMO_BRIDGE_MAX_PAYLOAD (16 * 1024 * 1024)
