@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/models/m08f/icon-128.png" alt="Phomemo M08F" width="96">
+  <img src="src/models/m08f/icon-128.png" alt="Phomemo M08F" width="128">
 </p>
 
 <h1 align="center">phomemo-driver</h1>
