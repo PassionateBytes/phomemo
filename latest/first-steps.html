@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>First steps - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Everyday use" href="everyday-use.html" /><link rel="prev" title="Installation" href="installation.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="First steps"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="#">First steps</a></li><li class="link"><a href="library.html">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="latest">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">latest</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#step-1-power-and-bluetooth-on">Step 1: Power and Bluetooth on</a></li>
+<li><a class="reference internal" href="#step-2-register-the-printer">Step 2: Register the printer</a><ul>
+<li><a class="reference internal" href="#alternative-register-through-the-web-interface">Alternative: Register through the web interface</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#step-3-print-the-test-page">Step 3: Print the test page</a></li>
+<li><a class="reference internal" href="#step-4-add-a-permanent-cups-queue-optional">Step 4: Add a permanent CUPS queue (optional)</a></li>
+<li><a class="reference internal" href="#next">Next</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">First steps</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="first-steps">
+<h1>First steps<a class="headerlink" href="#first-steps" title="Link to this heading">#</a></h1>
+<p>You have the driver installed (see <a class="reference internal" href="installation.html"><span class="std std-doc">Installation</span></a>) and both services are running. Now you register the printer with the printer app and print a first page.</p>
+<section id="step-1-power-and-bluetooth-on">
+<h2>Step 1: Power and Bluetooth on<a class="headerlink" href="#step-1-power-and-bluetooth-on" title="Link to this heading">#</a></h2>
+<p>Power the printer on and keep it close to your computer. Ensure Bluetooth is enabled on your computer.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The printer accepts one connection at a time and does not show up in a scan while another device (a phone or another computer) is connected to it. Bluetooth range is short: keep the printer near your computer.</p>
+</div>
+</section>
+<section id="step-2-register-the-printer">
+<h2>Step 2: Register the printer<a class="headerlink" href="#step-2-register-the-printer" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>autoadd
+</span><span data-line="2">sudo<span class="w"> </span>phomemo-printer-app<span class="w"> </span>printers
+</span></pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">autoadd</span></code> command automatically scans for printers within range and registers every compatible printer it finds. The <code class="docutils literal notranslate"><span class="pre">printers</span></code> command then lists all registered printers.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>At its very first start (no saved state yet) the printer app registers every printer in range automatically. This means you may be able to skip the <code class="docutils literal notranslate"><span class="pre">autoadd</span></code> command, if you have the printer turned on and in range during the first installation of the driver package.</p>
+</div>
+<section id="alternative-register-through-the-web-interface">
+<h3>Alternative: Register through the web interface<a class="headerlink" href="#alternative-register-through-the-web-interface" title="Link to this heading">#</a></h3>
+<p>In addition to the CLI commands you can register a printer through the printer app web interface:</p>
+<ol class="arabic simple">
+<li><p>Open <a class="reference external" href="http://localhost:8000/">http://localhost:8000/</a> in your browser</p></li>
+<li><p>Use the the <em>Add Printer</em> button. The printer app then scans for printers in range.</p></li>
+<li><p>Select the printer and continue the registration through the web interface.</p></li>
+</ol>
+</section>
+</section>
+<section id="step-3-print-the-test-page">
+<h2>Step 3: Print the test page<a class="headerlink" href="#step-3-print-the-test-page" title="Link to this heading">#</a></h2>
+<p>Ensure the printer is powered on and in range, and load a sheet.<br />
+Then open the printer app web interface at <a class="reference external" href="http://localhost:8000/">http://localhost:8000/</a>, select your printer in the menu, then use the button <em>Print test page</em>.</p>
+<p>The test page shows the printer’s address, serial number, battery state, firmware and driver versions, and more.</p>
+</section>
+<section id="step-4-add-a-permanent-cups-queue-optional">
+<h2>Step 4: Add a permanent CUPS queue (optional)<a class="headerlink" href="#step-4-add-a-permanent-cups-queue-optional" title="Link to this heading">#</a></h2>
+<p>The queue CUPS creates on first use is temporary: CUPS removes it once the printer idles. GNOME Settings lists only permanent queues, so add one if you want the printer to show up in your system printer GUI.</p>
+<p><strong>In GNOME:</strong><br />
+Settings → Printers → Add Printer, then pick the printer.</p>
+<p><strong>On the command line:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>lpadmin<span class="w"> </span>-p<span class="w"> </span>Phomemo_M08F_DDEEFF<span class="w"> </span>-E<span class="w"> </span>-m<span class="w"> </span>everywhere<span class="w"> </span><span class="se">\</span>
+</span><span data-line="2"><span class="w">  </span>-v<span class="w"> </span><span class="s1">&#39;ipps://Phomemo%20M08F%20(DDEEFF)._ipps._tcp.local/&#39;</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">lpinfo</span> <span class="pre">--include-schemes</span> <span class="pre">dnssd</span> <span class="pre">-v</span></code> lists the exact URI for your printer.</p>
+</section>
+<section id="next">
+<h2>Next<a class="headerlink" href="#next" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="everyday-use.html"><span class="std std-doc">Everyday use</span></a>: printing options, sheets, battery, several printers.</p></li>
+<li><p><a class="reference internal" href="troubleshooting.html"><span class="std std-doc">Troubleshooting</span></a>: when something does not work.</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="installation.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Installation</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="everyday-use.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Everyday use</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>

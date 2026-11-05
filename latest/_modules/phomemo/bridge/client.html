@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>phomemo.bridge.client - phomemo-driver</title><link rel="shortcut icon" href="../../../_static/m08f.png"/><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="phomemo.bridge.client"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      <img class="light-logo" src="../../../_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../installation.html">Install</a></li><li class="link"><a href="../../../first-steps.html">First steps</a></li><li class="link"><a href="../../../library.html">Library</a></li><li class="link"><a href="../../../contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="latest">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">latest</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">phomemo.bridge.client</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <h1>Source code for phomemo.bridge.client</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="c1"># This file is part of phomemo.</span>
+</span><span data-line="2"><span class="c1"># Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions</span>
+</span><span data-line="3"><span class="c1">#</span>
+</span><span data-line="4"><span class="c1"># phomemo is free software: you can redistribute it and/or modify</span>
+</span><span data-line="5"><span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+</span><span data-line="6"><span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+</span><span data-line="7"><span class="c1"># (at your option) any later version.</span>
+</span><span data-line="8"><span class="c1">#</span>
+</span><span data-line="9"><span class="c1"># phomemo is distributed in the hope that it will be useful,</span>
+</span><span data-line="10"><span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+</span><span data-line="11"><span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+</span><span data-line="12"><span class="c1"># GNU Lesser General Public License for more details.</span>
+</span><span data-line="13"><span class="c1">#</span>
+</span><span data-line="14"><span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+</span><span data-line="15"><span class="c1"># along with phomemo.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="sd">&quot;&quot;&quot;Client for the bridge socket, used by the CLI and by printer-application tests.&quot;&quot;&quot;</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="20"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+</span><span data-line="21"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span data-line="22"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Self</span>
+</span><span data-line="23">
+</span><span data-line="24"><span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+</span><span data-line="25">
+</span><span data-line="26"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo.bridge.protocol</span><span class="w"> </span><span class="kn">import</span> <span class="n">encode_message</span><span class="p">,</span> <span class="n">read_message</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="n">MEDIA</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="29">    <span class="s2">&quot;a4&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">297.0</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+</span><span data-line="30">    <span class="s2">&quot;a5&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">148.0</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+</span><span data-line="31">    <span class="s2">&quot;roll&quot;</span><span class="p">:</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+</span><span data-line="32"><span class="p">}</span>
+</span><span data-line="33"><span class="n">QUALITY</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;draft&quot;</span><span class="p">:</span> <span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;normal&quot;</span><span class="p">:</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="s2">&quot;high&quot;</span><span class="p">}</span>
+</span><span data-line="34"><span class="n">_ROWS_PER_MESSAGE</span> <span class="o">=</span> <span class="mi">64</span>
+</span><span data-line="35">
+</span><span data-line="36">
+<div class="viewcode-block" id="BridgeError">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeError">[docs]</a>
+</span><span data-line="37"><span class="k">class</span><span class="w"> </span><span class="nc">BridgeError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+</span><span data-line="38"><span class="w">    </span><span class="sd">&quot;&quot;&quot;The bridge refused or failed a command; the message is its ``error``.&quot;&quot;&quot;</span></div>
+
+</span><span data-line="39">
+</span><span data-line="40">
+<div class="viewcode-block" id="BridgeClient">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient">[docs]</a>
+</span><span data-line="41"><span class="k">class</span><span class="w"> </span><span class="nc">BridgeClient</span><span class="p">:</span>
+</span><span data-line="42"><span class="w">    </span><span class="sd">&quot;&quot;&quot;One connection to the bridge.</span>
+</span><span data-line="43">
+</span><span data-line="44"><span class="sd">    Args:</span>
+</span><span data-line="45"><span class="sd">        socket_path: The bridge&#39;s unix socket.</span>
+</span><span data-line="46"><span class="sd">        on_event: Called with each pushed event while a reply is pending.</span>
+</span><span data-line="47"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="48">
+</span><span data-line="49">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+</span><span data-line="50">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="51">        <span class="n">socket_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+</span><span data-line="52">        <span class="n">on_event</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="53">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="54">        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">socket_path</span>
+</span><span data-line="55">        <span class="bp">self</span><span class="o">.</span><span class="n">_on_event</span> <span class="o">=</span> <span class="n">on_event</span>
+</span><span data-line="56">        <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">StreamReader</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="57">        <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">StreamWriter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="58">        <span class="bp">self</span><span class="o">.</span><span class="n">_pending</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="59">
+</span><span data-line="60">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span data-line="61">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="62">        <span class="k">return</span> <span class="bp">self</span>
+</span><span data-line="63">
+</span><span data-line="64">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">_exc</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="65">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</span><span data-line="66">
+<div class="viewcode-block" id="BridgeClient.connect">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.connect">[docs]</a>
+</span><span data-line="67">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="68"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Open the socket connection.&quot;&quot;&quot;</span>
+</span><span data-line="69">        <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">open_unix_connection</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">))</span></div>
+
+</span><span data-line="70">
+<div class="viewcode-block" id="BridgeClient.disconnect">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.disconnect">[docs]</a>
+</span><span data-line="71">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="72"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the socket connection.&quot;&quot;&quot;</span>
+</span><span data-line="73">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="74">            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span data-line="75">            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+</span><span data-line="76">            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="77">            <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+</span><span data-line="78">
+<div class="viewcode-block" id="BridgeClient.send">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.send">[docs]</a>
+</span><span data-line="79">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="80"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a command without waiting for its reply.&quot;&quot;&quot;</span>
+</span><span data-line="81">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;not connected&quot;</span>
+</span><span data-line="82">        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cmd&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;abort&quot;</span><span class="p">:</span>
+</span><span data-line="83">            <span class="bp">self</span><span class="o">.</span><span class="n">_pending</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cmd&quot;</span><span class="p">)</span>
+</span><span data-line="84">        <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encode_message</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+</span><span data-line="85">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span></div>
+
+</span><span data-line="86">
+<div class="viewcode-block" id="BridgeClient.reply">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.reply">[docs]</a>
+</span><span data-line="87">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reply</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="88"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the reply to the pending command, dispatching events on the way.</span>
+</span><span data-line="89">
+</span><span data-line="90"><span class="sd">        The bridge acknowledges an ``abort`` sent while another command is</span>
+</span><span data-line="91"><span class="sd">        pending before it answers that command; the acknowledgement is</span>
+</span><span data-line="92"><span class="sd">        skipped here.</span>
+</span><span data-line="93">
+</span><span data-line="94"><span class="sd">        Raises:</span>
+</span><span data-line="95"><span class="sd">            BridgeError: If the reply reports ``ok: false``.</span>
+</span><span data-line="96"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="97">        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;not connected&quot;</span>
+</span><span data-line="98">        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="99">            <span class="n">obj</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="k">await</span> <span class="n">read_message</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="p">)</span>
+</span><span data-line="100">            <span class="k">if</span> <span class="s2">&quot;event&quot;</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+</span><span data-line="101">                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_on_event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="102">                    <span class="bp">self</span><span class="o">.</span><span class="n">_on_event</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+</span><span data-line="103">                <span class="k">continue</span>
+</span><span data-line="104">            <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cmd&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;abort&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending</span> <span class="o">!=</span> <span class="s2">&quot;abort&quot;</span><span class="p">:</span>
+</span><span data-line="105">                <span class="k">continue</span>
+</span><span data-line="106">            <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">):</span>
+</span><span data-line="107">                <span class="k">raise</span> <span class="n">BridgeError</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown error&quot;</span><span class="p">))</span>
+</span><span data-line="108">            <span class="k">return</span> <span class="n">obj</span></div>
+
+</span><span data-line="109">
+<div class="viewcode-block" id="BridgeClient.call">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.call">[docs]</a>
+</span><span data-line="110">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="111"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Send a command and return its reply.&quot;&quot;&quot;</span>
+</span><span data-line="112">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+</span><span data-line="113">        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">()</span></div>
+
+</span><span data-line="114">
+</span><span data-line="115">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">discover</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+</span><span data-line="116">        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;discover&quot;</span><span class="p">,</span> <span class="s2">&quot;timeout&quot;</span><span class="p">:</span> <span class="n">timeout</span><span class="p">}))[</span><span class="s2">&quot;printers&quot;</span><span class="p">]</span>
+</span><span data-line="117">
+<div class="viewcode-block" id="BridgeClient.open">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.open">[docs]</a>
+</span><span data-line="118">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="119"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Bring the printer connection up.</span>
+</span><span data-line="120">
+</span><span data-line="121"><span class="sd">        Args:</span>
+</span><span data-line="122"><span class="sd">            address: Printer to connect to; ``None`` keeps the bridge&#39;s choice</span>
+</span><span data-line="123"><span class="sd">                (configured address, the last printer, or a name scan).</span>
+</span><span data-line="124">
+</span><span data-line="125"><span class="sd">        Returns:</span>
+</span><span data-line="126"><span class="sd">            ``connected`` and, when that is false, the ``reason``.</span>
+</span><span data-line="127"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="128">        <span class="n">obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;open&quot;</span><span class="p">}</span>
+</span><span data-line="129">        <span class="k">if</span> <span class="n">address</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="130">            <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">address</span>
+</span><span data-line="131">        <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+</span><span data-line="132">        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reply</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;cmd&quot;</span><span class="p">)}</span></div>
+
+</span><span data-line="133">
+<div class="viewcode-block" id="BridgeClient.drop_link">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.drop_link">[docs]</a>
+</span><span data-line="134">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">drop_link</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="135"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Drop the printer connection now instead of after the idle timeout.&quot;&quot;&quot;</span>
+</span><span data-line="136">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;disconnect&quot;</span><span class="p">})</span></div>
+
+</span><span data-line="137">
+<div class="viewcode-block" id="BridgeClient.info">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.info">[docs]</a>
+</span><span data-line="138">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="139"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Device details and sensors of the linked printer.&quot;&quot;&quot;</span>
+</span><span data-line="140">        <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;info&quot;</span><span class="p">})</span>
+</span><span data-line="141">        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reply</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;cmd&quot;</span><span class="p">)}</span></div>
+
+</span><span data-line="142">
+<div class="viewcode-block" id="BridgeClient.auto_off">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.auto_off">[docs]</a>
+</span><span data-line="143">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">auto_off</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="144"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the linked printer&#39;s auto-off timer, setting it first if given.</span>
+</span><span data-line="145">
+</span><span data-line="146"><span class="sd">        Args:</span>
+</span><span data-line="147"><span class="sd">            minutes: New timeout, a multiple of 5; 0 = never switch off.</span>
+</span><span data-line="148">
+</span><span data-line="149"><span class="sd">        Returns:</span>
+</span><span data-line="150"><span class="sd">            The timer in minutes as the printer reports it.</span>
+</span><span data-line="151"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="152">        <span class="n">obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;auto_off&quot;</span><span class="p">}</span>
+</span><span data-line="153">        <span class="k">if</span> <span class="n">minutes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="154">            <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;minutes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">minutes</span>
+</span><span data-line="155">        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">obj</span><span class="p">))[</span><span class="s2">&quot;auto_off_minutes&quot;</span><span class="p">]</span></div>
+
+</span><span data-line="156">
+</span><span data-line="157">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="158">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;close&quot;</span><span class="p">})</span>
+</span><span data-line="159">
+<div class="viewcode-block" id="BridgeClient.status">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.status">[docs]</a>
+</span><span data-line="160">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span data-line="161"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Connection state and sensors; ``last_seen`` values without a connection.</span>
+</span><span data-line="162">
+</span><span data-line="163"><span class="sd">        Args:</span>
+</span><span data-line="164"><span class="sd">            address: Printer to report on; ``None`` means the linked or</span>
+</span><span data-line="165"><span class="sd">                last linked one.</span>
+</span><span data-line="166"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="167">        <span class="n">obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;status&quot;</span><span class="p">}</span>
+</span><span data-line="168">        <span class="k">if</span> <span class="n">address</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="169">            <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">address</span>
+</span><span data-line="170">        <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+</span><span data-line="171">        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">reply</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">,</span> <span class="s2">&quot;cmd&quot;</span><span class="p">)}</span></div>
+
+</span><span data-line="172">
+</span><span data-line="173">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settle</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="174">        <span class="n">obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;wait_ready&quot;</span><span class="p">}</span>
+</span><span data-line="175">        <span class="k">if</span> <span class="n">settle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="176">            <span class="n">obj</span><span class="p">[</span><span class="s2">&quot;settle&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">settle</span>
+</span><span data-line="177">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+</span><span data-line="178">
+</span><span data-line="179">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">page_begin</span><span class="p">(</span>
+</span><span data-line="180">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="181">        <span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="182">        <span class="n">length_rows</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="183">        <span class="n">bits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
+</span><span data-line="184">        <span class="n">tone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+</span><span data-line="185">        <span class="n">content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+</span><span data-line="186">        <span class="n">density</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span>
+</span><span data-line="187">        <span class="n">media_length_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">297.0</span><span class="p">,</span>
+</span><span data-line="188">        <span class="n">rotate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="189">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="190">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+</span><span data-line="191">            <span class="p">{</span>
+</span><span data-line="192">                <span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;page_begin&quot;</span><span class="p">,</span>
+</span><span data-line="193">                <span class="s2">&quot;width&quot;</span><span class="p">:</span> <span class="n">width</span><span class="p">,</span>
+</span><span data-line="194">                <span class="s2">&quot;length_rows&quot;</span><span class="p">:</span> <span class="n">length_rows</span><span class="p">,</span>
+</span><span data-line="195">                <span class="s2">&quot;bits&quot;</span><span class="p">:</span> <span class="n">bits</span><span class="p">,</span>
+</span><span data-line="196">                <span class="s2">&quot;tone&quot;</span><span class="p">:</span> <span class="n">tone</span><span class="p">,</span>
+</span><span data-line="197">                <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
+</span><span data-line="198">                <span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="n">density</span><span class="p">,</span>
+</span><span data-line="199">                <span class="s2">&quot;media_length_mm&quot;</span><span class="p">:</span> <span class="n">media_length_mm</span><span class="p">,</span>
+</span><span data-line="200">                <span class="s2">&quot;rotate&quot;</span><span class="p">:</span> <span class="n">rotate</span><span class="p">,</span>
+</span><span data-line="201">            <span class="p">}</span>
+</span><span data-line="202">        <span class="p">)</span>
+</span><span data-line="203">
+</span><span data-line="204">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="205">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">},</span> <span class="n">payload</span><span class="p">)</span>
+</span><span data-line="206">
+</span><span data-line="207">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">page_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="208">        <span class="k">return</span> <span class="nb">int</span><span class="p">((</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;page_end&quot;</span><span class="p">}))[</span><span class="s2">&quot;impressions&quot;</span><span class="p">])</span>
+</span><span data-line="209">
+</span><span data-line="210">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">eject</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="211">        <span class="k">return</span> <span class="nb">bool</span><span class="p">((</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;eject&quot;</span><span class="p">}))[</span><span class="s2">&quot;ejected&quot;</span><span class="p">])</span>
+</span><span data-line="212">
+<div class="viewcode-block" id="BridgeClient.identify">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.identify">[docs]</a>
+</span><span data-line="213">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">identify</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="214"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Eject a loaded sheet, then pulse the feed three times.&quot;&quot;&quot;</span>
+</span><span data-line="215">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;identify&quot;</span><span class="p">})</span></div>
+
+</span><span data-line="216">
+<div class="viewcode-block" id="BridgeClient.test_page">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.test_page">[docs]</a>
+</span><span data-line="217">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">test_page</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">versions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+</span><span data-line="218"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Render the test page and return the PNG&#39;s path.</span>
+</span><span data-line="219">
+</span><span data-line="220"><span class="sd">        Args:</span>
+</span><span data-line="221"><span class="sd">            versions: Component versions to print, by name.</span>
+</span><span data-line="222"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="223">        <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">(</span>
+</span><span data-line="224">            <span class="p">{</span>
+</span><span data-line="225">                <span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;test_page&quot;</span><span class="p">,</span>
+</span><span data-line="226">                <span class="s2">&quot;printer_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Phomemo M08F&quot;</span><span class="p">,</span>
+</span><span data-line="227">                <span class="s2">&quot;versions&quot;</span><span class="p">:</span> <span class="n">versions</span> <span class="ow">or</span> <span class="p">{},</span>
+</span><span data-line="228">            <span class="p">}</span>
+</span><span data-line="229">        <span class="p">)</span>
+</span><span data-line="230">        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">reply</span><span class="p">[</span><span class="s2">&quot;path&quot;</span><span class="p">])</span></div>
+
+</span><span data-line="231">
+<div class="viewcode-block" id="BridgeClient.print_test_page">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.print_test_page">[docs]</a>
+</span><span data-line="232">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">print_test_page</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="233"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Render the test page and print it through the bridge.</span>
+</span><span data-line="234">
+</span><span data-line="235"><span class="sd">        The page covers the area below the sheet&#39;s unprintable lead, so it</span>
+</span><span data-line="236"><span class="sd">        gets that lead as white rows on top before the normal page</span>
+</span><span data-line="237"><span class="sd">        preparation drops them again.</span>
+</span><span data-line="238">
+</span><span data-line="239"><span class="sd">        Args:</span>
+</span><span data-line="240"><span class="sd">            quality: ``draft``, ``normal`` or ``high``.</span>
+</span><span data-line="241">
+</span><span data-line="242"><span class="sd">        Returns:</span>
+</span><span data-line="243"><span class="sd">            Impressions printed (1).</span>
+</span><span data-line="244"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="245">        <span class="n">path</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_page</span><span class="p">()</span>
+</span><span data-line="246">        <span class="n">page</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">)</span>
+</span><span data-line="247">        <span class="n">lead</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mi">10</span> <span class="o">/</span> <span class="mf">25.4</span> <span class="o">*</span> <span class="mi">203</span><span class="p">)</span>
+</span><span data-line="248">        <span class="n">canvas</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">page</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">page</span><span class="o">.</span><span class="n">height</span> <span class="o">+</span> <span class="n">lead</span><span class="p">),</span> <span class="mi">255</span><span class="p">)</span>
+</span><span data-line="249">        <span class="n">canvas</span><span class="o">.</span><span class="n">paste</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">lead</span><span class="p">))</span>
+</span><span data-line="250">        <span class="n">padded</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="s2">&quot;phomemo-testpage-sheet.png&quot;</span><span class="p">)</span>
+</span><span data-line="251">        <span class="n">canvas</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">padded</span><span class="p">)</span>
+</span><span data-line="252">        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">print_image</span><span class="p">(</span><span class="n">padded</span><span class="p">,</span> <span class="n">media</span><span class="o">=</span><span class="s2">&quot;a4&quot;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="n">quality</span><span class="p">)</span></div>
+
+</span><span data-line="253">
+</span><span data-line="254">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">abort</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="255">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">call</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;abort&quot;</span><span class="p">})</span>
+</span><span data-line="256">
+<div class="viewcode-block" id="BridgeClient.print_image">
+<a class="viewcode-back" href="../../../api.html#phomemo.bridge.client.BridgeClient.print_image">[docs]</a>
+</span><span data-line="257">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">print_image</span><span class="p">(</span>
+</span><span data-line="258">        <span class="bp">self</span><span class="p">,</span>
+</span><span data-line="259">        <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+</span><span data-line="260">        <span class="n">media</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;a4&quot;</span><span class="p">,</span>
+</span><span data-line="261">        <span class="n">tone</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+</span><span data-line="262">        <span class="n">quality</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span><span class="p">,</span>
+</span><span data-line="263">        <span class="n">content</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+</span><span data-line="264">        <span class="n">abort_after</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="265">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="266"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Print an image file as one page: open, wait for a sheet, stream, end.</span>
+</span><span data-line="267">
+</span><span data-line="268"><span class="sd">        Args:</span>
+</span><span data-line="269"><span class="sd">            path: Image file readable by Pillow.</span>
+</span><span data-line="270"><span class="sd">            media: ``a4``, ``a5`` (fed long edge first, page rotated) or ``roll``.</span>
+</span><span data-line="271"><span class="sd">            tone: ``auto`` or a ``ToneMode`` value.</span>
+</span><span data-line="272"><span class="sd">            quality: ``draft``, ``normal`` or ``high`` (maps to density).</span>
+</span><span data-line="273"><span class="sd">            content: ``auto``, ``text``, ``graphic`` or ``photo``.</span>
+</span><span data-line="274"><span class="sd">            abort_after: Seconds after ``page_end`` to send ``abort``; for testing.</span>
+</span><span data-line="275">
+</span><span data-line="276"><span class="sd">        Returns:</span>
+</span><span data-line="277"><span class="sd">            Impressions printed (1).</span>
+</span><span data-line="278">
+</span><span data-line="279"><span class="sd">        Raises:</span>
+</span><span data-line="280"><span class="sd">            BridgeError: If any step fails.</span>
+</span><span data-line="281"><span class="sd">            KeyError: If ``media`` or ``quality`` is not known.</span>
+</span><span data-line="282"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="283">        <span class="n">length_mm</span><span class="p">,</span> <span class="n">rotate</span> <span class="o">=</span> <span class="n">MEDIA</span><span class="p">[</span><span class="n">media</span><span class="p">]</span>
+</span><span data-line="284">        <span class="n">density</span> <span class="o">=</span> <span class="n">QUALITY</span><span class="p">[</span><span class="n">quality</span><span class="p">]</span>
+</span><span data-line="285">        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;L&quot;</span><span class="p">)</span>
+</span><span data-line="286">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+</span><span data-line="287">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait_ready</span><span class="p">()</span>
+</span><span data-line="288">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">page_begin</span><span class="p">(</span>
+</span><span data-line="289">            <span class="n">img</span><span class="o">.</span><span class="n">width</span><span class="p">,</span>
+</span><span data-line="290">            <span class="n">img</span><span class="o">.</span><span class="n">height</span><span class="p">,</span>
+</span><span data-line="291">            <span class="n">bits</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+</span><span data-line="292">            <span class="n">tone</span><span class="o">=</span><span class="n">tone</span><span class="p">,</span>
+</span><span data-line="293">            <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span>
+</span><span data-line="294">            <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span>
+</span><span data-line="295">            <span class="n">media_length_mm</span><span class="o">=</span><span class="n">length_mm</span><span class="p">,</span>
+</span><span data-line="296">            <span class="n">rotate</span><span class="o">=</span><span class="n">rotate</span><span class="p">,</span>
+</span><span data-line="297">        <span class="p">)</span>
+</span><span data-line="298">        <span class="n">raw</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
+</span><span data-line="299">        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> <span class="n">_ROWS_PER_MESSAGE</span><span class="p">):</span>
+</span><span data-line="300">            <span class="n">count</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">_ROWS_PER_MESSAGE</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+</span><span data-line="301">            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">(</span>
+</span><span data-line="302">                <span class="n">count</span><span class="p">,</span> <span class="n">raw</span><span class="p">[</span><span class="n">start</span> <span class="o">*</span> <span class="n">img</span><span class="o">.</span><span class="n">width</span> <span class="p">:</span> <span class="p">(</span><span class="n">start</span> <span class="o">+</span> <span class="n">count</span><span class="p">)</span> <span class="o">*</span> <span class="n">img</span><span class="o">.</span><span class="n">width</span><span class="p">]</span>
+</span><span data-line="303">            <span class="p">)</span>
+</span><span data-line="304">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;page_end&quot;</span><span class="p">})</span>
+</span><span data-line="305">        <span class="k">if</span> <span class="n">abort_after</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="306">            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">abort_after</span><span class="p">)</span>
+</span><span data-line="307">            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">({</span><span class="s2">&quot;cmd&quot;</span><span class="p">:</span> <span class="s2">&quot;abort&quot;</span><span class="p">})</span>
+</span><span data-line="308">        <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">reply</span><span class="p">()</span>
+</span><span data-line="309">        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span data-line="310">        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">reply</span><span class="p">[</span><span class="s2">&quot;impressions&quot;</span><span class="p">])</span></div>
+</div>
+
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../_static/versions.js?v=96ae6708"></script></body>
+</html>

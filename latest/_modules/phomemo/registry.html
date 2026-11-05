@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>phomemo.registry - phomemo-driver</title><link rel="shortcut icon" href="../../_static/m08f.png"/><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="phomemo.registry"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../index.html">
+      <img class="light-logo" src="../../_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../installation.html">Install</a></li><li class="link"><a href="../../first-steps.html">First steps</a></li><li class="link"><a href="../../library.html">Library</a></li><li class="link"><a href="../../contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="latest">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">latest</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../command-line.html">Command line</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../troubleshooting.html">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">phomemo.registry</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <h1>Source code for phomemo.registry</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="c1"># This file is part of phomemo.</span>
+</span><span data-line="2"><span class="c1"># Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions</span>
+</span><span data-line="3"><span class="c1">#</span>
+</span><span data-line="4"><span class="c1"># phomemo is free software: you can redistribute it and/or modify</span>
+</span><span data-line="5"><span class="c1"># it under the terms of the GNU Lesser General Public License as published by</span>
+</span><span data-line="6"><span class="c1"># the Free Software Foundation, either version 3 of the License, or</span>
+</span><span data-line="7"><span class="c1"># (at your option) any later version.</span>
+</span><span data-line="8"><span class="c1">#</span>
+</span><span data-line="9"><span class="c1"># phomemo is distributed in the hope that it will be useful,</span>
+</span><span data-line="10"><span class="c1"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+</span><span data-line="11"><span class="c1"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+</span><span data-line="12"><span class="c1"># GNU Lesser General Public License for more details.</span>
+</span><span data-line="13"><span class="c1">#</span>
+</span><span data-line="14"><span class="c1"># You should have received a copy of the GNU Lesser General Public License</span>
+</span><span data-line="15"><span class="c1"># along with phomemo.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="sd">&quot;&quot;&quot;Printer profile registry.</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="sd">Each profile captures the physical and protocol characteristics of a</span>
+</span><span data-line="20"><span class="sd">specific Phomemo printer model: print width, BLE UUIDs, timing</span>
+</span><span data-line="21"><span class="sd">constraints, and supported features. The profile system is extensible —</span>
+</span><span data-line="22"><span class="sd">add new models by registering a ``PrinterProfile`` instance via</span>
+</span><span data-line="23"><span class="sd">``register_profile``.</span>
+</span><span data-line="24"><span class="sd">&quot;&quot;&quot;</span>
+</span><span data-line="25">
+</span><span data-line="26"><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</span><span data-line="27"><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+</span><span data-line="28"><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+</span><span data-line="29"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span data-line="30"><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+</span><span data-line="31">
+</span><span data-line="32"><span class="kn">from</span><span class="w"> </span><span class="nn">phomemo.protocol</span><span class="w"> </span><span class="kn">import</span> <span class="n">Density</span>
+</span><span data-line="33">
+</span><span data-line="34"><span class="n">_UUID_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+</span><span data-line="35">    <span class="sa">r</span><span class="s2">&quot;^[0-9a-f]</span><span class="si">{8}</span><span class="s2">-[0-9a-f]</span><span class="si">{4}</span><span class="s2">-[0-9a-f]</span><span class="si">{4}</span><span class="s2">-[0-9a-f]</span><span class="si">{4}</span><span class="s2">-[0-9a-f]</span><span class="si">{12}</span><span class="s2">$&quot;</span><span class="p">,</span>
+</span><span data-line="36">    <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">,</span>
+</span><span data-line="37"><span class="p">)</span>
+</span><span data-line="38">
+</span><span data-line="39">
+<div class="viewcode-block" id="PrinterProfile">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.PrinterProfile">[docs]</a>
+</span><span data-line="40"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="41"><span class="k">class</span><span class="w"> </span><span class="nc">PrinterProfile</span><span class="p">:</span>
+</span><span data-line="42"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Hardware and protocol parameters for a Phomemo printer model.</span>
+</span><span data-line="43">
+</span><span data-line="44"><span class="sd">    Attributes:</span>
+</span><span data-line="45"><span class="sd">        name: Lower-case model identifier (e.g. ``&quot;m08f&quot;``), also the name of</span>
+</span><span data-line="46"><span class="sd">            the model&#39;s manifest directory.</span>
+</span><span data-line="47"><span class="sd">        ble_name_pattern: Regex pattern matched against BLE advertisement</span>
+</span><span data-line="48"><span class="sd">            names during device discovery.</span>
+</span><span data-line="49"><span class="sd">        print_width_px: Print head width in dots/pixels.</span>
+</span><span data-line="50"><span class="sd">        dpi: Print resolution in dots per inch.</span>
+</span><span data-line="51"><span class="sd">        max_chunk_bytes: Maximum BLE write payload in bytes. Determined by</span>
+</span><span data-line="52"><span class="sd">            the negotiated ATT MTU minus 3 bytes of ATT overhead.</span>
+</span><span data-line="53"><span class="sd">        negotiate_mtu: If ``True`` (default), the transport will attempt to read the</span>
+</span><span data-line="54"><span class="sd">            negotiated BLE MTU at connect time and derive the effective chunk</span>
+</span><span data-line="55"><span class="sd">            size from it (MTU minus 3 bytes ATT overhead). Falls back to</span>
+</span><span data-line="56"><span class="sd">            ``max_chunk_bytes`` if the MTU cannot be determined.</span>
+</span><span data-line="57"><span class="sd">        write_with_response: Use ATT Write Request (``True``, default) rather</span>
+</span><span data-line="58"><span class="sd">            than Write Command for every write. The printer delays its</span>
+</span><span data-line="59"><span class="sd">            response while its receive buffer is full, so the stream is paced</span>
+</span><span data-line="60"><span class="sd">            by the print head and never overflows. Unacknowledged writes need</span>
+</span><span data-line="61"><span class="sd">            ``chunk_delay_s`` and still overflow on long jobs.</span>
+</span><span data-line="62"><span class="sd">        chunk_delay_s: Minimum delay between BLE writes in seconds. ``0.0``</span>
+</span><span data-line="63"><span class="sd">            (default) with ``write_with_response``; only unacknowledged</span>
+</span><span data-line="64"><span class="sd">            writes need a delay.</span>
+</span><span data-line="65"><span class="sd">        band_height: Maximum rows per GS v 0 raster command.</span>
+</span><span data-line="66"><span class="sd">        sheet_length_mm: Length of one sheet in the feed direction, or</span>
+</span><span data-line="67"><span class="sd">            ``None`` for continuous roll media.</span>
+</span><span data-line="68"><span class="sd">        top_margin_mm: Unprintable lead from the paper edge to the first</span>
+</span><span data-line="69"><span class="sd">            printed row, set by the distance between the paper sensor and</span>
+</span><span data-line="70"><span class="sd">            the print head.</span>
+</span><span data-line="71"><span class="sd">        bottom_margin_mm: Rows kept free at the sheet end so the raster plus</span>
+</span><span data-line="72"><span class="sd">            trailing feed never runs the sheet out of the sensor mid-job; an</span>
+</span><span data-line="73"><span class="sd">            overrun leaves the printer in an error state.</span>
+</span><span data-line="74"><span class="sd">        service_uuid: BLE GATT service UUID for the print data service.</span>
+</span><span data-line="75"><span class="sd">        write_uuid: BLE characteristic UUID for writing commands/data.</span>
+</span><span data-line="76"><span class="sd">        notify_uuid: BLE characteristic UUID for device events (``ff01``).</span>
+</span><span data-line="77"><span class="sd">            All meaningful notifications arrive here: sensor state changes,</span>
+</span><span data-line="78"><span class="sd">            query responses, and print completion signals.</span>
+</span><span data-line="79"><span class="sd">        status_uuid: BLE characteristic UUID for the status echo channel</span>
+</span><span data-line="80"><span class="sd">            (``ff03``). Echoes ``01 01`` for most writes and sends a fixed</span>
+</span><span data-line="81"><span class="sd">            connect greeting on startup. Does not carry query responses or</span>
+</span><span data-line="82"><span class="sd">            actionable device state; useful only for low-level debugging.</span>
+</span><span data-line="83"><span class="sd">        density_levels: ``ESC N 04`` concentration values for the low,</span>
+</span><span data-line="84"><span class="sd">            medium and high ``Density`` levels, or ``None`` when the model</span>
+</span><span data-line="85"><span class="sd">            has no density control.</span>
+</span><span data-line="86"><span class="sd">        supports_escpos_queries: Whether standard ESC/POS queries return</span>
+</span><span data-line="87"><span class="sd">            meaningful data (False for M08F — use Phomemo queries instead).</span>
+</span><span data-line="88"><span class="sd">        make: Manufacturer as shown to users.</span>
+</span><span data-line="89"><span class="sd">        model_name: Model as the vendor writes it (``&quot;M08F&quot;``); ``name`` is</span>
+</span><span data-line="90"><span class="sd">            the lower-case identifier.</span>
+</span><span data-line="91"><span class="sd">        media: PWG names of the sheet sizes the model takes.</span>
+</span><span data-line="92"><span class="sd">        default_media: The medium jobs get when they name none.</span>
+</span><span data-line="93"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="94">
+</span><span data-line="95">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="96">    <span class="n">ble_name_pattern</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="97">    <span class="n">print_width_px</span><span class="p">:</span> <span class="nb">int</span>
+</span><span data-line="98">    <span class="n">dpi</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">203</span>
+</span><span data-line="99">    <span class="n">max_chunk_bytes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">244</span>
+</span><span data-line="100">    <span class="n">negotiate_mtu</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="101">    <span class="n">write_with_response</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="102">    <span class="n">chunk_delay_s</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span data-line="103">    <span class="n">band_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
+</span><span data-line="104">    <span class="n">sheet_length_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="105">    <span class="n">top_margin_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span data-line="106">    <span class="n">bottom_margin_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+</span><span data-line="107">    <span class="n">service_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;0000ff00-0000-1000-8000-00805f9b34fb&quot;</span>
+</span><span data-line="108">    <span class="n">write_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;0000ff02-0000-1000-8000-00805f9b34fb&quot;</span>
+</span><span data-line="109">    <span class="n">notify_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;0000ff01-0000-1000-8000-00805f9b34fb&quot;</span>
+</span><span data-line="110">    <span class="n">status_uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;0000ff03-0000-1000-8000-00805f9b34fb&quot;</span>
+</span><span data-line="111">    <span class="n">density_levels</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="112">    <span class="n">supports_escpos_queries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="113">    <span class="n">make</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Phomemo&quot;</span>
+</span><span data-line="114">    <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+</span><span data-line="115">    <span class="n">media</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+</span><span data-line="116">    <span class="n">default_media</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="117">
+</span><span data-line="118">    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="119"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate profile fields on construction.</span>
+</span><span data-line="120">
+</span><span data-line="121"><span class="sd">        Raises:</span>
+</span><span data-line="122"><span class="sd">            ValueError: If ``print_width_px`` is not a multiple of 8, if</span>
+</span><span data-line="123"><span class="sd">                ``sheet_length_mm`` is not positive, if the margins leave no</span>
+</span><span data-line="124"><span class="sd">                printable length, or if any UUID field does not match the</span>
+</span><span data-line="125"><span class="sd">                standard UUID format.</span>
+</span><span data-line="126"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="127">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">print_width_px</span> <span class="o">%</span> <span class="mi">8</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="128">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="129">                <span class="sa">f</span><span class="s2">&quot;print_width_px must be a multiple of 8, got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">print_width_px</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="130">            <span class="p">)</span>
+</span><span data-line="131">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sheet_length_mm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="132">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sheet_length_mm</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="133">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="134">                    <span class="s2">&quot;sheet_length_mm must be positive or None, &quot;</span>
+</span><span data-line="135">                    <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sheet_length_mm</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span data-line="136">                <span class="p">)</span>
+</span><span data-line="137">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_margin_mm</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottom_margin_mm</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sheet_length_mm</span><span class="p">:</span>
+</span><span data-line="138">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;top and bottom margin leave no printable length&quot;</span><span class="p">)</span>
+</span><span data-line="139">        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;service_uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;write_uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;notify_uuid&quot;</span><span class="p">,</span> <span class="s2">&quot;status_uuid&quot;</span><span class="p">):</span>
+</span><span data-line="140">            <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+</span><span data-line="141">            <span class="k">if</span> <span class="ow">not</span> <span class="n">_UUID_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+</span><span data-line="142">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2"> is not a valid UUID: </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="143">
+<div class="viewcode-block" id="PrinterProfile.rows_for">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.PrinterProfile.rows_for">[docs]</a>
+</span><span data-line="144">    <span class="k">def</span><span class="w"> </span><span class="nf">rows_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length_mm</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="145"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Dot rows that fit between the margins of a sheet of the given length.</span>
+</span><span data-line="146">
+</span><span data-line="147"><span class="sd">        Args:</span>
+</span><span data-line="148"><span class="sd">            length_mm: Sheet length in the feed direction, or ``None`` for</span>
+</span><span data-line="149"><span class="sd">                roll media.</span>
+</span><span data-line="150">
+</span><span data-line="151"><span class="sd">        Returns:</span>
+</span><span data-line="152"><span class="sd">            Printable rows, or ``None`` for roll media.</span>
+</span><span data-line="153">
+</span><span data-line="154"><span class="sd">        Raises:</span>
+</span><span data-line="155"><span class="sd">            ValueError: If the margins leave no printable length.</span>
+</span><span data-line="156"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="157">        <span class="k">if</span> <span class="n">length_mm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="158">            <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="159">        <span class="n">printable_mm</span> <span class="o">=</span> <span class="n">length_mm</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">top_margin_mm</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottom_margin_mm</span>
+</span><span data-line="160">        <span class="k">if</span> <span class="n">printable_mm</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="161">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="162">                <span class="sa">f</span><span class="s2">&quot;sheet of </span><span class="si">{</span><span class="n">length_mm</span><span class="si">}</span><span class="s2">mm leaves nothing printable after the margins&quot;</span>
+</span><span data-line="163">            <span class="p">)</span>
+</span><span data-line="164">        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">printable_mm</span> <span class="o">/</span> <span class="mf">25.4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dpi</span><span class="p">)</span></div>
+
+</span><span data-line="165">
+</span><span data-line="166">    <span class="nd">@property</span>
+</span><span data-line="167">    <span class="k">def</span><span class="w"> </span><span class="nf">max_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="168"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Printable rows of the default sheet, ``None`` for roll media.&quot;&quot;&quot;</span>
+</span><span data-line="169">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows_for</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sheet_length_mm</span><span class="p">)</span>
+</span><span data-line="170">
+</span><span data-line="171">    <span class="nd">@property</span>
+</span><span data-line="172">    <span class="k">def</span><span class="w"> </span><span class="nf">lead_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="173"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Rows covered by the top margin: the sheet lead the head cannot reach.&quot;&quot;&quot;</span>
+</span><span data-line="174">        <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">top_margin_mm</span> <span class="o">/</span> <span class="mf">25.4</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dpi</span><span class="p">)</span>
+</span><span data-line="175">
+</span><span data-line="176">    <span class="nd">@property</span>
+</span><span data-line="177">    <span class="k">def</span><span class="w"> </span><span class="nf">width_bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="178"><span class="w">        </span><span class="sd">&quot;&quot;&quot;Print width in bytes (8 pixels per byte, MSB-first).&quot;&quot;&quot;</span>
+</span><span data-line="179">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">print_width_px</span> <span class="o">//</span> <span class="mi">8</span>
+</span><span data-line="180">
+<div class="viewcode-block" id="PrinterProfile.density_value">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.PrinterProfile.density_value">[docs]</a>
+</span><span data-line="181">    <span class="k">def</span><span class="w"> </span><span class="nf">density_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="n">Density</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="182"><span class="w">        </span><span class="sd">&quot;&quot;&quot;The model&#39;s concentration value for a density level.</span>
+</span><span data-line="183">
+</span><span data-line="184"><span class="sd">        Args:</span>
+</span><span data-line="185"><span class="sd">            level: The requested density.</span>
+</span><span data-line="186">
+</span><span data-line="187"><span class="sd">        Returns:</span>
+</span><span data-line="188"><span class="sd">            The ``ESC N 04`` value, or ``None`` without density control.</span>
+</span><span data-line="189"><span class="sd">        &quot;&quot;&quot;</span>
+</span><span data-line="190">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_levels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="191">            <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="192">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_levels</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">Density</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">level</span><span class="p">)]</span></div>
+</div>
+
+</span><span data-line="193">
+</span><span data-line="194">
+</span><span data-line="195"><span class="n">_REGISTRY</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PrinterProfile</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="196">
+</span><span data-line="197">
+<div class="viewcode-block" id="get_profile">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.get_profile">[docs]</a>
+</span><span data-line="198"><span class="k">def</span><span class="w"> </span><span class="nf">get_profile</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrinterProfile</span><span class="p">:</span>
+</span><span data-line="199"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Look up a registered printer profile by name.</span>
+</span><span data-line="200">
+</span><span data-line="201"><span class="sd">    Args:</span>
+</span><span data-line="202"><span class="sd">        name: Profile key (e.g. ``&quot;m08f&quot;``).</span>
+</span><span data-line="203">
+</span><span data-line="204"><span class="sd">    Returns:</span>
+</span><span data-line="205"><span class="sd">        The matching ``PrinterProfile``.</span>
+</span><span data-line="206">
+</span><span data-line="207"><span class="sd">    Raises:</span>
+</span><span data-line="208"><span class="sd">        KeyError: If no profile is registered under that name.</span>
+</span><span data-line="209"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="210">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="211">        <span class="k">return</span> <span class="n">_REGISTRY</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</span><span data-line="212">    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+</span><span data-line="213">        <span class="n">available</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_REGISTRY</span><span class="p">))</span>
+</span><span data-line="214">        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown profile </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Available: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span></div>
+
+</span><span data-line="215">
+</span><span data-line="216">
+<div class="viewcode-block" id="list_profiles">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.list_profiles">[docs]</a>
+</span><span data-line="217"><span class="k">def</span><span class="w"> </span><span class="nf">list_profiles</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="218"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the names of all registered printer profiles.</span>
+</span><span data-line="219">
+</span><span data-line="220"><span class="sd">    Returns:</span>
+</span><span data-line="221"><span class="sd">        Sorted list of profile name strings.</span>
+</span><span data-line="222"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="223">    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_REGISTRY</span><span class="p">)</span></div>
+
+</span><span data-line="224">
+</span><span data-line="225">
+<div class="viewcode-block" id="register_profile">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.register_profile">[docs]</a>
+</span><span data-line="226"><span class="k">def</span><span class="w"> </span><span class="nf">register_profile</span><span class="p">(</span><span class="n">profile</span><span class="p">:</span> <span class="n">PrinterProfile</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="227"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register a custom printer profile.</span>
+</span><span data-line="228">
+</span><span data-line="229"><span class="sd">    Allows third-party code to add profiles for printer models not</span>
+</span><span data-line="230"><span class="sd">    shipped with this library.</span>
+</span><span data-line="231">
+</span><span data-line="232"><span class="sd">    Args:</span>
+</span><span data-line="233"><span class="sd">        profile: The profile to register. Overwrites any existing</span>
+</span><span data-line="234"><span class="sd">            profile with the same name.</span>
+</span><span data-line="235"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="236">    <span class="n">_REGISTRY</span><span class="p">[</span><span class="n">profile</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">profile</span></div>
+
+</span><span data-line="237">
+</span><span data-line="238">
+<div class="viewcode-block" id="profile_for_name">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.profile_for_name">[docs]</a>
+</span><span data-line="239"><span class="k">def</span><span class="w"> </span><span class="nf">profile_for_name</span><span class="p">(</span><span class="n">ble_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrinterProfile</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="240"><span class="w">    </span><span class="sd">&quot;&quot;&quot;The registered profile whose name pattern matches an advertised name.</span>
+</span><span data-line="241">
+</span><span data-line="242"><span class="sd">    Args:</span>
+</span><span data-line="243"><span class="sd">        ble_name: Name the printer advertises over Bluetooth.</span>
+</span><span data-line="244">
+</span><span data-line="245"><span class="sd">    Returns:</span>
+</span><span data-line="246"><span class="sd">        The first matching profile in identifier order, or ``None``.</span>
+</span><span data-line="247"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="248">    <span class="k">if</span> <span class="ow">not</span> <span class="n">ble_name</span><span class="p">:</span>
+</span><span data-line="249">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="250">    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">_REGISTRY</span><span class="p">):</span>
+</span><span data-line="251">        <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">_REGISTRY</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">ble_name_pattern</span><span class="p">,</span> <span class="n">ble_name</span><span class="p">):</span>
+</span><span data-line="252">            <span class="k">return</span> <span class="n">_REGISTRY</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+</span><span data-line="253">    <span class="k">return</span> <span class="kc">None</span></div>
+
+</span><span data-line="254">
+</span><span data-line="255">
+</span><span data-line="256"><span class="n">Kind</span> <span class="o">=</span> <span class="nb">type</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</span><span data-line="257">
+</span><span data-line="258"><span class="n">_FIELDS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="259">    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="260">    <span class="s2">&quot;make&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="261">    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="262">    <span class="s2">&quot;ble_name_pattern&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="263">    <span class="s2">&quot;print_width_px&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="264">    <span class="s2">&quot;dpi&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="265">    <span class="s2">&quot;band_height&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="266">    <span class="s2">&quot;sheet_length_mm&quot;</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+</span><span data-line="267">    <span class="s2">&quot;top_margin_mm&quot;</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+</span><span data-line="268">    <span class="s2">&quot;bottom_margin_mm&quot;</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+</span><span data-line="269">    <span class="s2">&quot;media&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span>
+</span><span data-line="270">    <span class="s2">&quot;ble&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+</span><span data-line="271"><span class="p">}</span>
+</span><span data-line="272"><span class="n">_BLE_FIELDS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Kind</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="273">    <span class="s2">&quot;max_chunk_bytes&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="274">    <span class="s2">&quot;negotiate_mtu&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+</span><span data-line="275">    <span class="s2">&quot;write_with_response&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+</span><span data-line="276">    <span class="s2">&quot;chunk_delay_s&quot;</span><span class="p">:</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+</span><span data-line="277">    <span class="s2">&quot;service_uuid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="278">    <span class="s2">&quot;write_uuid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="279">    <span class="s2">&quot;notify_uuid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="280">    <span class="s2">&quot;status_uuid&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="281"><span class="p">}</span>
+</span><span data-line="282">
+</span><span data-line="283">
+</span><span data-line="284"><span class="k">def</span><span class="w"> </span><span class="nf">_field</span><span class="p">(</span><span class="n">where</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">Kind</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+</span><span data-line="285">    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="286">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: missing&quot;</span><span class="p">)</span>
+</span><span data-line="287">    <span class="n">value</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+</span><span data-line="288">    <span class="n">kinds</span> <span class="o">=</span> <span class="n">kind</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="n">kind</span><span class="p">,)</span>
+</span><span data-line="289">    <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">bool</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">kinds</span><span class="p">):</span>
+</span><span data-line="290">        <span class="n">expected</span> <span class="o">=</span> <span class="s2">&quot; or &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">)</span>
+</span><span data-line="291">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: expected </span><span class="si">{</span><span class="n">expected</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="292">    <span class="k">return</span> <span class="n">value</span>
+</span><span data-line="293">
+</span><span data-line="294">
+</span><span data-line="295"><span class="k">def</span><span class="w"> </span><span class="nf">_media</span><span class="p">(</span><span class="n">where</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">entries</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="296">    <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="297">    <span class="n">defaults</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="298">    <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+</span><span data-line="299">        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pwg&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+</span><span data-line="300">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: media: expected objects with a pwg name&quot;</span><span class="p">)</span>
+</span><span data-line="301">        <span class="n">names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;pwg&quot;</span><span class="p">])</span>
+</span><span data-line="302">        <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="303">            <span class="n">defaults</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">&quot;pwg&quot;</span><span class="p">])</span>
+</span><span data-line="304">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">defaults</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="305">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: media: exactly one default medium needed&quot;</span><span class="p">)</span>
+</span><span data-line="306">    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">names</span><span class="p">),</span> <span class="n">defaults</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="307">
+</span><span data-line="308">
+<div class="viewcode-block" id="load_manifest">
+<a class="viewcode-back" href="../../api.html#phomemo.registry.load_manifest">[docs]</a>
+</span><span data-line="309"><span class="k">def</span><span class="w"> </span><span class="nf">load_manifest</span><span class="p">(</span><span class="n">model_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PrinterProfile</span><span class="p">:</span>
+</span><span data-line="310"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a profile from a model manifest directory.</span>
+</span><span data-line="311">
+</span><span data-line="312"><span class="sd">    The directory holds ``model.json`` and the model&#39;s icons; its name is the</span>
+</span><span data-line="313"><span class="sd">    model identifier.</span>
+</span><span data-line="314">
+</span><span data-line="315"><span class="sd">    Args:</span>
+</span><span data-line="316"><span class="sd">        model_dir: The model&#39;s manifest directory.</span>
+</span><span data-line="317">
+</span><span data-line="318"><span class="sd">    Returns:</span>
+</span><span data-line="319"><span class="sd">        The profile the manifest defines.</span>
+</span><span data-line="320">
+</span><span data-line="321"><span class="sd">    Raises:</span>
+</span><span data-line="322"><span class="sd">        ValueError: If ``model.json`` does not parse, or a field is missing,</span>
+</span><span data-line="323"><span class="sd">            of the wrong type or inconsistent; the message names file and</span>
+</span><span data-line="324"><span class="sd">            field.</span>
+</span><span data-line="325"><span class="sd">        OSError: If ``model.json`` cannot be read.</span>
+</span><span data-line="326"><span class="sd">    &quot;&quot;&quot;</span>
+</span><span data-line="327">    <span class="n">path</span> <span class="o">=</span> <span class="n">model_dir</span> <span class="o">/</span> <span class="s2">&quot;model.json&quot;</span>
+</span><span data-line="328">    <span class="n">where</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span data-line="329">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="330">        <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+</span><span data-line="331">    <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+</span><span data-line="332">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+</span><span data-line="333">    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span data-line="334">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: expected an object&quot;</span><span class="p">)</span>
+</span><span data-line="335">    <span class="n">values</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">_field</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">_FIELDS</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</span><span data-line="336">    <span class="k">if</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">model_dir</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+</span><span data-line="337">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="338">            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: id: </span><span class="si">{</span><span class="n">values</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> differs from the directory &quot;</span>
+</span><span data-line="339">            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_dir</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span>
+</span><span data-line="340">        <span class="p">)</span>
+</span><span data-line="341">    <span class="n">ble</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="342">        <span class="n">key</span><span class="p">:</span> <span class="n">_field</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: ble&quot;</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;ble&quot;</span><span class="p">],</span> <span class="n">key</span><span class="p">,</span> <span class="n">kind</span><span class="p">)</span>
+</span><span data-line="343">        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">_BLE_FIELDS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span data-line="344">    <span class="p">}</span>
+</span><span data-line="345">    <span class="n">features</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;features&quot;</span><span class="p">,</span> <span class="p">{})</span>
+</span><span data-line="346">    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span data-line="347">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: features: expected an object&quot;</span><span class="p">)</span>
+</span><span data-line="348">    <span class="n">media</span><span class="p">,</span> <span class="n">default_media</span> <span class="o">=</span> <span class="n">_media</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="s2">&quot;media&quot;</span><span class="p">])</span>
+</span><span data-line="349">    <span class="n">density_levels</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="350">    <span class="k">if</span> <span class="s2">&quot;density&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="351">        <span class="n">density</span> <span class="o">=</span> <span class="n">_field</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;density&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+</span><span data-line="352">        <span class="n">density_levels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+</span><span data-line="353">            <span class="n">_field</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: density&quot;</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">level</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">Density</span>
+</span><span data-line="354">        <span class="p">)</span>
+</span><span data-line="355">    <span class="k">return</span> <span class="n">PrinterProfile</span><span class="p">(</span>
+</span><span data-line="356">        <span class="n">name</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span>
+</span><span data-line="357">        <span class="n">ble_name_pattern</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;ble_name_pattern&quot;</span><span class="p">],</span>
+</span><span data-line="358">        <span class="n">print_width_px</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;print_width_px&quot;</span><span class="p">],</span>
+</span><span data-line="359">        <span class="n">dpi</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;dpi&quot;</span><span class="p">],</span>
+</span><span data-line="360">        <span class="n">band_height</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;band_height&quot;</span><span class="p">],</span>
+</span><span data-line="361">        <span class="n">sheet_length_mm</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;sheet_length_mm&quot;</span><span class="p">]),</span>
+</span><span data-line="362">        <span class="n">top_margin_mm</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;top_margin_mm&quot;</span><span class="p">]),</span>
+</span><span data-line="363">        <span class="n">bottom_margin_mm</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;bottom_margin_mm&quot;</span><span class="p">]),</span>
+</span><span data-line="364">        <span class="n">max_chunk_bytes</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;max_chunk_bytes&quot;</span><span class="p">],</span>
+</span><span data-line="365">        <span class="n">negotiate_mtu</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;negotiate_mtu&quot;</span><span class="p">],</span>
+</span><span data-line="366">        <span class="n">write_with_response</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;write_with_response&quot;</span><span class="p">],</span>
+</span><span data-line="367">        <span class="n">chunk_delay_s</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;chunk_delay_s&quot;</span><span class="p">]),</span>
+</span><span data-line="368">        <span class="n">service_uuid</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;service_uuid&quot;</span><span class="p">],</span>
+</span><span data-line="369">        <span class="n">write_uuid</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;write_uuid&quot;</span><span class="p">],</span>
+</span><span data-line="370">        <span class="n">notify_uuid</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;notify_uuid&quot;</span><span class="p">],</span>
+</span><span data-line="371">        <span class="n">status_uuid</span><span class="o">=</span><span class="n">ble</span><span class="p">[</span><span class="s2">&quot;status_uuid&quot;</span><span class="p">],</span>
+</span><span data-line="372">        <span class="n">density_levels</span><span class="o">=</span><span class="n">density_levels</span><span class="p">,</span>
+</span><span data-line="373">        <span class="n">supports_escpos_queries</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;escpos_queries&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
+</span><span data-line="374">        <span class="n">make</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;make&quot;</span><span class="p">],</span>
+</span><span data-line="375">        <span class="n">model_name</span><span class="o">=</span><span class="n">values</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+</span><span data-line="376">        <span class="n">media</span><span class="o">=</span><span class="n">media</span><span class="p">,</span>
+</span><span data-line="377">        <span class="n">default_media</span><span class="o">=</span><span class="n">default_media</span><span class="p">,</span>
+</span><span data-line="378">    <span class="p">)</span></div>
+
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../_static/documentation_options.js?v=e259d695"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../_static/versions.js?v=96ae6708"></script></body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="cyan" data-content_root="./">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Troubleshooting - phomemo-driver</title><link rel="shortcut icon" href="_static/m08f.png"/><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Python library" href="library.html" /><link rel="prev" title="Command line" href="command-line.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"dark");
+  </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=d7ae396b" />
+    
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="Troubleshooting"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="index.html">
+      <img class="light-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <img class="dark-logo" src="_static/m08f.png" alt="phomemo-driver" height="28" loading="lazy" />
+      <strong>phomemo-driver</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="installation.html">Install</a></li><li class="link"><a href="first-steps.html">First steps</a></li><li class="link"><a href="library.html">Library</a></li><li class="link"><a href="contributing.html">Contributing</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="nav-versions" id="version-menu" data-version="latest">
+    <button type="button" aria-label="Versions">
+      <span class="md:hidden">Versions</span>
+      <span class="hidden md:inline">latest</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul></ul></div>
+  </div><div class="sy-head-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><p class="caption" role="heading" aria-level="3"><span class="caption-text">Get started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="first-steps.html">First steps</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Using it</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="everyday-use.html">Everyday use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="command-line.html">Command line</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Python library</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="library.html">Python library</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Under the hood</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="driver-stack.html">Driver stack</a></li>
+<li class="toctree-l1"><a class="reference internal" href="print-flow.html">Print flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">Printer models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="m08f-protocol-reference.html">Phomemo M08F Protocol Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+<p class="caption" role="heading" aria-level="3"><span class="caption-text">Project</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#check-the-services-are-running">Check the services are running</a></li>
+<li><a class="reference internal" href="#read-the-logs">Read the logs</a></li>
+<li><a class="reference internal" href="#no-devices-listed-or-jobs-pause">No devices listed, or jobs pause</a></li>
+<li><a class="reference internal" href="#printer-not-found-although-it-is-on">Printer not found although it is on</a></li>
+<li><a class="reference internal" href="#a-job-waits-and-does-not-print">A job waits and does not print</a></li>
+<li><a class="reference internal" href="#the-printer-does-not-show-up-in-gnome-settings">The printer does not show up in GNOME Settings</a></li>
+<li><a class="reference internal" href="#the-printer-app-does-not-start-no-model-manifests">The printer app does not start: &#8220;no model manifests&#8221;</a></li>
+<li><a class="reference internal" href="#still-stuck">Still stuck?</a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">phomemo-driver</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Troubleshooting</strong>
+        <meta itemprop="position" content="2" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h1>
+<p>Something does not work? First make sure both services run, then look at the logs, then find your symptom below.</p>
+<section id="check-the-services-are-running">
+<h2>Check the services are running<a class="headerlink" href="#check-the-services-are-running" title="Link to this heading">#</a></h2>
+<p>The printer driver is consists of two system services: <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span></code> and <code class="docutils literal notranslate"><span class="pre">phomemo-printer-app</span></code>. Both should start automatically after installation and at every boot. You can check their status with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">systemctl<span class="w"> </span>is-active<span class="w"> </span>phomemo-bridge<span class="w"> </span>phomemo-printer-app
+</span></pre></div>
+</div>
+<p>Both services should report as <code class="docutils literal notranslate"><span class="pre">active</span></code>. If one or both say <code class="docutils literal notranslate"><span class="pre">inactive</span></code> or <code class="docutils literal notranslate"><span class="pre">failed</span></code>, start and enable the services:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>phomemo-bridge<span class="w"> </span>phomemo-printer-app
+</span></pre></div>
+</div>
+</section>
+<section id="read-the-logs">
+<h2>Read the logs<a class="headerlink" href="#read-the-logs" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">journalctl<span class="w"> </span>-f<span class="w"> </span>-u<span class="w"> </span>phomemo-printer-app<span class="w"> </span>-u<span class="w"> </span>phomemo-bridge
+</span></pre></div>
+</div>
+<p>This follows both services. The printer app’s unit runs the server with <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">log-file=-</span></code>, so its log goes to the journal too.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The bridge also logs unusable settings in <code class="docutils literal notranslate"><span class="pre">/etc/phomemo/bridge.toml</span></code> there: <code class="docutils literal notranslate"><span class="pre">journalctl</span> <span class="pre">-u</span> <span class="pre">phomemo-bridge</span></code>. For more detail from the printer app, set <code class="docutils literal notranslate"><span class="pre">log-level=debug</span></code> in <code class="docutils literal notranslate"><span class="pre">/etc/phomemo-printer-app.conf</span></code> and restart it.</p>
+</div>
+<p>Running both by hand, for development:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>server<span class="w"> </span>-v
+</span><span data-line="2">phomemo-printer-app<span class="w"> </span>server<span class="w"> </span>-o<span class="w"> </span>log-file<span class="o">=</span>-<span class="w"> </span>-o<span class="w"> </span>log-level<span class="o">=</span>debug
+</span></pre></div>
+</div>
+</section>
+<section id="no-devices-listed-or-jobs-pause">
+<h2>No devices listed, or jobs pause<a class="headerlink" href="#no-devices-listed-or-jobs-pause" title="Link to this heading">#</a></h2>
+<p>The printer app cannot reach the bridge.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">systemctl<span class="w"> </span>status<span class="w"> </span>phomemo-bridge
+</span><span data-line="2">phomemo-bridge<span class="w"> </span>status
+</span></pre></div>
+</div>
+<p>The first shows whether the bridge service runs; the second talks to the bridge directly.</p>
+<p>When the bridge is not running, the printer app pauses the queue and names the socket path in its log. It resumes on its own once the bridge answers.</p>
+<p>Both programs must use the same socket:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Setup</p></th>
+<th class="head"><p>Socket</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>System services</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/run/phomemo/bridge.sock</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Run by hand</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">PHOMEMO_BRIDGE_SOCKET</span></code> when set, else <code class="docutils literal notranslate"><span class="pre">$XDG_RUNTIME_DIR/phomemo-bridge.sock</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>During a restart of the bridge service the socket is briefly missing. A bridge restarted while jobs are queued fails the job in progress; the queued jobs reconnect and print.</p>
+</div>
+</section>
+<section id="printer-not-found-although-it-is-on">
+<h2>Printer not found although it is on<a class="headerlink" href="#printer-not-found-although-it-is-on" title="Link to this heading">#</a></h2>
+<p>Work through these in order.</p>
+<p><strong>The bridge still holds the connection.</strong> The printer does not show up in a scan while it is connected. Release it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">phomemo-bridge<span class="w"> </span>disconnect
+</span></pre></div>
+</div>
+<p><strong>BlueZ holds a stale connection.</strong> After a bridge that was killed (for example with <code class="docutils literal notranslate"><span class="pre">SIGKILL</span></code>), BlueZ may keep the connection up:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">bluetoothctl<span class="w"> </span>disconnect<span class="w"> </span>AA:BB:CC:DD:EE:FF
+</span></pre></div>
+</div>
+<p><strong>Another device is connected.</strong> The printer accepts one connection at a time. Disconnect your phone or the other computer.</p>
+<p><strong>The printer is out of range.</strong> Bluetooth range is short; bring the printer within about 2 m.</p>
+<p><strong>The printer switched itself off.</strong> Its auto-off timer ran out. Switch it on again, and see <a class="reference internal" href="everyday-use.html#auto-off"><span class="std std-ref">Everyday use</span></a> to change the timer.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p><code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">devices</span></code> scans and lists every printer in range with its address. A printer shows up only while it is switched on and not connected to another host.</p>
+</div>
+</section>
+<section id="a-job-waits-and-does-not-print">
+<h2>A job waits and does not print<a class="headerlink" href="#a-job-waits-and-does-not-print" title="Link to this heading">#</a></h2>
+<p>The job is waiting for something. Check the printer’s page in the web interface (http://localhost:8000/) for the reason:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Reason</p></th>
+<th class="head"><p>Message</p></th>
+<th class="head"><p>What to do</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">cover-open</span></code></p></td>
+<td><p>“Close the lid.”</p></td>
+<td><p>Close the lid, then insert a sheet.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">media-empty</span></code></p></td>
+<td><p>“Insert a sheet.”</p></td>
+<td><p>Insert a sheet with the lid closed.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">offline</span></code></p></td>
+<td><p></p></td>
+<td><p>The printer is off, out of range or connected elsewhere: switch it on, bring it closer or disconnect the other device.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">other</span></code></p></td>
+<td><p>“Turn on Bluetooth.”</p></td>
+<td><p>Bluetooth on this computer is off.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>CUPS shows “Printing.” throughout; only the printer app shows the reason.</p>
+</div>
+</section>
+<section id="the-printer-does-not-show-up-in-gnome-settings">
+<h2>The printer does not show up in GNOME Settings<a class="headerlink" href="#the-printer-does-not-show-up-in-gnome-settings" title="Link to this heading">#</a></h2>
+<p>GNOME Settings lists only permanent CUPS queues. Add one as described in <a class="reference internal" href="first-steps.html#step-6-add-a-permanent-cups-queue-optional"><span class="std std-ref">First steps</span></a>.</p>
+</section>
+<section id="the-printer-app-does-not-start-no-model-manifests">
+<h2>The printer app does not start: “no model manifests”<a class="headerlink" href="#the-printer-app-does-not-start-no-model-manifests" title="Link to this heading">#</a></h2>
+<p>The model manifests are built into the printer app, so it normally needs no files. This error appears only when <code class="docutils literal notranslate"><span class="pre">PHOMEMO_MODELS_DIR</span></code> is set: the printer app then loads the manifests from that directory instead and refuses to start when it holds none it can use.</p>
+<p>Unset <code class="docutils literal notranslate"><span class="pre">PHOMEMO_MODELS_DIR</span></code>, or point it at a directory with one subdirectory per model, each with a valid <code class="docutils literal notranslate"><span class="pre">model.json</span></code>. See <a class="reference internal" href="models.html"><span class="std std-doc">Printer models</span></a>.</p>
+</section>
+<section id="still-stuck">
+<h2>Still stuck?<a class="headerlink" href="#still-stuck" title="Link to this heading">#</a></h2>
+<p>Open an issue on <a class="reference external" href="https://github.com/PassionateBytes/phomemo-driver/issues">GitHub</a> with the output of <code class="docutils literal notranslate"><span class="pre">journalctl</span> <span class="pre">-u</span> <span class="pre">phomemo-printer-app</span> <span class="pre">-u</span> <span class="pre">phomemo-bridge</span></code> around the time of the problem.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="command-line.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">Command line</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="library.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Python library</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright"><p>2026, Paul Bütof, Passionate Bytes Solutions. Documentation licensed under CC BY-SA 4.0</p>
+  
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> and
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/PassionateBytes/phomemo-driver" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="_static/documentation_options.js?v=e259d695"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="_static/shibuya.js?v=50760d75"></script>
+      <script src="_static/versions.js?v=96ae6708"></script></body>
+</html>
