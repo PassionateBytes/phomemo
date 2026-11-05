@@ -250,7 +250,7 @@ phomemo-bridge testpage
 # printed 1 page(s)
 ```
 
-Prints the test page: device details, millimetre scales, a gray ramp, line widths and text samples.
+Prints the test page: device details, millimetre and inch scales, a gray ramp, line widths and text samples in point sizes.
 
 | Option | Default | Meaning |
 |---|---|---|
