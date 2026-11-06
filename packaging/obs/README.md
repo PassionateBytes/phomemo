@@ -130,7 +130,7 @@ logged in (`osc` asks for the credentials on first use).
    ```
 
    The commit runs the services on the server: the sources appear as
-   `_service:obs_scm:*` files and the builds start.
+   `_service:*` files and the builds start.
 
    `phomemo-driver` checks out the newest `v*` tag. Until a release
    carries `packaging/debian/`, its service fails with
@@ -175,8 +175,8 @@ variable is unset.
 ## Checking the sources locally
 
 The services run on the server; `osc service runall` runs them in a
-package checkout when `obs-service-obs_scm`, `obs-service-tar`,
-`obs-service-recompress` and `obs-service-download_files` are installed
+package checkout when `obs-service-tar_scm`, `obs-service-recompress`
+and `obs-service-download_files` are installed
 (openSUSE packages of the same names). For the Debian side, `make deb` in
 this repository assembles `debian/` from `packaging/debian/debian.*` the way
 OBS's `debtransform` does and builds the packages with `dpkg-buildpackage`.

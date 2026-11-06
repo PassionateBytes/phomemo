@@ -17,13 +17,14 @@ along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 Source service of the OBS package "phomemo-driver": checks out the newest
 v* tag reachable from main, packs it as phomemo-driver-<version>.tar.gz and
-takes the RPM spec and the Debian packaging files from that tag. The tarball
-is made on the server, so no build target needs the service packages. A service
+takes the RPM spec and the Debian packaging files from that tag. tar_scm and
+recompress run on the server (build.opensuse.org has no server-side tar
+service), so no build target needs the service packages. A service
 run (commit, "Trigger services" in the web UI, or the token the release
 workflow uses) rebuilds every target from the newest release.
 -->
 <services>
-  <service name="obs_scm">
+  <service name="tar_scm">
     <param name="scm">git</param>
     <param name="url">https://github.com/PassionateBytes/phomemo-driver.git</param>
     <param name="revision">@PARENT_TAG@</param>
@@ -38,7 +39,6 @@ workflow uses) rebuilds every target from the newest release.
     <param name="extract">packaging/debian/debian.rules</param>
     <param name="extract">packaging/debian/debian.phomemo-driver.install</param>
   </service>
-  <service name="tar"/>
   <service name="recompress">
     <param name="file">*.tar</param>
     <param name="compression">gz</param>
