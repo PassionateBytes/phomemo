@@ -1,0 +1,61 @@
+name: Other Phomemo model
+description: You own a Phomemo printer other than the M08F and want it supported
+title: "New model: "
+labels: ["new model"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Only the M08F has been tested so far. Every other model starts with an owner who can answer a few questions and run test prints. No coding needed.
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: As printed on the device or its box
+      placeholder: M08E
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: How does it connect?
+      multiple: true
+      options:
+        - Bluetooth (the phone app finds it without pairing in system settings)
+        - Bluetooth (paired in the phone's system settings first)
+        - USB
+        - Wi-Fi
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: ble-name
+    attributes:
+      label: Name it advertises over Bluetooth
+      description: "`bluetoothctl scan on` on Linux, or a BLE scanner app on the phone, shows it"
+      placeholder: M08E
+  - type: input
+    id: paper
+    attributes:
+      label: Paper it takes
+      description: Sizes or width, as the box or the vendor page states them
+      placeholder: A4 and Letter, 216 mm
+  - type: input
+    id: serial-prefix
+    attributes:
+      label: First four characters of the serial number
+      description: Only the first four, which encode the hardware revision. Never post the whole serial.
+      placeholder: Q6..
+  - type: checkboxes
+    id: help
+    attributes:
+      label: What can you do?
+      options:
+        - label: Run test prints with a development build and report the result
+        - label: Measure a printed test page (ruler or calipers)
+        - label: Capture Bluetooth traffic from the vendor app (instructions provided)
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Vendor page link, firmware version from the app, what you tried so far

@@ -2,7 +2,7 @@
 
 Thanks for wanting to help! Bug reports, fixes, documentation and new features are all welcome. Two kinds of contribution we especially hope for:
 
-- **New printer models.** A Phomemo model with the same protocol needs only a model manifest; see [Printer models](models.md).
+- **New printer models.** A Phomemo model with the same protocol needs only a model manifest; see [Printer models](models.md). Own one, especially a Bluetooth model, but do not want to write the manifest yourself? [Open a new-model issue](https://github.com/PassionateBytes/phomemo-driver/issues/new?template=new-model.yml): the model name, the name it advertises over Bluetooth and a few test prints are what it takes.
 - **New package formats.** Today there are RPMs (COPR) and PyPI. Debian packages (apt), a snap or anything else that brings the driver to more systems would be great; see [Add a package format](#add-a-package-format).
 
 Questions and bug reports go to [GitHub issues](https://github.com/PassionateBytes/phomemo-driver/issues).

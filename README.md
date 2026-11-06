@@ -23,6 +23,8 @@
 The Phomemo M08F is an A4 thermal printer that only speaks Bluetooth LE with a custom protocol. The printer normally only works through the manufacturer's phone app.  
 This project provides a **fully featured printer driver stack** for this printer. Once installed, your Phomemo M08F shows up as a regular printer on your system. No vendor app, no phone required.
 
+> **Own another Phomemo model?** Only the M08F has been tested so far. Phomemo's other printers, especially the Bluetooth ones, most likely speak the same protocol and need an owner to try them. [Open an issue](https://github.com/PassionateBytes/phomemo-driver/issues/new?template=new-model.yml) with the model name and the name it advertises over Bluetooth; no coding needed.
+
 ## Features
 
 - **A real system printer:** an IPP Everywhere printer app (PAPPL) that CUPS finds by DNS-SD, with its own web interface. Print from any application, `lp`, or any IPP client.
