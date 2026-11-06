@@ -110,9 +110,11 @@ def test_package_metadata_marks_the_beta_and_links_the_docs() -> None:
     )
 
 
-def test_bump_resets_the_rpm_release() -> None:
-    bump = (REPO / "Makefile").read_text().split("bump:")[1].split("\ntag:")[0]
-    assert "s/^Release:        .*/Release:        1%{?dist}/" in bump
+def test_release_resets_the_rpm_release_and_starts_the_changelog() -> None:
+    makefile = (REPO / "Makefile").read_text()
+    release = makefile.split("\nrelease:")[1].split("\nclean:")[0]
+    assert "s/^Release:        .*/Release:        1%{?dist}/" in release
+    assert "%changelog" in release
 
 
 def test_spec_changelog_starts_with_the_current_version() -> None:

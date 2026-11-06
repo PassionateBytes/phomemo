@@ -15,8 +15,7 @@
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 # Release: publishes a version. Runs on v* tags, made with
-#   make bump VERSION=x.y.z
-#   make tag
+#   make release VERSION=x.y.z   (or major, minor, patch)
 #   git push && git push origin vx.y.z
 #
 # Jobs:
