@@ -275,6 +275,7 @@ jobs:
           'pytest-asyncio', pytest_asyncio.__version__)" | tee /tmp/versions.txt
       - name: Python tests
         id: pytests
+        shell: bash
         working-directory: src/phomemo
         run: set -o pipefail; python3 -m pytest -q tests 2>&1 | tee /tmp/pytest.log
       - name: Summary
@@ -283,7 +284,7 @@ jobs:
         env:
           PYTESTS: ${{ steps.pytests.outcome }}
         run: |
-          counts=$(tail -n 1 /tmp/pytest.log 2>/dev/null | sed 's/^=* *//; s/ *=*$//')
+          counts=$({ tail -n 1 /tmp/pytest.log 2>/dev/null || true; } | sed 's/^=* *//; s/ *=*$//')
           {
             echo "### Version floors (Ubuntu 24.04)"
             echo
