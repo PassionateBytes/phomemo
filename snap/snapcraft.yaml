@@ -175,19 +175,31 @@ parts:
   # The library and the bridge, installed with pip into a virtual environment
   # at the snap's root (bin/, lib/python3.13/site-packages). The wrappers run
   # bin/python3.13 -m phomemo.bridge, which activates that environment.
+  #
+  # Done by hand instead of with the python plugin: the venv is created
+  # without pip (ensurepip fails for the PPA's Python) and pip is
+  # bootstrapped from the archive's wheel. bin/python3.13 then links to the
+  # staged interpreter and pyvenv.cfg names its directory in the installed
+  # snap.
   phomemo:
     source: .
     source-subdir: src/phomemo
-    plugin: python
-    build-environment:
-      - PARTS_PYTHON_INTERPRETER: python3.13
+    plugin: nil
     build-packages:
+      - python3-pip-whl
       - python3.13-venv
     stage-packages:
       - python3.13
     override-build: |
       set -eu
-      craftctl default
+      python3.13 -m venv --without-pip "$CRAFT_PART_INSTALL"
+      venv_python="$CRAFT_PART_INSTALL/bin/python3.13"
+      set -- /usr/share/python-wheels/pip-*.whl
+      "$venv_python" "$1/pip" install --no-cache-dir --upgrade pip
+      "$venv_python" -m pip install --no-cache-dir .
+      find "$CRAFT_PART_INSTALL/bin" -type f -exec \
+        sed -i "1 s|^#!$CRAFT_PART_INSTALL/bin/|#!/snap/phomemo-printer-app/current/bin/|" {} +
+      ln -sfn ../usr/bin/python3.13 "$venv_python"
       sed -i 's|^home = .*|home = /snap/phomemo-printer-app/current/usr/bin|' \
         "$CRAFT_PART_INSTALL/pyvenv.cfg"
       craftctl set version="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)"
