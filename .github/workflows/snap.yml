@@ -1,0 +1,127 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# Snap: builds the snap (snap/snapcraft.yaml) and publishes it to the Snap
+# Store. Its own workflow because a snap build takes a while (PAPPL from
+# source, the Python environment): pull requests run it only when they touch
+# the snap, the sources or the packaged configuration.
+#
+# Jobs:
+#   build     per architecture (amd64 and arm64 runners, LXD set up by
+#             snapcore/action-build): builds the snap and keeps it as an
+#             artefact for a local `snap install --dangerous`.
+#   publish   on pushes only: uploads each snap to the store and releases
+#             it, to `edge` from main and to `stable` from a v* tag. Skipped
+#             with a warning when the repository secret
+#             SNAPCRAFT_STORE_CREDENTIALS is unset (forks, or before the
+#             snap name is registered); the credentials come from
+#             `snapcraft export-login`, see docs/contributing.md.
+
+name: Snap
+run-name: Snap ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - snap/**
+      - src/**
+      - packaging/config/**
+      - .github/workflows/snap.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: snap
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap-${{ matrix.arch }}
+          path: ${{ steps.snap.outputs.snap }}
+      - name: Summary
+        env:
+          ARCH: ${{ matrix.arch }}
+          SNAP: ${{ steps.snap.outputs.snap }}
+        run: |
+          # shellcheck disable=SC2016  # literal backticks: Markdown code
+          echo "### Snap ($ARCH): \`$(basename "$SNAP")\`, $(du -h "$SNAP" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish (${{ matrix.arch }})
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    concurrency:
+      group: snap-publish-${{ matrix.arch }}
+      cancel-in-progress: false
+    env:
+      CHANNEL: ${{ github.ref_type == 'tag' && 'stable' || 'edge' }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: snap-${{ matrix.arch }}
+          path: snap/
+      - name: Check for store credentials
+        id: credentials
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          if [ -z "$SNAPCRAFT_STORE_CREDENTIALS" ]; then
+            echo "::warning::SNAPCRAFT_STORE_CREDENTIALS is not set; the snap was not published"
+            echo "Snap ($CHANNEL): not published (secret SNAPCRAFT_STORE_CREDENTIALS unset)" >> "$GITHUB_STEP_SUMMARY"
+            echo "set=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "set=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Find the snap file
+        id: file
+        run: echo "path=$(ls snap/*.snap)" >> "$GITHUB_OUTPUT"
+      - uses: snapcore/action-publish@v1
+        if: steps.credentials.outputs.set == 'true'
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.file.outputs.path }}
+          release: ${{ env.CHANNEL }}
+      - name: Summary
+        if: steps.credentials.outputs.set == 'true'
+        env:
+          ARCH: ${{ matrix.arch }}
+          SNAP: ${{ steps.file.outputs.path }}
+        run: |
+          # shellcheck disable=SC2016  # literal backticks: Markdown code
+          echo "### Snap ($ARCH): \`$(basename "$SNAP")\` released to \`$CHANNEL\`" >> "$GITHUB_STEP_SUMMARY"

@@ -35,8 +35,8 @@
 #                   custom webhook, secret COPR_WEBHOOK; skipped with a
 #                   warning when the secret is unset.
 #
-# The versioned docs (docs.yml) build from the same tag through their own
-# trigger.
+# The versioned docs (docs.yml) and the snap (snap.yml, released to the
+# store channel stable) build from the same tag through their own triggers.
 
 name: Release
 run-name: Release ${{ github.ref_name }}

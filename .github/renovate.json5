@@ -58,5 +58,24 @@
       matchDepTypes: ["action"],
       groupName: "GitHub Actions",
     },
+    {
+      // The printer app is written against PAPPL 1.4; a new minor or major
+      // may change the API or the behaviour the snap relies on.
+      description: "PAPPL in the snap: patch releases merge, anything bigger waits for review.",
+      matchPackageNames: ["michaelrsweet/pappl"],
+      matchUpdateTypes: ["major", "minor"],
+      automerge: false,
+    },
+  ],
+  customManagers: [
+    {
+      description: "The PAPPL release tag the snap builds from (snap/snapcraft.yaml).",
+      customType: "regex",
+      managerFilePatterns: ["/^snap/snapcraft\\.yaml$/"],
+      matchStrings: [
+        "source: https://github\\.com/(?<depName>michaelrsweet/pappl)\\n\\s+source-type: git\\n\\s+source-tag: (?<currentValue>v[0-9.]+)\\n",
+      ],
+      datasourceTemplate: "github-tags",
+    },
   ],
 }
