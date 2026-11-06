@@ -36,6 +36,8 @@ from phomemo.events import (
 from phomemo.printer import PrintAborted, Printer, SheetRanOut
 from phomemo.protocol import Density, QueryCommand
 
+from .conftest import make_ble_device
+
 
 class FakeTransport:
     """Minimal transport stub for testing event routing."""
@@ -118,7 +120,7 @@ _MAC = "AA:BB:CC:DD:EE:FF"
 
 
 def _fake_device() -> BLEDevice:
-    return BLEDevice(address=_MAC, name="M08F", details=None)
+    return make_ble_device(_MAC, "M08F")
 
 
 @pytest.mark.asyncio
@@ -751,8 +753,8 @@ async def test_connect_by_name_remembers_the_address_it_found(
 async def test_connect_by_name_refuses_when_several_printers_answer(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    first = BLEDevice(address="AA:BB:CC:00:00:01", name="M08F", details=None)
-    second = BLEDevice(address="AA:BB:CC:00:00:02", name="M08F", details=None)
+    first = make_ble_device("AA:BB:CC:00:00:01", "M08F")
+    second = make_ble_device("AA:BB:CC:00:00:02", "M08F")
 
     async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
         return [first, second]

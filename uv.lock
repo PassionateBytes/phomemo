@@ -428,8 +428,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bleak", specifier = ">=3.0.0,<4" },
-    { name = "pillow", specifier = ">=12.1.0,<14" },
+    { name = "bleak", specifier = ">=0.21.0,<4" },
+    { name = "pillow", specifier = ">=10.1.0,<14" },
 ]
 
 [package.metadata.requires-dev]

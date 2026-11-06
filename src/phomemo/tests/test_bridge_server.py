@@ -31,7 +31,7 @@ from phomemo.events import LidState, PaperState
 from phomemo.printer import DeviceInfo, PrintAborted, SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
-from .conftest import PLAIN_SERIAL, VARIANT_SERIAL
+from .conftest import PLAIN_SERIAL, VARIANT_SERIAL, make_ble_device, stop_server
 
 A4 = get_profile("m08f")
 
@@ -228,8 +228,7 @@ async def bridge(config: BridgeConfig) -> AsyncIterator[BridgeConfig]:
     try:
         yield config
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
 
 
 async def _connect(config: BridgeConfig) -> Client:
@@ -246,9 +245,7 @@ def _printer() -> FakePrinter:
 async def test_discover_lists_known_models_only(
     bridge: BridgeConfig, one_m08f_in_range: list[BLEDevice]
 ) -> None:
-    one_m08f_in_range.append(
-        BLEDevice(address="11:22:33:44:55:66", name="Q30", details=None)
-    )
+    one_m08f_in_range.append(make_ble_device("11:22:33:44:55:66", "Q30"))
     client = await _connect(bridge)
     reply = await client.call({"cmd": "discover", "timeout": 1})
     assert reply == {
@@ -490,9 +487,7 @@ async def test_open_without_a_model_for_a_printer_not_in_range(
 async def test_open_without_address_refuses_several_printers(
     bridge: BridgeConfig, one_m08f_in_range: list[BLEDevice]
 ) -> None:
-    one_m08f_in_range.append(
-        BLEDevice(address="AA:BB:CC:00:00:02", name="M08F", details=None)
-    )
+    one_m08f_in_range.append(make_ble_device("AA:BB:CC:00:00:02", "M08F"))
     client = await _connect(bridge)
     reply = await client.call({"cmd": "open"})
     assert reply["connected"] is False
@@ -540,8 +535,7 @@ async def test_status_session_does_not_rearm_hold(tmp_path: Path) -> None:
         await asyncio.sleep(0.3)
         assert _printer().connected is False
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
 
 
 @pytest.mark.asyncio
@@ -873,8 +867,7 @@ async def test_open_with_printer_off_is_ok_and_not_connected(tmp_path: Path) -> 
         }
         await client.close()
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
 
 
 @pytest.mark.asyncio
@@ -1264,8 +1257,7 @@ async def test_connect_leaves_a_matching_auto_off_alone(
         assert _printer().auto_off_writes == []
         await client.close()
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
 
 
 @pytest.mark.asyncio
@@ -1400,8 +1392,7 @@ async def test_connect_without_an_auto_off_setting_leaves_the_timer(
         assert _printer().auto_off_writes == []
         await client.close()
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
 
 
 @pytest.mark.asyncio
@@ -1416,5 +1407,4 @@ async def test_idle_disconnect_zero_keeps_the_link(tmp_path: Path) -> None:
         await asyncio.sleep(0.1)
         assert _printer().connected
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
