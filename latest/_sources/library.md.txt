@@ -17,7 +17,7 @@ uv add phomemo
 sudo dnf install python3-phomemo
 ```
 
-You need Python 3.13 or later and a Bluetooth adapter. Linux with BlueZ is tested; bleak also runs on macOS and Windows.
+You need Python 3.12 or later and a Bluetooth adapter. Linux with BlueZ is tested; bleak also runs on macOS and Windows.
 
 ## Quick start
 

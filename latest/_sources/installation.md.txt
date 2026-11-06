@@ -15,7 +15,7 @@ After installing the driver package you need to follow the [First steps](first-s
 
 - Linux with BlueZ (tested on Fedora)
 - CUPS and Avahi (DNS-SD), so applications can discover the printer
-- Python 3.13 or later
+- Python 3.12 or later
 - A Phomemo M08F thermal printer (see [Printer models](models.md))
 
 ## Package managers
