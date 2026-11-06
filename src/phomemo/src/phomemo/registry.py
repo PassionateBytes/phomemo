@@ -18,7 +18,7 @@
 
 Each profile captures the physical and protocol characteristics of a
 specific Phomemo printer model: print width, BLE UUIDs, timing
-constraints, and supported features. The profile system is extensible —
+constraints, and supported features. The profile system is extensible:
 add new models by registering a ``PrinterProfile`` instance via
 ``register_profile``.
 """
@@ -46,6 +46,11 @@ class PrinterProfile:
             the model's manifest directory.
         ble_name_pattern: Regex pattern matched against BLE advertisement
             names during device discovery.
+        serial_codes: Substrings of the printer serial that mark this model.
+            Several models can share an advertised name; a printer whose
+            serial contains one of these codes belongs to this model, and
+            a model without codes takes every printer the pattern matches
+            that no code claims.
         print_width_px: Print head width in dots/pixels.
         dpi: Print resolution in dots per inch.
         max_chunk_bytes: Maximum BLE write payload in bytes. Determined by
@@ -84,7 +89,7 @@ class PrinterProfile:
             medium and high ``Density`` levels, or ``None`` when the model
             has no density control.
         supports_escpos_queries: Whether standard ESC/POS queries return
-            meaningful data (False for M08F — use Phomemo queries instead).
+            meaningful data (False for M08F: use Phomemo queries instead).
         make: Manufacturer as shown to users.
         model_name: Model as the vendor writes it (``"M08F"``); ``name`` is
             the lower-case identifier.
@@ -95,6 +100,7 @@ class PrinterProfile:
     name: str
     ble_name_pattern: str
     print_width_px: int
+    serial_codes: tuple[str, ...] = ()
     dpi: int = 203
     max_chunk_bytes: int = 244
     negotiate_mtu: bool = True
@@ -178,6 +184,36 @@ class PrinterProfile:
         """Print width in bytes (8 pixels per byte, MSB-first)."""
         return self.print_width_px // 8
 
+    def ble_settings(self) -> tuple[Any, ...]:
+        """The parameters the Bluetooth connection is set up with.
+
+        Returns:
+            UUIDs, chunk size and write mode as one comparable tuple; two
+            profiles with equal settings can share a connection.
+        """
+        return (
+            self.service_uuid,
+            self.write_uuid,
+            self.notify_uuid,
+            self.status_uuid,
+            self.max_chunk_bytes,
+            self.negotiate_mtu,
+            self.write_with_response,
+            self.chunk_delay_s,
+        )
+
+    def matches_serial(self, serial: str) -> bool:
+        """Whether one of the model's serial codes occurs in a printer serial.
+
+        Args:
+            serial: The serial as the printer reports it.
+
+        Returns:
+            ``True`` if a code is a substring of ``serial`` (case-sensitive);
+            always ``False`` for a model without codes.
+        """
+        return any(code in serial for code in self.serial_codes)
+
     def density_value(self, level: Density) -> int | None:
         """The model's concentration value for a density level.
 
@@ -236,21 +272,55 @@ def register_profile(profile: PrinterProfile) -> None:
     _REGISTRY[profile.name] = profile
 
 
-def profile_for_name(ble_name: str | None) -> PrinterProfile | None:
-    """The registered profile whose name pattern matches an advertised name.
+def profiles_for_name(ble_name: str | None) -> list[PrinterProfile]:
+    """Every registered profile whose name pattern matches an advertised name.
+
+    More than one candidate means the name alone does not settle the model;
+    the printer's serial does (see ``profile_for_name``).
 
     Args:
         ble_name: Name the printer advertises over Bluetooth.
 
     Returns:
-        The first matching profile in identifier order, or ``None``.
+        The matching profiles in identifier order; empty without a name.
     """
     if not ble_name:
+        return []
+    return [
+        _REGISTRY[key]
+        for key in sorted(_REGISTRY)
+        if re.search(_REGISTRY[key].ble_name_pattern, ble_name)
+    ]
+
+
+def profile_for_name(
+    ble_name: str | None, serial: str | None = None
+) -> PrinterProfile | None:
+    """The registered profile for a printer, by advertised name and serial.
+
+    The name pattern selects the candidates. With a serial, a candidate
+    whose serial code occurs in it wins. Otherwise the candidate without
+    serial codes wins, and if every candidate carries codes, the first in
+    identifier order.
+
+    Args:
+        ble_name: Name the printer advertises over Bluetooth.
+        serial: The printer's serial, when it has been read.
+
+    Returns:
+        The profile, or ``None`` when no name pattern matches.
+    """
+    candidates = profiles_for_name(ble_name)
+    if not candidates:
         return None
-    for key in sorted(_REGISTRY):
-        if re.search(_REGISTRY[key].ble_name_pattern, ble_name):
-            return _REGISTRY[key]
-    return None
+    if serial:
+        for profile in candidates:
+            if profile.matches_serial(serial):
+                return profile
+    for profile in candidates:
+        if not profile.serial_codes:
+            return profile
+    return candidates[0]
 
 
 Kind = type | tuple[type, ...]
@@ -290,6 +360,15 @@ def _field(where: str, data: dict[str, Any], key: str, kind: Kind) -> Any:
         expected = " or ".join(k.__name__ for k in kinds)
         raise ValueError(f"{where}: {key}: expected {expected}, got {value!r}")
     return value
+
+
+def _serial_codes(where: str, data: dict[str, Any]) -> tuple[str, ...]:
+    if "serial_codes" not in data:
+        return ()
+    codes = _field(where, data, "serial_codes", list)
+    if not all(isinstance(code, str) and code for code in codes):
+        raise ValueError(f"{where}: serial_codes: expected non-empty strings")
+    return tuple(codes)
 
 
 def _media(where: str, entries: list[Any]) -> tuple[tuple[str, ...], str]:
@@ -355,6 +434,7 @@ def load_manifest(model_dir: Path) -> PrinterProfile:
     return PrinterProfile(
         name=values["id"],
         ble_name_pattern=values["ble_name_pattern"],
+        serial_codes=_serial_codes(where, data),
         print_width_px=values["print_width_px"],
         dpi=values["dpi"],
         band_height=values["band_height"],

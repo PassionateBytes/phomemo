@@ -62,6 +62,18 @@ class BleTransport:
         self._connected = False
         self._effective_chunk_bytes: int = profile.max_chunk_bytes
 
+    def use_profile(self, profile: PrinterProfile) -> None:
+        """Take the UUIDs and write settings from another profile.
+
+        The caller makes sure they equal the current ones while connected;
+        the characteristics are subscribed and the chunk size negotiated
+        at connect time.
+
+        Args:
+            profile: The profile to read the BLE parameters from.
+        """
+        self._profile = profile
+
     @property
     def is_connected(self) -> bool:
         """Whether the BLE connection is active."""

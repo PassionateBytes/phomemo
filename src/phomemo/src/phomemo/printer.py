@@ -156,6 +156,7 @@ class Printer:
             self._profile = profile
 
         self._address = address
+        self._advertised_name: str | None = getattr(address, "name", None)
         self._transport = BleTransport(self._profile)
         self._event_callbacks: list[EventCallback] = []
         self._waiters: list[tuple[type[DeviceEvent], asyncio.Future[DeviceEvent]]] = []
@@ -182,6 +183,34 @@ class Printer:
         if device is None:
             return None
         return getattr(device, "address", None) or str(device)
+
+    @property
+    def advertised_name(self) -> str | None:
+        """The name the printer advertises, once a scan has seen it."""
+        return self._advertised_name
+
+    def use_profile(self, profile: PrinterProfile) -> None:
+        """Switch to another profile, keeping the connection.
+
+        Meant for a model variant resolved from the serial after the
+        connection is up: the printer is the same device, only its
+        geometry and names differ.
+
+        Args:
+            profile: The profile to use from now on.
+
+        Raises:
+            ValueError: If connected and ``profile`` has other BLE
+                parameters than the current one; those only take effect at
+                connect time, so a new connection is needed.
+        """
+        if self.is_connected and profile.ble_settings() != self._profile.ble_settings():
+            raise ValueError(
+                f"profile {profile.name!r} has other BLE parameters than "
+                f"{self._profile.name!r}; reconnect to use it"
+            )
+        self._profile = profile
+        self._transport.use_profile(profile)
 
     @property
     def chunk_bytes(self) -> int:
@@ -284,6 +313,7 @@ class Printer:
             # Later connects resolve the address by a fresh scan; BlueZ may
             # have dropped this device object by then.
             self._address = device.address
+            self._advertised_name = device.name
         elif isinstance(device, str):
             try:
                 found = await BleakScanner.find_device_by_address(
@@ -296,6 +326,7 @@ class Printer:
                     f"Device {device} not found within {discovery_timeout}s"
                 )
             device = found
+            self._advertised_name = device.name or self._advertised_name
 
         await self._transport.connect(
             device,
