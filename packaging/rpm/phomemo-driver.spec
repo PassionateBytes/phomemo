@@ -19,7 +19,7 @@ Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Printer driver for the Phomemo M08F thermal printer
 
-License:        GPL-3.0-or-later AND MIT
+License:        GPL-3.0-or-later
 URL:            https://github.com/PassionateBytes/phomemo-driver
 Source0:        %{url}/archive/v%{version}/phomemo-driver-%{version}.tar.gz
 

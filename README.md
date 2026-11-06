@@ -43,6 +43,15 @@ sudo dnf copr enable passionatebytes/phomemo-driver
 sudo dnf install phomemo-driver
 ```
 
+On Debian 13 and Ubuntu 24.04 or newer, from the [Open Build Service](https://build.opensuse.org/project/show/home:passionatebytes:phomemo-driver) repository (pick your release's directory, see [Installation](https://passionatebytes.github.io/phomemo-driver/installation.html)):
+
+```bash
+repo="https://download.opensuse.org/repositories/home:/passionatebytes:/phomemo-driver/Debian_13"
+curl -fsSL "$repo/Release.key" | gpg --dearmor | sudo tee /etc/apt/keyrings/phomemo-driver.gpg >/dev/null
+echo "deb [signed-by=/etc/apt/keyrings/phomemo-driver.gpg] $repo/ /" | sudo tee /etc/apt/sources.list.d/phomemo-driver.list
+sudo apt update && sudo apt install phomemo-driver
+```
+
 Or from source:
 
 ```bash
