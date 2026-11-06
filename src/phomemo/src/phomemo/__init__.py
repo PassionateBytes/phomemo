@@ -53,6 +53,8 @@ from phomemo.registry import (
     PrinterProfile,
     get_profile,
     list_profiles,
+    profile_for_name,
+    profiles_for_name,
     register_profile,
 )
 
@@ -78,5 +80,7 @@ __all__ = [
     "image_to_bitmap",
     "list_profiles",
     "prepare_image",
+    "profile_for_name",
+    "profiles_for_name",
     "register_profile",
 ]

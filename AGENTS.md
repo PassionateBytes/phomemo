@@ -8,7 +8,7 @@ A driver stack for the Phomemo M08F A4 thermal printer over Bluetooth Low Energy
 
 - `src/phomemo/`: the Python library (BLE transport, printing protocol, image preparation, printer profiles) and `phomemo-bridge`, the bridge that owns the printer for other programs over a unix socket.
 - `src/printer-app/`: a PAPPL printer application in C that presents the printer as an IPP Everywhere printer and drives the bridge.
-- `src/models/`: one description per printer model (`model.json` plus icons), read by the library, the bridge and the printer application; a new model with the same protocol is a new directory there.
+- `src/models/`: one description per printer model (`model.json` plus icons), read by the library, the bridge and the printer application; a new model with the same protocol is a new directory there. A hardware variant sold under the same advertised name is a directory with the same `ble_name_pattern` and the variant's `serial_codes`.
 - `packaging/`: system units and presets (`systemd/`), default configuration (`config/`), RPM spec files (`rpm/`); one directory per package format, see `packaging/README.md`.
 - `docs/`: the documentation site (Sphinx, its own uv project `phomemo-docs`), published per version (`latest/` from main, one directory per tag, `stable/`) on the `gh-pages` branch by `docs/publish.py`; `docs/m08f-protocol-reference.md` is the reverse-engineered protocol and the source of truth for printer behaviour.
 - Root: the uv workspace (`pyproject.toml` with the members and the ruff settings, `uv.lock`, `.python-version`), the `Makefile` for builds, installs and releases.

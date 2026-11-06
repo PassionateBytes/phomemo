@@ -16,14 +16,26 @@
 
 """Tests for model manifests and the profiles built from them."""
 
+import dataclasses
 import json
 import shutil
 from pathlib import Path
 
-import phomemo.profiles  # noqa: F401, registers the built-in profiles
+import phomemo.registry as registry
 import pytest
 from phomemo.profiles import models_dir
-from phomemo.registry import get_profile, load_manifest, profile_for_name
+from phomemo.registry import (
+    PrinterProfile,
+    get_profile,
+    load_manifest,
+    profile_for_name,
+    profiles_for_name,
+    register_profile,
+)
+
+import phomemo
+
+from .conftest import PLAIN_SERIAL, VARIANT_CODE, VARIANT_SERIAL
 
 MODELS = Path(__file__).parents[2] / "models"
 
@@ -146,3 +158,100 @@ def test_manifest_density_needs_all_three_levels(tmp_path: Path) -> None:
     _write(target, data)
     with pytest.raises(ValueError, match=r"density: medium: missing"):
         load_manifest(target)
+
+
+# ----------------------------------------------------------------------
+# Serial codes
+# ----------------------------------------------------------------------
+
+
+def test_m08f_manifest_ships_no_serial_codes() -> None:
+    assert get_profile("m08f").serial_codes == ()
+
+
+def test_manifest_without_serial_codes_has_none(tmp_path: Path) -> None:
+    target, data = _copy_model(tmp_path)
+    data.pop("serial_codes", None)
+    _write(target, data)
+    assert load_manifest(target).serial_codes == ()
+
+
+def test_manifest_serial_codes_are_read(variant_models_dir: Path) -> None:
+    profile = load_manifest(variant_models_dir / "m08f-test")
+    assert profile.serial_codes == (VARIANT_CODE,)
+    assert profile.ble_name_pattern == "^M08F"
+
+
+@pytest.mark.parametrize("codes", ["Q999", ["Q999", 7], [""]])
+def test_manifest_serial_codes_must_be_non_empty_strings(
+    tmp_path: Path, codes: object
+) -> None:
+    target, data = _copy_model(tmp_path)
+    data["serial_codes"] = codes
+    _write(target, data)
+    with pytest.raises(ValueError, match=r"serial_codes"):
+        load_manifest(target)
+
+
+def test_matches_serial_is_a_substring_test(variant_registered: PrinterProfile) -> None:
+    assert variant_registered.matches_serial(VARIANT_SERIAL)
+    assert variant_registered.matches_serial("Q999")
+    assert not variant_registered.matches_serial("TESTQ99SERIAL00")
+    assert not variant_registered.matches_serial("q999")
+    assert not get_profile("m08f").matches_serial(VARIANT_SERIAL)
+
+
+def test_profiles_for_name_lists_every_candidate_in_id_order(
+    variant_registered: PrinterProfile,
+) -> None:
+    assert profiles_for_name("M08F-1234") == [get_profile("m08f"), variant_registered]
+    assert profiles_for_name("Q30") == []
+    assert profiles_for_name(None) == []
+
+
+def test_profiles_for_name_without_variants_has_one_candidate() -> None:
+    assert profiles_for_name("M08F") == [get_profile("m08f")]
+
+
+def test_profile_for_name_with_a_serial_code_picks_the_variant(
+    variant_registered: PrinterProfile,
+) -> None:
+    assert profile_for_name("M08F", VARIANT_SERIAL) == variant_registered
+
+
+def test_profile_for_name_with_a_serial_without_code_picks_the_generic_model(
+    variant_registered: PrinterProfile,
+) -> None:
+    assert profile_for_name("M08F", PLAIN_SERIAL) == get_profile("m08f")
+
+
+def test_profile_for_name_without_a_serial_picks_the_generic_model(
+    variant_registered: PrinterProfile,
+) -> None:
+    assert profile_for_name("M08F") == get_profile("m08f")
+    assert profile_for_name("M08F", None) == get_profile("m08f")
+
+
+def test_profile_for_name_with_only_coded_candidates_returns_the_first(
+    variant_registered: PrinterProfile, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    other = dataclasses.replace(
+        variant_registered, name="m08f-other", serial_codes=("Q998",)
+    )
+    register_profile(other)
+    registry._REGISTRY.pop("m08f")
+    assert profiles_for_name("M08F") == [other, variant_registered]
+    assert profile_for_name("M08F") == other
+    assert profile_for_name("M08F", PLAIN_SERIAL) == other
+    assert profile_for_name("M08F", VARIANT_SERIAL) == variant_registered
+
+
+def test_profile_for_name_serial_does_not_widen_the_name_match(
+    variant_registered: PrinterProfile,
+) -> None:
+    assert profile_for_name("Q30", VARIANT_SERIAL) is None
+
+
+def test_resolution_functions_are_exported() -> None:
+    assert phomemo.profile_for_name is profile_for_name
+    assert phomemo.profiles_for_name is profiles_for_name

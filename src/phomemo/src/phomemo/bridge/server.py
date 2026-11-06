@@ -35,13 +35,36 @@ from phomemo.registry import (
     get_profile,
     list_profiles,
     profile_for_name,
+    profiles_for_name,
 )
 
 logger = logging.getLogger(__name__)
 
 PrinterFactory = Callable[[PrinterProfile, "str | BLEDevice | None"], Printer]
 
-__all__ = ["BridgeConfig", "Bridge", "serve", "start_server"]
+__all__ = ["BridgeConfig", "Bridge", "Found", "serve", "start_server"]
+
+_SERIAL_TIMEOUT = 1.0
+
+
+@dataclass(frozen=True, slots=True)
+class Found:
+    """A printer a scan turned up, with the model it was taken for.
+
+    Attributes:
+        device: The device as the scan saw it.
+        profile: The model: resolved from the serial when the advertised
+            name matched several models and the printer answered, else the
+            model the name alone gives.
+        serial: The serial read to resolve the model, if any.
+        resolved: ``None`` when the name alone settled the model; otherwise
+            whether the serial could be read.
+    """
+
+    device: BLEDevice
+    profile: PrinterProfile
+    serial: str | None = None
+    resolved: bool | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,9 +102,12 @@ class Bridge:
     def __init__(self, config: BridgeConfig, printer_factory: PrinterFactory) -> None:
         self.config = config
         self._factory = printer_factory
-        # The printer connectioned or used last, with its model's profile; kept in
+        # The printer connected or used last, with its model's profile; kept in
         # memory until the bridge stops.
         self.printer: Printer | None = None
+        # Whether that printer's model was named by the client (kept as is)
+        # rather than read from the advertised name (refined by the serial).
+        self._model_explicit = False
         self.session_active = False
         self._seen: dict[str, dict[str, Any]] = {}
         self._hold_handle: asyncio.TimerHandle | None = None
@@ -113,22 +139,82 @@ class Bridge:
         """Whether a live Bluetooth connection exists."""
         return self.printer is not None and self.printer.is_connected
 
-    async def discover(self, timeout: float) -> list[tuple[BLEDevice, PrinterProfile]]:
-        """Scan for printers of every known model.
+    async def scan(self, timeout: float) -> list[BLEDevice]:
+        """Scan for printers of every known model, without connecting.
 
         Args:
             timeout: Scan duration in seconds.
 
         Returns:
-            Each device found with the profile its advertised name matches;
-            devices of no known model are left out.
+            The devices whose advertised name matches a known model.
         """
         pattern = "|".join(
             f"(?:{get_profile(name).ble_name_pattern})" for name in list_profiles()
         )
         devices = await discover(name_pattern=pattern, timeout=timeout)
-        found = [(device, profile_for_name(device.name)) for device in devices]
-        return [(device, profile) for device, profile in found if profile is not None]
+        return [device for device in devices if profiles_for_name(device.name)]
+
+    async def discover(self, timeout: float) -> list[Found]:
+        """Scan for printers of every known model and tell their models apart.
+
+        A printer whose advertised name matches one model is reported as
+        that model without connecting. When several models share the name,
+        the bridge reads the printer's serial (over the held connection
+        when it is that printer, else over a brief one) and resolves the
+        model from it.
+
+        Args:
+            timeout: Scan duration in seconds.
+
+        Returns:
+            Each printer found with its model.
+        """
+        found: list[Found] = []
+        for device in await self.scan(timeout):
+            candidates = profiles_for_name(device.name)
+            if len(candidates) == 1:
+                found.append(Found(device, candidates[0]))
+                continue
+            serial = await self._read_serial(device, timeout)
+            profile = profile_for_name(device.name, serial)
+            assert profile is not None
+            self.remember(device.address, serial=serial, model=profile.name)
+            found.append(Found(device, profile, serial, serial is not None))
+        return found
+
+    async def _read_serial(self, device: BLEDevice, timeout: float) -> str | None:
+        """The serial of a scanned printer, read over a connection to it.
+
+        Returns:
+            The serial, or ``None`` when the printer cannot be reached or
+            does not answer.
+        """
+        held = self.printer
+        if (
+            held is not None
+            and held.is_connected
+            and (held.address or "").upper() == device.address.upper()
+        ):
+            return await self._query_serial(held)
+        probe = self._factory(profile_for_name(device.name), device)
+        try:
+            await probe.connect(discovery_timeout=timeout)
+        except ConnectionError as exc:
+            logger.info("Cannot read the serial of %s: %s", device.address, exc)
+            return None
+        try:
+            return await self._query_serial(probe)
+        finally:
+            with contextlib.suppress(Exception):
+                await probe.disconnect()
+
+    @staticmethod
+    async def _query_serial(printer: Printer) -> str | None:
+        try:
+            return await printer.query_serial(timeout=_SERIAL_TIMEOUT)
+        except Exception as exc:  # noqa: BLE001, the model falls back to the name
+            logger.warning("Could not read the printer serial: %s", exc)
+            return None
 
     async def connect(
         self,
@@ -143,8 +229,9 @@ class Bridge:
             address: Printer to connect to; another address than the current
                 printer's drops that connection. ``None`` keeps the printer used
                 last, or takes the only known printer a scan finds.
-            model: Model of that printer; without it a scan reads the model
-                from the printer's advertised name.
+            model: Model of that printer, kept as given; without it a scan
+                reads the model from the printer's advertised name and the
+                serial settles it when several models share that name.
 
         Raises:
             ConnectionError: If the model is unknown, the printer is not
@@ -164,7 +251,9 @@ class Bridge:
             return
         if self.printer is None:
             self.printer = await self._new_printer(address, model, discovery_timeout)
+            self._model_explicit = model is not None
         await self.printer.connect(discovery_timeout=discovery_timeout)
+        await self._refine_model(discovery_timeout)
         logger.info("Printer connected (%s)", self.printer.profile.name)
         await self._apply_auto_off(self.printer)
 
@@ -173,26 +262,65 @@ class Bridge:
     ) -> Printer:
         if model is not None:
             return self._factory(get_profile(model), address)
-        found = await self.discover(timeout)
+        found = await self.scan(timeout)
         if address is not None:
             matches = [
-                (device, profile)
-                for device, profile in found
-                if device.address.upper() == address.upper()
+                device for device in found if device.address.upper() == address.upper()
             ]
             if not matches:
                 raise ConnectionError(f"no printer of a known model at {address}")
-            device, profile = matches[0]
-            return self._factory(profile, device)
-        if not found:
+            device = matches[0]
+        elif not found:
             raise ConnectionError("no printer of a known model in range")
-        if len(found) > 1:
-            addresses = ", ".join(sorted(device.address for device, _ in found))
+        elif len(found) > 1:
+            addresses = ", ".join(sorted(device.address for device in found))
             raise ConnectionError(
                 f"several printers in range ({addresses}); choose one by address"
             )
-        device, profile = found[0]
-        return self._factory(profile, device)
+        else:
+            device = found[0]
+        return self._factory(profile_for_name(device.name), device)
+
+    async def _refine_model(self, discovery_timeout: float) -> None:
+        """Settle the connected printer's model by its serial.
+
+        The advertised name may match several models; the serial tells
+        them apart. A model named by the client stays, with a warning when
+        the serial points elsewhere. A serial the printer does not give
+        leaves the name match in place.
+        """
+        printer = self.printer
+        assert printer is not None
+        name = printer.advertised_name
+        if not name or len(profiles_for_name(name)) < 2:
+            return
+        serial = await self._query_serial(printer)
+        if serial is None:
+            return
+        self.remember(printer.address, serial=serial)
+        resolved = profile_for_name(name, serial)
+        if resolved is None or resolved == printer.profile:
+            return
+        if self._model_explicit:
+            logger.warning(
+                "Printer %s opened as model %s, but its serial points to %s",
+                printer.address,
+                printer.profile.name,
+                resolved.name,
+            )
+            return
+        logger.info(
+            "Printer %s is model %s by its serial (name match: %s)",
+            printer.address,
+            resolved.name,
+            printer.profile.name,
+        )
+        if resolved.ble_settings() == printer.profile.ble_settings():
+            printer.use_profile(resolved)
+            return
+        await printer.disconnect()
+        self.printer = self._factory(resolved, printer.address)
+        await self.printer.connect(discovery_timeout=discovery_timeout)
 
     async def _apply_auto_off(self, printer: Printer) -> None:
         """Set the configured auto-off timer unless the printer already has it."""

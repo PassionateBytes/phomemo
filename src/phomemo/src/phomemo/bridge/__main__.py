@@ -35,11 +35,12 @@ from phomemo.bridge.server import serve
 from phomemo.imaging import ToneMode
 
 _PRINTER_CHOICE = (
-    "Which printer: the one given with --address, else the printer connectioned or "
+    "Which printer: the one given with --address, else the printer connected or "
     "used last since the bridge started, else the only printer of a known model "
     "a scan finds. With several printers in range and none of these, the "
     'command refuses and lists them; pick one with --address (see "devices"). '
-    "The model comes from the printer's advertised name."
+    "The model comes from the printer's advertised name, refined by its serial "
+    "once connected."
 )
 
 _COMMANDS: dict[str, tuple[str, str]] = {
@@ -52,8 +53,10 @@ _COMMANDS: dict[str, tuple[str, str]] = {
     "devices": (
         "list printers in range",
         "Scan for printers of every known model and list each one's Bluetooth "
-        "address, model and advertised name. A printer shows up only while it "
-        "is switched on and not linked to another host.",
+        "address, model and advertised name. When several models share an "
+        "advertised name, the bridge connects briefly and reads the serial to "
+        "tell them apart. A printer shows up only while it is switched on and "
+        "not connected to another host.",
     ),
     "connect": (
         "connect to the printer",
@@ -255,7 +258,10 @@ async def _run_client(args: argparse.Namespace, socket_path: Path) -> int:
         elif args.command == "devices":
             printers = await client.discover(args.timeout)
             for printer in printers:
-                print(f"{printer['address']}  {printer['model']:<8}  {printer['name']}")
+                line = f"{printer['address']}  {printer['model']:<8}  {printer['name']}"
+                if printer.get("resolved") is False:
+                    line += "  (model unconfirmed: the printer did not answer)"
+                print(line)
             if not printers:
                 print("no printer in range", file=sys.stderr)
                 return 1

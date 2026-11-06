@@ -92,6 +92,8 @@ phomemo-bridge devices
 
 Scans for printers of every known model. One line per printer: Bluetooth address, model, advertised name. A printer shows up only while it is switched on and not connected to another host. With none in range it prints `no printer in range` to stderr and exits with status 1.
 
+When several models share an advertised name (hardware variants), the bridge connects briefly to such a printer and reads its serial to tell them apart. A printer it cannot reach is listed as the generic model with `(model unconfirmed: the printer did not answer)` after the name. See [How a printer is matched](models.md#how-a-printer-is-matched).
+
 | Option | Default | Meaning |
 |---|---|---|
 | `--timeout SECONDS` | `5` | How long to scan. |

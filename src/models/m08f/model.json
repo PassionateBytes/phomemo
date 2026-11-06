@@ -3,6 +3,7 @@
   "make": "Phomemo",
   "name": "M08F",
   "ble_name_pattern": "^M08F",
+  "serial_codes": [],
   "print_width_px": 1680,
   "dpi": 203,
   "band_height": 256,

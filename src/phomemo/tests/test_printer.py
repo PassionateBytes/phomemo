@@ -15,6 +15,7 @@
 # along with phomemo.  If not, see <https://www.gnu.org/licenses/>.
 
 import asyncio
+import dataclasses
 from dataclasses import replace
 
 import phomemo.printer as printer_module
@@ -43,6 +44,10 @@ class FakeTransport:
         self.is_connected = True
         self.chunk_bytes = 244
         self.written: list[bytes] = []
+        self.profile: object = None
+
+    def use_profile(self, profile: object) -> None:
+        self.profile = profile
 
     async def write(self, data: bytes) -> None:
         self.written.append(data)
@@ -183,6 +188,67 @@ async def test_connect_bledevice_instance_passes_through(
     printer._transport = FakeTransport()  # type: ignore[assignment]
     await printer.connect()
     assert printer._transport.connect_address is device  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_advertised_name_comes_from_the_scan(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    device = _fake_device()
+
+    async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
+        return [device]
+
+    monkeypatch.setattr(printer_module, "discover", fake_discover)
+    printer = _make_printer()
+    assert printer.advertised_name is None
+    await printer.connect()
+    assert printer.advertised_name == "M08F"
+
+
+@pytest.mark.asyncio
+async def test_advertised_name_is_learnt_when_a_mac_is_resolved(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_find(address: str, timeout: float) -> BLEDevice | None:
+        return _fake_device()
+
+    monkeypatch.setattr(
+        printer_module.BleakScanner, "find_device_by_address", fake_find
+    )
+    printer = Printer("m08f", _MAC)
+    printer._transport = FakeTransport()  # type: ignore[assignment]
+    assert printer.advertised_name is None
+    await printer.connect()
+    assert printer.advertised_name == "M08F"
+
+
+def test_advertised_name_of_a_bledevice_is_known_at_once() -> None:
+    assert Printer("m08f", _fake_device()).advertised_name == "M08F"
+
+
+@pytest.mark.asyncio
+async def test_use_profile_switches_the_model_on_a_live_connection() -> None:
+    printer = Printer("m08f", _fake_device())
+    printer._transport = FakeTransport()  # type: ignore[assignment]
+    await printer.connect()
+    variant = dataclasses.replace(
+        printer.profile, name="m08f-test", serial_codes=("Q999",)
+    )
+    printer.use_profile(variant)
+    assert printer.profile is variant
+    assert printer._transport.profile is variant  # type: ignore[attr-defined]
+
+
+@pytest.mark.asyncio
+async def test_use_profile_refuses_other_ble_settings_while_connected() -> None:
+    printer = Printer("m08f", _fake_device())
+    printer._transport = FakeTransport()  # type: ignore[assignment]
+    await printer.connect()
+    other = dataclasses.replace(printer.profile, name="other", max_chunk_bytes=20)
+    with pytest.raises(ValueError, match="other BLE parameters"):
+        printer.use_profile(other)
+    assert printer.profile.name == "m08f"
 
 
 @pytest.mark.asyncio
