@@ -116,6 +116,8 @@ release:  ## Set the version everywhere, commit and tag it (VERSION=x.y.z|major|
 	sed -i "s/^Version:        .*/Version:        $$new/" packaging/rpm/phomemo-driver.spec; \
 	sed -i 's/^Release:        .*/Release:        1%{?dist}/' packaging/rpm/phomemo-driver.spec; \
 	sed -i "s/^#define PHOMEMO_VERSION \".*\"/#define PHOMEMO_VERSION \"$$new\"/" src/printer-app/phomemo.h; \
+	entry="* $$(LC_ALL=C date '+%a %b %d %Y') $$(git config user.name) - $$new-1\n- Release $$new\n"; \
+	sed -i "/^%changelog$$/a $$entry" packaging/rpm/phomemo-driver.spec; \
 	uv lock; \
 	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock; \
 	git commit -q -m "chore: version $$new"; \
