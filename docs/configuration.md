@@ -15,6 +15,10 @@ Both are read in this order, and a key in the later file wins. A file that does 
 
 `phomemo-bridge --config FILE` reads only `FILE` instead of both. Here a missing file is an error: the command prints `configuration error: ...` and exits with status 2.
 
+:::{note}
+In the snap, the bridge reads only `/var/snap/phomemo-printer-app/common/bridge.toml` (its wrapper passes `--config`); `phomemo-printer-app.bridge` reads the same file. Restart it with `sudo snap restart phomemo-printer-app.phomemo-bridge`.
+:::
+
 The format is TOML: one `name = value` per line, `#` starts a comment. The packaged file has every key commented out, so you can see the defaults.
 
 ### Keys
@@ -66,7 +70,7 @@ Without `socket_path` and without `PHOMEMO_BRIDGE_SOCKET`, the bridge and its co
 2. else `$XDG_RUNTIME_DIR/phomemo-bridge.sock`,
 3. else `/run/phomemo/bridge.sock`.
 
-`PHOMEMO_BRIDGE_SOCKET` overrides `socket_path` from any file. The system unit sets it to `/run/phomemo/bridge.sock`.
+`PHOMEMO_BRIDGE_SOCKET` overrides `socket_path` from any file. The system unit sets it to `/run/phomemo/bridge.sock`; the snap sets it to `/var/snap/phomemo-printer-app/common/bridge.sock` for both services and both command lines.
 
 ## Printer app
 
@@ -82,6 +86,10 @@ Each option comes from the first of these that sets it:
 | 4 | `/etc/phomemo-printer-app.conf` |
 
 The system service runs as root and is started with `-o log-file=-`, so its log goes to the journal. For your own settings, edit `/etc/phomemo-printer-app.conf`.
+
+:::{note}
+In the snap, the printer app reads `/var/snap/phomemo-printer-app/common/phomemo-printer-app.conf` instead of the files under `/etc` (PAPPL switches to the snap's common directory on its own). Restart it with `sudo snap restart phomemo-printer-app.phomemo-printer-app-server`.
+:::
 
 :::{warning}
 Unknown options are ignored without a message. Check the spelling if a setting seems to have no effect.

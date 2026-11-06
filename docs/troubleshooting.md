@@ -16,13 +16,17 @@ Both services should report as `active`. If one or both say `inactive` or `faile
 sudo systemctl enable --now phomemo-bridge phomemo-printer-app
 ```
 
+:::{note}
+Installed as a snap, the services are `snap.phomemo-printer-app.phomemo-bridge` and `snap.phomemo-printer-app.phomemo-printer-app-server`: `snap services phomemo-printer-app` shows their state, `sudo snap start --enable phomemo-printer-app` starts them. The bridge needs the `bluez` interface and the printer app `avahi-control`; `snap connections phomemo-printer-app` shows whether they are connected (see [Installation](installation.md#snap-ubuntu-and-every-distribution-with-snapd)).
+:::
+
 ## Read the logs
 
 ```bash
 journalctl -f -u phomemo-printer-app -u phomemo-bridge
 ```
 
-This follows both services. The printer app's unit runs the server with `-o log-file=-`, so its log goes to the journal too.
+This follows both services. The printer app's unit runs the server with `-o log-file=-`, so its log goes to the journal too. In the snap: `sudo snap logs -f phomemo-printer-app`, and the configuration files live in `/var/snap/phomemo-printer-app/common/`.
 
 ```{tip}
 The bridge also logs unusable settings in `/etc/phomemo/bridge.toml` there: `journalctl -u phomemo-bridge`. For more detail from the printer app, set `log-level=debug` in `/etc/phomemo-printer-app.conf` and restart it.

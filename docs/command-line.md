@@ -5,6 +5,8 @@ Two commands come with the driver:
 - `phomemo-bridge` runs the bridge and talks to it directly: scan, connect, check the sensors, print an image.
 - `phomemo-printer-app` runs the printer app and manages its registered printers.
 
+In the snap, the bridge command is `phomemo-printer-app.bridge` (`phomemo-printer-app.bridge status`); everything below applies unchanged.
+
 ## phomemo-bridge
 
 ### First steps

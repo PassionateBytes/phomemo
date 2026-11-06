@@ -33,6 +33,8 @@ sudo dnf install phomemo-driver     # installs and starts both services
 sudo phomemo-printer-app autoadd    # registers every printer in range
 ```
 
+On Ubuntu and other distributions with snapd, `sudo snap install phomemo-printer-app` replaces the first two lines (plus two `snap connect` commands, see [Installation](installation.md)).
+
 The printer now shows up in your applications' print dialogs. The details,
 other ways to install and the optional permanent CUPS queue are in
 [Installation](installation.md) and [First steps](first-steps.md).

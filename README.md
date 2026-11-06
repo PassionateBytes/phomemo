@@ -41,6 +41,14 @@ sudo dnf copr enable passionatebytes/phomemo-driver
 sudo dnf install phomemo-driver
 ```
 
+As a snap (Ubuntu and every distribution with snapd):
+
+```bash
+sudo snap install phomemo-printer-app
+sudo snap connect phomemo-printer-app:bluez
+sudo snap connect phomemo-printer-app:avahi-control
+```
+
 Or from source:
 
 ```bash

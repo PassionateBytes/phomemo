@@ -20,7 +20,7 @@ After installing the driver package you need to follow the [First steps](first-s
 
 ## Package managers
 
-More package formats are planned.
+Two package formats today: RPMs from COPR for Fedora, and a snap for Ubuntu and every other distribution with snapd. More are welcome, see [Contributing](contributing.md).
 
 ### DNF (Fedora, COPR)
 
@@ -37,6 +37,40 @@ The first command adds the COPR repository [passionatebytes/phomemo-driver](http
 | `python3-phomemo` | The Python library and the `phomemo-bridge` command. Install it alone if you only need the library. |
 
 The package enables both services and starts them on first installation. Upgrades restart them and keep your changes to the configuration files.
+
+### Snap (Ubuntu and every distribution with snapd)
+
+```bash
+sudo snap install phomemo-printer-app
+sudo snap connect phomemo-printer-app:bluez
+sudo snap connect phomemo-printer-app:avahi-control
+```
+
+The snap `phomemo-printer-app` contains both services with everything they need (PAPPL, Python, the library) and starts them on installation. It talks to the BlueZ and Avahi daemons of your system, so both must be running (they are on Ubuntu desktop). The two `snap connect` commands grant it that access; they are needed until the Snap Store grants the snap automatic connections.
+
+The `phomemo-printer-app` command works as described everywhere in this documentation (`sudo phomemo-printer-app autoadd`, ...). The bridge command line is `phomemo-printer-app.bridge`:
+
+```bash
+phomemo-printer-app.bridge status
+```
+
+What differs from the other installations:
+
+| What | In the snap |
+|---|---|
+| Services | `snap services phomemo-printer-app` lists `phomemo-bridge` and `phomemo-printer-app-server`; `sudo snap restart phomemo-printer-app` restarts both |
+| Logs | `sudo snap logs -f phomemo-printer-app` |
+| Configuration files | `/var/snap/phomemo-printer-app/common/bridge.toml` and `/var/snap/phomemo-printer-app/common/phomemo-printer-app.conf`, created from the packaged defaults at the services' first start and kept across upgrades |
+| Bridge socket | `/var/snap/phomemo-printer-app/common/bridge.sock` |
+| Printer app state and spool | `/var/snap/phomemo-printer-app/common/` |
+| Web interface | [http://localhost:8000/](http://localhost:8000/), as everywhere |
+| Service user | None: inside the snap both services run as root, confined by snapd |
+
+Both services need the interfaces `bluez` (the bridge) and `avahi-control`, `network` and `network-bind` (the printer app); `snap connections phomemo-printer-app` shows which are connected. A snap can print files from your home directory through the `home` interface, which connects on its own.
+
+```{tip}
+`sudo snap install --channel=edge phomemo-printer-app` gives you the build of the latest `main`; `sudo snap refresh --channel=stable phomemo-printer-app` goes back to releases.
+```
 
 ## From source
 

@@ -1,0 +1,32 @@
+#!/bin/sh
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# Runs the printer app server inside the snap. PAPPL keeps its state, spool
+# and control socket in $SNAP_COMMON and reads
+# $SNAP_COMMON/phomemo-printer-app.conf, created here from the packaged
+# default at first start. The TLS certificate goes to CUPS_SERVERROOT/ssl
+# (set for the whole snap). The log goes to stdout, which snapd sends to
+# the journal (snap logs).
+
+set -eu
+
+mkdir -p "$SNAP_COMMON/cups/ssl"
+if [ ! -e "$SNAP_COMMON/phomemo-printer-app.conf" ]; then
+  cp "$SNAP/etc/phomemo-printer-app.conf" "$SNAP_COMMON/phomemo-printer-app.conf"
+fi
+
+exec "$SNAP/usr/bin/phomemo-printer-app" -o log-file=- server

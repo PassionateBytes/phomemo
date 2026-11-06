@@ -3,7 +3,7 @@
 Thanks for wanting to help! Bug reports, fixes, documentation and new features are all welcome. Two kinds of contribution we especially hope for:
 
 - **New printer models.** A Phomemo model with the same protocol needs only a model manifest; see [Printer models](models.md).
-- **New package formats.** Today there are RPMs (COPR) and PyPI. Debian packages (apt), a snap or anything else that brings the driver to more systems would be great; see [Add a package format](#add-a-package-format).
+- **New package formats.** Today there are RPMs (COPR), a snap and PyPI. Debian packages (apt) or anything else that brings the driver to more systems would be great; see [Add a package format](#add-a-package-format).
 
 Questions and bug reports go to [GitHub issues](https://github.com/PassionateBytes/phomemo-driver/issues).
 
@@ -35,6 +35,7 @@ src/printer-app/    PAPPL printer app in C
 src/models/         model manifests, one directory per model
 docs/               this site (Sphinx, uv project "phomemo-docs")
 packaging/          systemd units, default configuration, spec files
+snap/               the snap (snapcraft.yaml, wrapper scripts)
 ```
 
 `docs/m08f-protocol-reference.md` is the source of truth for how the printer behaves.
@@ -124,9 +125,12 @@ packaging/
   systemd/    system units, service user (sysusers), presets
   config/     bridge.toml for /etc/phomemo/, phomemo-printer-app.conf for /etc/
   rpm/        phomemo-driver.spec (driver + python3-phomemo), python-bleak.spec
+snap/
+  snapcraft.yaml   the snap: parts, daemons, interfaces
+  local/           wrapper scripts, adapt-config.py (configuration comments for the snap)
 ```
 
-Files shared by every package format live in the format-neutral directories (`systemd/`, `config/`); each format gets its own directory. The Python package goes to PyPI from `src/phomemo/` and needs nothing from here.
+Files shared by every package format live in the format-neutral directories (`systemd/`, `config/`); each format gets its own directory. The snap's directory sits at the repository root because snapcraft looks for it there. The Python package goes to PyPI from `src/phomemo/` and needs nothing from here.
 
 The Fedora route:
 
@@ -134,12 +138,18 @@ The Fedora route:
 - `phomemo-driver.spec` builds from a `git archive` of the repository.
 - Fedora has no bleak, so `python-bleak.spec` is built at the bleak version locked in `uv.lock`. Renovate's weekly lock refresh updates it within the range in `src/phomemo/pyproject.toml`, or by hand: `uv lock --upgrade-package bleak`.
 
+The snap route:
+
+- `snap/snapcraft.yaml` builds one strictly confined snap, `phomemo-printer-app`, laid out like the [OpenPrinting printer-application snaps](https://github.com/OpenPrinting/ps-printer-app): PAPPL from its release tag (`source-tag`, kept current by Renovate), the printer app built with its Makefile against it and the base's cJSON, the library and the bridge in a virtual environment at the snap's root. The base's Python is 3.12, so Python 3.13 comes from the deadsnakes PPA. The two services are snap daemons (`phomemo-bridge`, then `phomemo-printer-app-server`), the commands `phomemo-printer-app` and `phomemo-printer-app.bridge`; the wrappers in `snap/local/` set the paths under `$SNAP_COMMON`, the code is unchanged. The version is the package version from `src/phomemo/pyproject.toml`.
+- `make snap` builds it locally (needs [snapcraft](https://snapcraft.io/docs/snapcraft-setup) with LXD); `sudo snap install --dangerous dist/*.snap` installs the result, then `sudo snap connect phomemo-printer-app:bluez` and `sudo snap connect phomemo-printer-app:avahi-control`.
+- `.github/workflows/snap.yml` builds the snap for amd64 and arm64 on pull requests that touch it, keeps it as a workflow artefact, and publishes pushes to `main` to the store channel `edge` and `v*` tags to `stable`. Publishing needs the repository secret `SNAPCRAFT_STORE_CREDENTIALS`, exported with `snapcraft export-login`; without it the workflow builds and warns.
+
 ### Add a package format
 
-1. Create a directory named after the format (`debian/`, `snap/`, ...) with its manifests and any build scripts it needs.
+1. Create a directory named after the format (`debian/`, ...) with its manifests and any build scripts it needs; at the repository root only when the format's tooling insists, as snapcraft does.
 2. Reuse `systemd/` and `config/` instead of copying them. Formats that install units differently (a snap's daemons, for example) take what they need from there or describe the same services in their own terms.
 3. Add a target to the root `Makefile` that builds the package locally, and a job to the workflows that builds it in CI and publishes it on a tag.
-4. Add the format to the table in `packaging/README.md` and its install instructions to `src/printer-app/README.md`.
+4. Add the format to the table in `packaging/README.md` and its install instructions to [Installation](installation.md).
 
 ```{note}
 Not sure how a format should handle the two services or the `phomemo` service user? Open an issue or a draft pull request early; we are happy to help.
@@ -164,6 +174,6 @@ Pushing the tag runs `.github/workflows/release.yml`:
 | Source RPMs | `make srpm` in a Fedora container |
 | GitHub release | Generated notes, with the wheel, sdist, source RPM and tarball attached |
 
-The tag also starts the COPR build of `phomemo-driver` (job `copr`).
+The tag also starts the COPR build of `phomemo-driver` (job `copr`) and, through `.github/workflows/snap.yml`, the snap build that is released to the store channel `stable`.
 
 For local artefacts: `make dist` (wheel and sdist), `make tarball` (source tarball named like the GitHub archive), `make srpm` (source RPM, needs rpm-build), all into `dist/`. `make help` lists every target.

@@ -1,0 +1,224 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# The driver stack as one strictly confined snap, laid out like the
+# OpenPrinting printer-application snaps: PAPPL built from source, the
+# printer app linked against it, the bridge in a Python virtual environment
+# at the snap's root, both running as daemons under snapd (as root, there is
+# no service user inside a snap).
+#
+# Everything writable lives in $SNAP_COMMON (/var/snap/phomemo-printer-app/
+# common), shared by every revision:
+#   bridge.toml, phomemo-printer-app.conf   configuration, copied from the
+#                                           packaged defaults at first start
+#   bridge.sock                             the bridge socket (both daemons
+#                                           get PHOMEMO_BRIDGE_SOCKET below)
+#   phomemo-printer-app.state, .d/, .sock   PAPPL state, spool and control
+#                                           socket (PAPPL picks $SNAP_COMMON
+#                                           on its own when it is set)
+#   cups/ssl                                the printer app's TLS certificate
+#   run/                                    the bridge's runtime directory
+#
+# The base's Python is 3.12; the library needs 3.13, which comes from the
+# deadsnakes PPA. The venv's bin/python3.13 links to that interpreter and
+# its pyvenv.cfg points at the snap's own usr/bin, so running the venv
+# interpreter finds both the standard library and the venv's packages.
+
+name: phomemo-printer-app
+title: Phomemo printer app
+summary: Printer driver for the Phomemo M08F thermal printer
+description: |
+  Makes the Phomemo M08F A4 thermal printer a printer like any other. The
+  printer app (PAPPL) presents it to CUPS and every IPP client, with a web
+  interface on port 8000; the bridge service owns its Bluetooth Low Energy
+  connection. Both start with the system.
+
+  After installing, connect the Bluetooth interface and register the printer:
+
+    sudo snap connect phomemo-printer-app:bluez
+    sudo snap connect phomemo-printer-app:avahi-control
+    sudo phomemo-printer-app autoadd
+
+  Configuration lives in /var/snap/phomemo-printer-app/common. The bridge
+  command line is available as phomemo-printer-app.bridge.
+website: https://passionatebytes.github.io/phomemo-driver/
+source-code: https://github.com/PassionateBytes/phomemo-driver
+issues: https://github.com/PassionateBytes/phomemo-driver/issues
+license: GPL-3.0-or-later
+icon: src/models/m08f/icon-512.png
+
+# The version comes from src/phomemo/pyproject.toml (part "phomemo").
+adopt-info: phomemo
+grade: stable
+confinement: strict
+base: core24
+
+platforms:
+  amd64:
+  arm64:
+
+# Python 3.13 for Ubuntu 24.04 (the base's Python is 3.12).
+package-repositories:
+  - type: apt
+    ppa: deadsnakes/ppa
+
+# Both daemons and both command lines find the bridge socket here; the
+# printer app keeps its TLS certificate under CUPS_SERVERROOT.
+environment:
+  PHOMEMO_BRIDGE_SOCKET: $SNAP_COMMON/bridge.sock
+  CUPS_SERVERROOT: $SNAP_COMMON/cups
+
+apps:
+  phomemo-bridge:
+    command: scripts/run-bridge-server
+    daemon: simple
+    restart-condition: on-failure
+    plugs: [bluez]
+
+  phomemo-printer-app-server:
+    command: scripts/run-printer-app-server
+    daemon: simple
+    after: [phomemo-bridge]
+    restart-condition: on-failure
+    # PAPPL waits up to a minute for pending jobs on shutdown; a longer
+    # systemd timeout lets it finish instead of being killed.
+    stop-timeout: 70s
+    plugs: [avahi-control, network, network-bind]
+
+  # The command lines: `phomemo-printer-app` (as outside the snap) and
+  # `phomemo-printer-app.bridge` for the bridge.
+  phomemo-printer-app:
+    command: scripts/run-printer-app
+    plugs: [avahi-control, home, network, network-bind]
+
+  bridge:
+    command: scripts/run-bridge
+    plugs: [home]
+
+parts:
+  pappl:
+    source: https://github.com/michaelrsweet/pappl
+    source-type: git
+    source-tag: v1.4.12
+    source-depth: 1
+    plugin: autotools
+    autotools-configure-parameters:
+      - --prefix=/usr
+      - --with-dnssd=avahi
+      - --with-tls=gnutls
+      - --enable-libjpeg
+      - --enable-libpng
+      - --disable-libusb
+      - --with-papplstatedir=/var/snap/phomemo-printer-app/common
+      - --with-papplsockdir=/var/snap/phomemo-printer-app/common
+    build-packages:
+      - libavahi-client-dev
+      - libcups2-dev
+      - libgnutls28-dev
+      - libjpeg-dev
+      - libpam0g-dev
+      - libpng-dev
+      - pkg-config
+      - zlib1g-dev
+    stage-packages:
+      - libavahi-client3
+      - libcups2t64
+      - libgnutls30t64
+      - libjpeg-turbo8
+      - libpam0g
+      - libpng16-16t64
+    prime:
+      - -usr/bin/pappl-makeresheader
+      - -usr/include
+      - -usr/lib/pkgconfig
+      - -usr/lib/*.a
+      - -usr/share/doc
+      - -usr/share/man
+
+  # The printer app, built with the repository Makefile against the PAPPL
+  # staged above and the base's cJSON; the model manifests are built in
+  # (embed-models.sh). The C unit tests run as part of the build.
+  printer-app:
+    after: [pappl]
+    source: .
+    plugin: nil
+    build-environment:
+      - LD_LIBRARY_PATH: "${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$CRAFT_STAGE/usr/lib"
+    override-build: |
+      set -eu
+      make -C src/printer-app clean
+      make -C src/printer-app all test CFLAGS="-O2 -g ${CFLAGS:-}" LDFLAGS="${LDFLAGS:-}"
+      install -D -m 755 src/printer-app/phomemo-printer-app \
+        "$CRAFT_PART_INSTALL/usr/bin/phomemo-printer-app"
+    build-packages:
+      - gcc
+      - libcjson-dev
+      - libcups2-dev
+      - make
+      - pkg-config
+    stage-packages:
+      - libcjson1
+
+  # The library and the bridge, installed with pip into a virtual environment
+  # at the snap's root (bin/, lib/python3.13/site-packages). The wrappers run
+  # bin/python3.13 -m phomemo.bridge, which activates that environment.
+  phomemo:
+    source: .
+    source-subdir: src/phomemo
+    plugin: python
+    build-environment:
+      - PARTS_PYTHON_INTERPRETER: python3.13
+    build-packages:
+      - python3.13-venv
+    stage-packages:
+      - python3.13
+    override-build: |
+      set -eu
+      craftctl default
+      sed -i 's|^home = .*|home = /snap/phomemo-printer-app/current/usr/bin|' \
+        "$CRAFT_PART_INSTALL/pyvenv.cfg"
+      craftctl set version="$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)"
+    prime:
+      - -bin/pip*
+      - -lib/python3.13/site-packages/_distutils_hack
+      - -lib/python3.13/site-packages/distutils-precedence.pth
+      - -lib/python3.13/site-packages/pip
+      - -lib/python3.13/site-packages/pip-*
+      - -lib/python3.13/site-packages/setuptools
+      - -lib/python3.13/site-packages/setuptools-*
+      - -lib/python3.13/site-packages/wheel
+      - -lib/python3.13/site-packages/wheel-*
+      - -usr/share/doc
+      - -usr/share/man
+
+  # The default configuration files, with their comments adapted to the
+  # snap's paths and commands; copied into $SNAP_COMMON at first start.
+  config:
+    source: .
+    plugin: nil
+    build-packages:
+      - python3
+    override-build: |
+      set -eu
+      python3 snap/local/adapt-config.py packaging/config "$CRAFT_PART_INSTALL/etc"
+
+  scripts:
+    source: snap/local
+    plugin: dump
+    organize:
+      run-*: scripts/
+    stage:
+      - scripts/

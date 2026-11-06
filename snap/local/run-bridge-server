@@ -1,0 +1,34 @@
+#!/bin/sh
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# Runs the bridge daemon inside the snap. The configuration file is created
+# from the packaged default at first start and kept across upgrades; the
+# socket path comes from PHOMEMO_BRIDGE_SOCKET (set for the whole snap).
+# The bridge writes its test page PNG into XDG_RUNTIME_DIR.
+
+set -eu
+
+mkdir -p "$SNAP_COMMON/run"
+if [ ! -e "$SNAP_COMMON/bridge.toml" ]; then
+  cp "$SNAP/etc/phomemo/bridge.toml" "$SNAP_COMMON/bridge.toml"
+fi
+
+export XDG_RUNTIME_DIR="$SNAP_COMMON/run"
+
+# bin/python3.13 is the virtual environment's interpreter; running it puts
+# the library on sys.path.
+exec "$SNAP/bin/python3.13" -m phomemo.bridge --config "$SNAP_COMMON/bridge.toml" server

@@ -31,7 +31,7 @@ SYSCONF   ?= /etc
 PYTHON    ?= python3
 VENV       = $(PREFIX)/lib/phomemo
 
-.PHONY: help build install uninstall check dist tarball srpm bump tag clean
+.PHONY: help build install uninstall check dist tarball srpm snap bump tag clean
 
 help:  ## List the targets
 	@echo "Usage: make [target] [VAR=value]"
@@ -96,6 +96,10 @@ tarball:  ## Source tarball named like the GitHub release archive
 srpm: tarball  ## Source RPM into dist/ (needs rpm-build)
 	rpmbuild -bs --define "_sourcedir $(CURDIR)/$(DIST)" \
 	  --define "_srcrpmdir $(CURDIR)/$(DIST)" packaging/rpm/phomemo-driver.spec
+
+snap:  ## Snap package into dist/ (needs snapcraft with LXD; snap/snapcraft.yaml)
+	mkdir -p $(DIST)
+	snapcraft pack --output $(DIST)/
 
 bump:  ## Set the version everywhere and commit it (VERSION=x.y.z)
 	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=x.y.z"; exit 1; }
