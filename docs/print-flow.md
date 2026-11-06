@@ -35,7 +35,7 @@ Commands without an address, such as the [command line](command-line.md) ones, r
 
 With several printers in range and nothing else to go on, the command refuses and lists their addresses. An `open` with another address than the current printer's drops the current connection and retargets the bridge.
 
-A scanned printer's model is the one whose `ble_name_pattern` matches its advertised name. Devices of no known model are left out of every scan.
+A scanned printer's model is the one whose `ble_name_pattern` matches its advertised name. Devices of no known model are left out of every scan. When the name matches several models (hardware variants with the same name), the printer's serial decides: `discover` connects briefly to read it, and an `open` without a model reads it right after connecting and switches to the model it names. A model named in the `open` stays; the bridge only warns when the serial points elsewhere. Details in [How a printer is matched](models.md#how-a-printer-is-matched).
 
 ## Socket protocol
 
@@ -74,8 +74,8 @@ While a long command is pending, the bridge pushes events:
 
 | Command | Arguments | Reply |
 |---|---|---|
-| `discover` | `timeout` | `printers: [{name, address, model}]`: printers of every known model in range, with the model their advertised name matches |
-| `open` | `address`, `model` (both optional) | Connects (or reuses the held connection) with the profile of `model`, or of the model the advertised name matches; another address retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
+| `discover` | `timeout` | `printers: [{name, address, model}]`: printers of every known model in range, with the model their advertised name matches. A printer whose name matches several models also carries `serial` and `resolved`: `true` with the model its serial names, `false` (serial `null`) with the generic model when the printer could not be reached |
+| `open` | `address`, `model` (both optional) | Connects (or reuses the held connection) with the profile of `model`, or of the model the advertised name matches, refined by the serial; replies `model`; another address retargets the bridge; `connected: false` with a `reason` when the printer is unreachable or the choice is ambiguous, `wait_ready` keeps retrying |
 | `close` | | Ends the session's use of the connection and starts the idle timer (`idle_disconnect_minutes`) |
 | `disconnect` | | Drops the connection now |
 | `status` | `address` (optional) | Connected: `connected: true`, `address`, `model`, live `lid`, `paper`, `battery`. Otherwise `connected: false`, the `address` asked about (or the last connected printer), `connected_to` when the bridge holds another printer, and `last_seen` with the values last read and their time `at` (absent until read once since the bridge started). Never connects. |
