@@ -300,7 +300,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 <section id="add-a-model">
 <h2>Add a model<a class="headerlink" href="#add-a-model" title="Link to this heading">#</a></h2>
-<p>Got a Phomemo printer that speaks the same protocol? Here is how to add it:</p>
+<p>Got a Phomemo printer that speaks the same protocol? <a class="reference external" href="https://github.com/PassionateBytes/phomemo-driver/issues/new?template=new-model.yml">Open a new-model issue</a> if you would rather have someone else write the manifest; you answer a few questions and run the test prints. To add it yourself:</p>
 <ol class="arabic">
 <li><p>Create <code class="docutils literal notranslate"><span class="pre">src/models/&lt;id&gt;/</span></code> with a <code class="docutils literal notranslate"><span class="pre">model.json</span></code>, starting from the M08F’s.</p></li>
 <li><p>Find the name it advertises and write <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> for it. <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">devices</span></code> lists only known models; <code class="docutils literal notranslate"><span class="pre">bluetoothctl</span> <span class="pre">scan</span> <span class="pre">on</span></code> shows all devices.</p></li>
