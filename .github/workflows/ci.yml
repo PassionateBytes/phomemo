@@ -25,10 +25,12 @@
 #   test      per release: lint and docs build (newest release only), printer
 #             app build, C unit tests, Python tests including the end-to-end
 #             tests against the built printer app.
-#   rpm       per release: python-bleak built as COPR builds it, at the bleak
-#             version locked in uv.lock, and installed; then phomemo-driver
-#             built against it and installed. Catches a lock update Fedora
+#   rpm       per release: python-bleak built as COPR and OBS build it, at
+#             the version its spec names, and installed; then phomemo-driver
+#             built against it and installed. Catches a bleak bump Fedora
 #             cannot satisfy before it reaches main.
+#   deb       Debian 13 and Ubuntu 24.04: the Debian packages built as OBS
+#             builds them (make deb), checked with lintian and installed.
 #   floor     the library's version floors (Python 3.12, bleak 0.21, Pillow
 #             10.1): the Python tests on Ubuntu 24.04 with the distribution's
 #             own python3, bleak, Pillow, pytest and pytest-asyncio packages.
@@ -228,11 +230,11 @@ jobs:
           SOURCES: ${{ steps.sources.outcome }}
           BUILD: ${{ steps.build.outcome }}
         run: |
-          bleak=$(sed -n '/^name = "bleak"$/{n;s/^version = "\(.*\)"$/\1/p;}' uv.lock)
+          bleak=$(sed -n 's/^Version:[[:space:]]*//p' packaging/rpm/python-bleak.spec)
           {
             echo "### RPM packages (Fedora $FEDORA)"
             echo
-            echo "bleak ${bleak:-unknown} (from uv.lock)"
+            echo "bleak ${bleak:-unknown} (from python-bleak.spec)"
             echo
             if [ "$SOURCES" = failure ] || [ "$BUILD" = failure ]; then
               echo "❌ Build or install failed"
@@ -245,6 +247,80 @@ jobs:
           if [ "$FEDORA" = rawhide ] && { [ "$SOURCES" = failure ] || [ "$BUILD" = failure ]; }; then
             echo "::warning::Rawhide: RPM build failed (informational, see the summary)"
           fi
+
+  # The Debian packages as OBS builds them: debian/ assembled from
+  # packaging/debian/debian.* (make deb), built with the distribution's
+  # debhelper, pybuild and dependencies, checked with lintian, installed.
+  deb:
+    name: Debian packages (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: "Debian 13", image: "debian:trixie"}
+          - {name: "Ubuntu 24.04", image: "ubuntu:24.04"}
+    steps:
+      - name: Install the packaging tools and build dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential debhelper dh-sequence-python3 pybuild-plugin-pyproject \
+            python3-all python3-hatchling python3-bleak python3-pil \
+            python3-pytest python3-pytest-asyncio \
+            libpappl-dev libcjson-dev libcups2-dev pkgconf \
+            lintian git ca-certificates
+      - uses: actions/checkout@v4
+      - name: Build the packages
+        id: build
+        run: make deb
+      - name: Lint the packages
+        id: lint
+        run: lintian --fail-on error --tag-display-limit 0 dist/*.deb
+      - name: Install the packages
+        id: install
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get install -y --no-install-recommends ./dist/*.deb
+          python3 -c "import bleak, phomemo, importlib.metadata as m; print('bleak', m.version('bleak'), 'phomemo', m.version('phomemo'))"
+          phomemo-bridge --version
+          test -x /usr/bin/phomemo-printer-app
+          test -f /usr/lib/systemd/system/phomemo-printer-app.service
+          test -f /usr/lib/systemd/system/phomemo-bridge.service
+          test -f /usr/lib/sysusers.d/phomemo.conf
+          test -f /etc/phomemo/bridge.toml
+      - name: Summary
+        if: always()
+        shell: bash
+        env:
+          NAME: ${{ matrix.name }}
+          BUILD: ${{ steps.build.outcome }}
+          LINT: ${{ steps.lint.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+        run: |
+          result() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              *) echo "${1:-skipped}" ;;
+            esac
+          }
+          {
+            echo "### Debian packages ($NAME)"
+            echo
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Build (make deb) | $(result "$BUILD") |"
+            echo "| lintian | $(result "$LINT") |"
+            echo "| Install | $(result "$INSTALL") |"
+            echo
+            # shellcheck disable=SC2016  # literal backticks: Markdown code
+            find dist -name '*.deb' -printf '- `%f`\n' 2>/dev/null | sort
+          } >> "$GITHUB_STEP_SUMMARY"
 
   # The declared floors, with the packages an LTS distribution ships: no uv,
   # no lock file. The printer application is not built here; its end-to-end
