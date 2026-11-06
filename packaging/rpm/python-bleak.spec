@@ -15,9 +15,10 @@
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 # Fedora does not package bleak; phomemo needs it. Built in the
-# phomemo-driver COPR project only. COPR's build replaces Version with the
-# bleak version locked in uv.lock (.copr/Makefile); to update, run
-# `uv lock --upgrade-package bleak` and commit the lockfile.
+# phomemo-driver COPR and OBS projects at the version named below, which
+# Renovate bumps from PyPI. Source0 spells out the PyPI URL (what the
+# Fedora pypi_source macro expands to) because the OBS download service
+# expands no Fedora macros.
 %global pypi_name bleak
 
 Name:           python-%{pypi_name}
@@ -27,7 +28,7 @@ Summary:        Cross-platform Bluetooth Low Energy client for Python
 
 License:        MIT
 URL:            https://github.com/hbldh/bleak
-Source0:        %{pypi_source %{pypi_name}}
+Source0:        https://files.pythonhosted.org/packages/source/b/%{pypi_name}/%{pypi_name}-%{version}.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python3-devel

@@ -31,9 +31,7 @@
     {
       // Renovate cannot limit a rangeStrategy to major updates, so widen
       // applies to every update of these two: in-range versions leave the
-      // range alone and come with the lock refresh. uv.lock pins the bleak
-      // version COPR's python-bleak package is built at (.copr/Makefile);
-      // CI builds and installs that package.
+      // range alone and come with the lock refresh.
       description: "Runtime dependencies: a new major raises the cap, for review.",
       matchPackageNames: ["bleak", "pillow"],
       rangeStrategy: "widen",
@@ -57,6 +55,20 @@
       matchManagers: ["github-actions"],
       matchDepTypes: ["action"],
       groupName: "GitHub Actions",
+    },
+  ],
+  // The bleak version packaged for Fedora (COPR and OBS build
+  // packaging/rpm/python-bleak.spec at the version it names) follows PyPI
+  // through this manager; CI checks that it stays inside the library's
+  // bleak range and that the RPM still builds against Fedora's dbus-fast.
+  customManagers: [
+    {
+      customType: "regex",
+      description: "Version of the python-bleak RPM spec.",
+      managerFilePatterns: ["/^packaging/rpm/python-bleak\\.spec$/"],
+      matchStrings: ["^Version:\\s+(?<currentValue>\\S+)\\s*$"],
+      datasourceTemplate: "pypi",
+      depNameTemplate: "bleak",
     },
   ],
 }

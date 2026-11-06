@@ -61,9 +61,9 @@ Build the docs with `-W` before you push: CI treats every Sphinx warning as an e
 
 The published site is versioned. `.github/workflows/docs.yml` builds `latest/` from every push to main and a directory per release (`0.3.0/`, ...) from every `v*` tag; the newest release is also copied to `stable/`, where the site root and the unversioned page links lead. `docs/publish.py` assembles the site on the `gh-pages` branch, and the version menu reads its `versions.json`. Local builds leave the menu out (the workflow sets `DOCS_VERSION`). To rebuild an older release, run the Docs workflow by hand with its tag.
 
-CI (`.github/workflows/ci.yml`) runs on every Fedora release that still gets updates (it asks Fedora's Bodhi which ones, from `MIN_FEDORA` on) and on Rawhide, each in its own container: the checks as an ordinary user, and the RPM packages as COPR builds them, `python-bleak` at the locked bleak version and `phomemo-driver` against it, both installed. Lint and the documentation build run on the newest release only. Rawhide is informational: a failure there shows in the run's summary and as a warning, but does not fail CI. A further job runs the Python tests on Ubuntu 24.04 with the distribution's own packages (Python 3.12, bleak 0.21, Pillow 10.2): the library's declared floors are `python>=3.12`, `bleak>=0.21.0` and `pillow>=10.1.0`, so a change that needs a newer API fails there.
+CI (`.github/workflows/ci.yml`) runs on every Fedora release that still gets updates (it asks Fedora's Bodhi which ones, from `MIN_FEDORA` on) and on Rawhide, each in its own container: the checks as an ordinary user, and the RPM packages as COPR and OBS build them, `python-bleak` at the version its spec names and `phomemo-driver` against it, both installed. Lint and the documentation build run on the newest release only. Rawhide is informational: a failure there shows in the run's summary and as a warning, but does not fail CI. The Debian packages are built as OBS builds them (`make deb`) on Debian 13 and Ubuntu 24.04, checked with lintian and installed. A further job runs the Python tests on Ubuntu 24.04 with the distribution's own packages (Python 3.12, bleak 0.21, Pillow 10.2): the library's declared floors are `python>=3.12`, `bleak>=0.21.0` and `pillow>=10.1.0`, so a change that needs a newer API fails there.
 
-Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files and bumps the GitHub Actions. The runtime dependencies are capped below their next major version (`bleak>=0.21.0,<4`, `pillow>=10.1.0,<14`); a new major comes as a pull request that raises the cap and waits for review, their minor and patch updates arrive with the weekly lock refresh. Development and documentation tools are uncapped. Everything else merges on its own once CI is green; GitHub Actions majors also wait for review.
+Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (`.github/renovate.json5`), weekly: it moves `uv.lock` within the ranges in the `pyproject.toml` files, bumps the `Version:` of `packaging/rpm/python-bleak.spec` from PyPI and bumps the GitHub Actions. The runtime dependencies are capped below their next major version (`bleak>=0.21.0,<4`, `pillow>=10.1.0,<14`); a new major comes as a pull request that raises the cap and waits for review, their minor and patch updates arrive with the weekly lock refresh. A test keeps the packaged bleak version inside the library's range, so a bleak major in the spec waits for the cap. Development and documentation tools are uncapped. Everything else merges on its own once CI is green; GitHub Actions majors also wait for review.
 
 ## Tests
 
@@ -124,15 +124,24 @@ packaging/
   systemd/    system units, service user (sysusers), presets
   config/     bridge.toml for /etc/phomemo/, phomemo-printer-app.conf for /etc/
   rpm/        phomemo-driver.spec (driver + python3-phomemo), python-bleak.spec
+  debian/     Debian source package: phomemo-driver.dsc and the debian.* files
+  obs/        the source services of the two Open Build Service packages
 ```
 
 Files shared by every package format live in the format-neutral directories (`systemd/`, `config/`); each format gets its own directory. The Python package goes to PyPI from `src/phomemo/` and needs nothing from here.
 
-The Fedora route:
+The COPR route (Fedora):
 
-- The COPR project `passionatebytes/phomemo-driver` builds both specs from git with the `make_srpm` method, which runs `.copr/Makefile`. `phomemo-driver` is built from the newest `v*` tag, never from unreleased code on `main`. The builds are started from GitHub through the project's custom webhook (repository secret `COPR_WEBHOOK`): `release.yml` on each tag, `copr-bleak.yml` when a push to `main` changes the locked bleak version.
+- The COPR project `passionatebytes/phomemo-driver` builds both specs from git with the `make_srpm` method, which runs `.copr/Makefile`. `phomemo-driver` is built from the newest `v*` tag, never from unreleased code on `main`. The builds are started from GitHub through the project's custom webhook (repository secret `COPR_WEBHOOK`): `release.yml` on each tag, `bleak.yml` when a push to `main` changes the version in `python-bleak.spec`.
 - `phomemo-driver.spec` builds from a `git archive` of the repository.
-- Fedora has no bleak, so `python-bleak.spec` is built at the bleak version locked in `uv.lock`. Renovate's weekly lock refresh updates it within the range in `src/phomemo/pyproject.toml`, or by hand: `uv lock --upgrade-package bleak`.
+- Fedora has no bleak, so `python-bleak.spec` is built at the version it names. Renovate bumps that version from PyPI; a test keeps it inside the range in `src/phomemo/pyproject.toml`.
+
+The OBS route (Debian, Ubuntu, and the RPMs as an alternative to COPR):
+
+- The Open Build Service project `home:passionatebytes:phomemo-driver` holds two packages, `phomemo-driver` and `python-bleak`, whose `_service` files are kept in `packaging/obs/`. Each service run fetches from this repository: `phomemo-driver` checks out the newest `v*` tag (`revision` `@PARENT_TAG@`), packs it as the source tarball and takes the spec and the `packaging/debian/` files from that tag; `python-bleak` takes its spec from `main` and downloads the bleak release it names from PyPI. OBS builds the RPM targets from the spec and the Debian and Ubuntu targets from `phomemo-driver.dsc` plus the `debian.*` files (`debian.X` becomes `debian/X`).
+- The service runs are started from GitHub with a token (secret `OBS_TOKEN`, project name in the repository variable `OBS_PROJECT`): `release.yml` on each tag, `bleak.yml` on a bleak version change. `packaging/obs/README.md` describes the project setup.
+- `make deb` builds the Debian packages locally the same way; CI does it on Debian 13 and Ubuntu 24.04.
+- `make release` bumps the version in `phomemo-driver.dsc` and starts the `debian.changelog` entry next to the spec's.
 
 ### Add a package format
 
@@ -162,7 +171,7 @@ Pushing the tag runs `.github/workflows/release.yml`:
 | Publish to PyPI | Trusted publishing, environment `pypi` |
 | Source RPMs | `make srpm` in a Fedora container |
 | GitHub release | Generated notes, with the wheel, sdist, source RPM and tarball attached |
+| COPR build | Asks COPR to build `phomemo-driver` (job `copr`) |
+| OBS build | Asks the Open Build Service to run the `phomemo-driver` source service (job `obs`) |
 
-The tag also starts the COPR build of `phomemo-driver` (job `copr`).
-
-For local artefacts: `make dist` (wheel and sdist), `make tarball` (source tarball named like the GitHub archive), `make srpm` (source RPM, needs rpm-build), all into `dist/`. `make help` lists every target.
+For local artefacts: `make dist` (wheel and sdist), `make tarball` (source tarball named like the GitHub archive), `make srpm` (source RPM, needs rpm-build), `make deb` (Debian packages, needs dpkg-dev, debhelper and the build dependencies), all into `dist/`. `make help` lists every target.

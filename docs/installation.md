@@ -20,7 +20,14 @@ After installing the driver package you need to follow the [First steps](first-s
 
 ## Package managers
 
-More package formats are planned.
+Every route delivers the same two packages:
+
+| Package | Contents |
+|---|---|
+| `phomemo-driver` | The printer app, both system units, the service user and the configuration files. Pulls in `python3-phomemo`, Avahi, BlueZ and CUPS; recommends `cups-browsed`. |
+| `python3-phomemo` | The Python library and the `phomemo-bridge` command. Install it alone if you only need the library. |
+
+The packages enable both services and start them on first installation. Upgrades restart them and keep your changes to the configuration files.
 
 ### DNF (Fedora, COPR)
 
@@ -29,14 +36,32 @@ sudo dnf copr enable passionatebytes/phomemo-driver
 sudo dnf install phomemo-driver
 ```
 
-The first command adds the COPR repository [passionatebytes/phomemo-driver](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/), the second installs the complete driver package.
+The first command adds the COPR repository [passionatebytes/phomemo-driver](https://copr.fedorainfracloud.org/coprs/passionatebytes/phomemo-driver/), the second installs the complete driver package. COPR is the primary route for Fedora.
 
-| Package | Contents |
-|---|---|
-| `phomemo-driver` | The printer app, both system units, the service user, presets and configuration files. Pulls in `python3-phomemo`, `avahi`, `bluez` and `cups`; recommends `cups-browsed`. |
-| `python3-phomemo` | The Python library and the `phomemo-bridge` command. Install it alone if you only need the library. |
+### APT (Debian, Ubuntu)
 
-The package enables both services and starts them on first installation. Upgrades restart them and keep your changes to the configuration files.
+The Debian packages are built on the [Open Build Service](https://build.opensuse.org/project/show/home:passionatebytes:phomemo-driver) for Debian 13 (trixie) and unstable, Ubuntu 24.04 LTS and the current Ubuntu releases. Pick the directory that matches your release (`Debian_13`, `Debian_Unstable`, `xUbuntu_24.04`, `xUbuntu_25.10`, `xUbuntu_26.04`, ...):
+
+```bash
+distro=Debian_13
+repo="https://download.opensuse.org/repositories/home:/passionatebytes:/phomemo-driver/$distro"
+curl -fsSL "$repo/Release.key" | gpg --dearmor | sudo tee /etc/apt/keyrings/phomemo-driver.gpg >/dev/null
+echo "deb [signed-by=/etc/apt/keyrings/phomemo-driver.gpg] $repo/ /" | sudo tee /etc/apt/sources.list.d/phomemo-driver.list
+sudo apt update
+sudo apt install phomemo-driver
+```
+
+Debian 12 and Ubuntu releases before 24.04 are not supported: their Python, bleak and Pillow are older than the library's floors.
+
+### DNF (Fedora, Open Build Service)
+
+The same OBS project also builds the RPM packages, as an alternative to COPR (same spec, different build service and signing key; use one of the two repositories, not both):
+
+```bash
+release=$(rpm -E %fedora)
+sudo dnf config-manager addrepo --from-repofile="https://download.opensuse.org/repositories/home:/passionatebytes:/phomemo-driver/Fedora_$release/home:passionatebytes:phomemo-driver.repo"
+sudo dnf install phomemo-driver
+```
 
 ## From source
 

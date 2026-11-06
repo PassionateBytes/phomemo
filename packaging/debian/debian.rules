@@ -1,0 +1,71 @@
+#!/usr/bin/make -f
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+# Two builds in one source package: the printer app through its Makefile and
+# the Python library through pybuild from src/phomemo. The printer app and
+# the shared files install into debian/tmp, from where the .install file
+# picks them for phomemo-driver; pybuild installs the library and the
+# phomemo-bridge script straight into debian/python3-phomemo. dh_installsystemd
+# enables and starts the units, dh_installsysusers creates the service user
+# from the sysusers file.
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export PYBUILD_NAME = phomemo
+
+PYBUILD = pybuild --dir src/phomemo
+TMP = $(CURDIR)/debian/tmp
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) -C src/printer-app
+	$(PYBUILD) --build
+
+# The Python suite runs from the source tree against the package pybuild
+# built (its metadata included), with one interpreter. The end-to-end tests
+# need ipptool, Ghostscript and a running Avahi, the packaging tests need
+# uv: neither is available in a build chroot.
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	$(MAKE) -C src/printer-app test
+	cd src/phomemo && PYTHONPATH=$$(ls -d $(CURDIR)/.pybuild/cpython3_*_phomemo/build | head -n 1) \
+	  python3 -m pytest -q tests \
+	  --ignore tests/test_printer_app.py --ignore tests/test_packaging.py
+endif
+
+override_dh_auto_install:
+	$(MAKE) -C src/printer-app install DESTDIR=$(TMP) PREFIX=/usr \
+	  UNITDIR=/usr/lib/systemd/system PRESETDIR=/usr/lib/systemd/system-preset
+	rm -r $(TMP)/usr/lib/systemd/system-preset
+	$(PYBUILD) --install
+	install -D -m 644 packaging/systemd/phomemo-bridge.service \
+	  $(TMP)/usr/lib/systemd/system/phomemo-bridge.service
+	install -D -m 644 packaging/systemd/phomemo.sysusers.conf \
+	  $(TMP)/usr/lib/sysusers.d/phomemo.conf
+	install -D -m 644 packaging/config/bridge.toml $(TMP)/etc/phomemo/bridge.toml
+	install -D -m 644 packaging/config/phomemo-printer-app.conf \
+	  $(TMP)/etc/phomemo-printer-app.conf
+
+# Not in the default sequence before debhelper compat 14: creates the
+# service user from the installed sysusers file before the units start.
+execute_after_dh_installsystemd:
+	dh_installsysusers
+
+override_dh_auto_clean:
+	$(MAKE) -C src/printer-app clean
+	$(PYBUILD) --clean

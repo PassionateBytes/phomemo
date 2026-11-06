@@ -1,0 +1,46 @@
+<!--
+This file is part of phomemo-driver.
+Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+
+phomemo-driver is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+phomemo-driver is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+Source service of the OBS package "phomemo-driver": checks out the newest
+v* tag reachable from main, packs it as phomemo-driver-<version>.tar.gz and
+takes the RPM spec and the Debian packaging files from that tag. tar_scm and
+recompress run on the server (build.opensuse.org has no server-side tar
+service), so no build target needs the service packages. A service
+run (commit, "Trigger services" in the web UI, or the token the release
+workflow uses) rebuilds every target from the newest release.
+-->
+<services>
+  <service name="tar_scm">
+    <param name="scm">git</param>
+    <param name="url">https://github.com/PassionateBytes/phomemo-driver.git</param>
+    <param name="revision">@PARENT_TAG@</param>
+    <param name="versionformat">@PARENT_TAG@</param>
+    <param name="versionrewrite-pattern">v(.*)</param>
+    <param name="filename">phomemo-driver</param>
+    <param name="extract">packaging/rpm/phomemo-driver.spec</param>
+    <param name="extract">packaging/debian/phomemo-driver.dsc</param>
+    <param name="extract">packaging/debian/debian.changelog</param>
+    <param name="extract">packaging/debian/debian.control</param>
+    <param name="extract">packaging/debian/debian.copyright</param>
+    <param name="extract">packaging/debian/debian.rules</param>
+    <param name="extract">packaging/debian/debian.phomemo-driver.install</param>
+  </service>
+  <service name="recompress">
+    <param name="file">*.tar</param>
+    <param name="compression">gz</param>
+  </service>
+</services>

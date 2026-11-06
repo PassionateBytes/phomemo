@@ -22,9 +22,8 @@
 # phomemo-driver.spec builds the newest release: the highest v* tag, with
 # the spec and the source tarball (git archive) taken from that tag, so a
 # build never ships unreleased code from main. python-bleak.spec is built
-# at the bleak version locked in uv.lock (the one the test suite runs
-# against), written into a copy of the spec before spectool downloads the
-# sources.
+# at the version the spec names (kept current by Renovate); spectool
+# downloads the sources.
 
 srpm:
 	dnf -y install git rpm-build rpmdevtools python3-rpm-macros
@@ -44,12 +43,7 @@ srpm:
 	    version=$$(sed -n 's/^Version:[[:space:]]*//p' "$$spec"); \
 	    git archive --format=tar.gz --prefix=phomemo-driver-$$version/ \
 	      -o "$(outdir)/phomemo-driver-$$version.tar.gz" "$$tag" ;; \
-	  python-bleak.spec) \
-	    version=$$(python3 -c 'import tomllib; print(next(p["version"] for p in tomllib.load(open("uv.lock", "rb"))["package"] if p["name"] == "bleak"))'); \
-	    echo "bleak $$version (from uv.lock)"; \
-	    sed "s/^Version:.*/Version:        $$version/" "$$spec" > "$(outdir)/python-bleak.spec"; \
-	    spec="$(outdir)/python-bleak.spec"; \
-	    spectool -g -C "$(outdir)" "$$spec" ;; \
-	  *) spectool -g -C "$(outdir)" "$$spec" ;; \
+	  *) cp "$$spec" "$(outdir)/"; spec="$(outdir)/$$(basename "$$spec")"; \
+	     spectool -g -C "$(outdir)" "$$spec" ;; \
 	esac; \
 	rpmbuild -bs --define "_sourcedir $(outdir)" --define "_srcrpmdir $(outdir)" "$$spec"

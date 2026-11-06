@@ -1,0 +1,65 @@
+# This file is part of phomemo-driver.
+# Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+#
+# phomemo-driver is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# phomemo-driver is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+Source: phomemo-driver
+Section: text
+Priority: optional
+Maintainer: Paul Bütof <paul@passionate-bytes.com>
+Build-Depends: debhelper-compat (= 13),
+               dh-sequence-python3,
+               pybuild-plugin-pyproject,
+               python3-all,
+               python3-hatchling,
+               python3-bleak (>= 0.21),
+               python3-pil (>= 10.1),
+               python3-pytest,
+               python3-pytest-asyncio,
+               libpappl-dev,
+               libcjson-dev,
+               libcups2-dev,
+               pkgconf | pkg-config
+Standards-Version: 4.7.0
+Homepage: https://github.com/PassionateBytes/phomemo-driver
+Vcs-Git: https://github.com/PassionateBytes/phomemo-driver.git
+Vcs-Browser: https://github.com/PassionateBytes/phomemo-driver
+Rules-Requires-Root: no
+
+Package: phomemo-driver
+Architecture: any
+Depends: ${shlibs:Depends},
+         ${misc:Depends},
+         python3-phomemo (= ${source:Version}),
+         avahi-daemon,
+         bluez,
+         cups
+Recommends: cups-browsed
+Description: Printer driver for the Phomemo M08F thermal printer
+ Makes the Phomemo M08F A4 thermal printer a printer like any other: a PAPPL
+ printer app presents it to CUPS and other IPP clients, and the
+ phomemo-bridge service owns its Bluetooth Low Energy connection. Both run as
+ system services, enabled on installation.
+
+Package: python3-phomemo
+Architecture: all
+Section: python
+Depends: ${python3:Depends},
+         ${misc:Depends},
+         bluez
+Description: Python library and bridge for Phomemo thermal printers
+ Async Python library for Phomemo thermal printers over Bluetooth Low Energy
+ (M08F A4): discovery, raster printing, sensor events. Includes
+ phomemo-bridge, the service that owns the printer connection for the printer
+ application.

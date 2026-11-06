@@ -21,7 +21,7 @@ description = "Async BLE driver library for Phomemo thermal printers"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "LGPL-3.0-or-later"
-license-files = ["COPYING", "COPYING.LESSER"]
+license-files = { paths = ["COPYING", "COPYING.LESSER"] }
 authors = [{ name = "Paul Bütof, Passionate Bytes Solutions" }]
 keywords = ["phomemo", "thermal printer", "bluetooth", "ble", "m08f", "printing"]
 classifiers = [
@@ -32,7 +32,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Topic :: Printing",
     "Topic :: System :: Hardware :: Hardware Drivers",
 ]

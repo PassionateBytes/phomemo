@@ -14,19 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
-# COPR python-bleak: Fedora has no bleak, so the COPR project builds it at
-# the version locked in uv.lock (.copr/Makefile). Runs on pushes to main
-# that change uv.lock and asks COPR to build python-bleak through the
-# project's custom webhook (secret COPR_WEBHOOK) when the locked bleak
-# version differs from the one before the push. Run it by hand to rebuild
-# regardless.
+# python-bleak: Fedora has no bleak, so the COPR project and the OBS project
+# build it at the version packaging/rpm/python-bleak.spec names (Renovate
+# keeps that current). Runs on pushes to main that change the spec and asks
+# both build services for a python-bleak build when the version differs
+# from the one before the push: COPR through the project's custom webhook
+# (secret COPR_WEBHOOK), OBS through a service-run token (secret OBS_TOKEN,
+# project in the repository variable OBS_PROJECT). A missing secret skips
+# that service with a warning. Run it by hand to rebuild regardless.
 
-name: COPR python-bleak
+name: python-bleak packages
 
 on:
   push:
     branches: [main]
-    paths: [uv.lock]
+    paths: [packaging/rpm/python-bleak.spec]
   workflow_dispatch:
 
 jobs:
@@ -37,23 +39,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Compare the locked bleak version
+      - name: Compare the packaged bleak version
         id: version
         env:
           BEFORE: ${{ github.event.before }}
           EVENT: ${{ github.event_name }}
         shell: python
         run: |
-          import os, subprocess, tomllib
+          import os, re, subprocess
 
           def bleak(ref):
               try:
-                  text = subprocess.run(["git", "show", f"{ref}:uv.lock"], check=True,
-                                        capture_output=True).stdout
+                  text = subprocess.run(["git", "show", f"{ref}:packaging/rpm/python-bleak.spec"],
+                                        check=True, capture_output=True).stdout.decode()
               except subprocess.CalledProcessError:
                   return None
-              return next((p["version"] for p in tomllib.loads(text.decode())["package"]
-                           if p["name"] == "bleak"), None)
+              match = re.search(r"^Version:\s+(\S+)", text, re.M)
+              return match[1] if match else None
 
           now = bleak("HEAD")
           before = bleak(os.environ["BEFORE"]) if os.environ["BEFORE"].strip("0") else None
@@ -61,7 +63,7 @@ jobs:
           print(f"bleak {before} -> {now}; build: {changed}")
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"now={now}\nbefore={before}\nbuild={str(changed).lower()}\n")
-      - name: Trigger the python-bleak build
+      - name: Trigger the COPR build
         env:
           COPR_WEBHOOK: ${{ secrets.COPR_WEBHOOK }}
           BUILD: ${{ steps.version.outputs.build }}
@@ -97,4 +99,44 @@ jobs:
             exit 1
           fi
           build=$(printf '%s' "$body" | tr -dc '0-9')
-          echo "bleak $BEFORE -> $NOW: [python-bleak build ${build:-requested}](https://copr.fedorainfracloud.org/coprs/build/${build}/)" >> "$GITHUB_STEP_SUMMARY"
+          echo "bleak $BEFORE -> $NOW: [COPR python-bleak build ${build:-requested}](https://copr.fedorainfracloud.org/coprs/build/${build}/)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Trigger the OBS service run
+        env:
+          OBS_TOKEN: ${{ secrets.OBS_TOKEN }}
+          OBS_PROJECT: ${{ vars.OBS_PROJECT }}
+          BUILD: ${{ steps.version.outputs.build }}
+          NOW: ${{ steps.version.outputs.now }}
+          BEFORE: ${{ steps.version.outputs.before }}
+        run: |
+          if [ "$BUILD" != true ]; then
+            echo "bleak $NOW unchanged: no OBS build" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ -z "$OBS_TOKEN" ] || [ -z "$OBS_PROJECT" ]; then
+            echo "::warning::OBS_TOKEN or OBS_PROJECT is not set; OBS was not asked to build"
+            echo "bleak $BEFORE -> $NOW: OBS not triggered (secret OBS_TOKEN or variable OBS_PROJECT unset)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! [[ "$OBS_PROJECT" =~ ^[A-Za-z0-9_.:-]+$ ]]; then
+            echo "::error::OBS_PROJECT is not an OBS project name (expected something like home:<user>:phomemo-driver)"
+            exit 1
+          fi
+          # The token travels in a curl config read from stdin, never on the
+          # command line. OBS answers <status code="ok"/> when the service
+          # run is queued.
+          url="https://api.opensuse.org/trigger/runservice?project=${OBS_PROJECT}&package=python-bleak"
+          for attempt in 1 2 3; do
+            reply=$(printf 'header = "Authorization: Token %s"\n' "$OBS_TOKEN" |
+              curl -sS -K - -X POST -w '\n%{http_code}' "$url") || reply=$'\n000'
+            code=${reply##*$'\n'}
+            body=$(printf '%s' "${reply%$'\n'*}" | tr -d '\n' | head -c 300)
+            [ "$code" = 200 ] && break
+            echo "::warning::OBS answered HTTP $code (${body:-no body}), attempt $attempt of 3"
+            sleep $((attempt * 20))
+          done
+          if [ "$code" != 200 ] || [[ "$body" != *'code="ok"'* ]]; then
+            echo "::error::OBS did not queue the python-bleak service run: HTTP $code (${body:-no body})"
+            echo "bleak $BEFORE -> $NOW: OBS refused the python-bleak service run (HTTP $code: ${body:-no body})" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "bleak $BEFORE -> $NOW: [OBS python-bleak service run queued](https://build.opensuse.org/package/show/${OBS_PROJECT}/python-bleak)" >> "$GITHUB_STEP_SUMMARY"

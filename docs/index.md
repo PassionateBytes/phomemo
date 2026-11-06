@@ -34,8 +34,9 @@ sudo phomemo-printer-app autoadd    # registers every printer in range
 ```
 
 The printer now shows up in your applications' print dialogs. The details,
-other ways to install and the optional permanent CUPS queue are in
-[Installation](installation.md) and [First steps](first-steps.md).
+other ways to install (Debian and Ubuntu packages, source) and the optional
+permanent CUPS queue are in [Installation](installation.md) and
+[First steps](first-steps.md).
 
 ## Where to start
 

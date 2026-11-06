@@ -1,0 +1,32 @@
+<!--
+This file is part of phomemo-driver.
+Copyright (C) 2026 Paul Bütof, Passionate Bytes Solutions
+
+phomemo-driver is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+phomemo-driver is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
+
+Source service of the OBS package "python-bleak" (Fedora targets only:
+Debian and Ubuntu ship python3-bleak). Takes the spec from main and
+downloads the bleak release the spec names from PyPI. The package builds
+only for RPM targets; its meta disables the Debian and Ubuntu repositories.
+-->
+<services>
+  <service name="obs_scm">
+    <param name="scm">git</param>
+    <param name="url">https://github.com/PassionateBytes/phomemo-driver.git</param>
+    <param name="revision">main</param>
+    <param name="without-version">enable</param>
+    <param name="extract">packaging/rpm/python-bleak.spec</param>
+  </service>
+  <service name="download_files"/>
+</services>

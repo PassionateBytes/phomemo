@@ -33,6 +33,11 @@
 #                   newest v* tag, .copr/Makefile) through the project's
 #                   custom webhook, secret COPR_WEBHOOK; skipped with a
 #                   warning when the secret is unset.
+#   obs             asks the Open Build Service to run the phomemo-driver
+#                   source service (packaging/obs/, picks the newest v* tag
+#                   too) with the token OBS_TOKEN in the project named by
+#                   the repository variable OBS_PROJECT; skipped with a
+#                   warning when either is unset.
 #
 # The versioned docs (docs.yml) build from the same tag through their own
 # trigger.
@@ -183,3 +188,42 @@ jobs:
           fi
           build=$(printf '%s' "$body" | tr -dc '0-9')
           echo "COPR: [phomemo-driver build ${build:-requested}](https://copr.fedorainfracloud.org/coprs/build/${build}/)" >> "$GITHUB_STEP_SUMMARY"
+
+  obs:
+    name: OBS build
+    needs: [python, srpm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger the phomemo-driver service run
+        env:
+          OBS_TOKEN: ${{ secrets.OBS_TOKEN }}
+          OBS_PROJECT: ${{ vars.OBS_PROJECT }}
+        run: |
+          if [ -z "$OBS_TOKEN" ] || [ -z "$OBS_PROJECT" ]; then
+            echo "::warning::OBS_TOKEN or OBS_PROJECT is not set; OBS was not asked to build"
+            echo "OBS: not triggered (secret OBS_TOKEN or variable OBS_PROJECT unset)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! [[ "$OBS_PROJECT" =~ ^[A-Za-z0-9_.:-]+$ ]]; then
+            echo "::error::OBS_PROJECT is not an OBS project name (expected something like home:<user>:phomemo-driver)"
+            exit 1
+          fi
+          # The token travels in a curl config read from stdin, never on the
+          # command line. OBS answers <status code="ok"/> when the service
+          # run is queued.
+          url="https://api.opensuse.org/trigger/runservice?project=${OBS_PROJECT}&package=phomemo-driver"
+          for attempt in 1 2 3; do
+            reply=$(printf 'header = "Authorization: Token %s"\n' "$OBS_TOKEN" |
+              curl -sS -K - -X POST -w '\n%{http_code}' "$url") || reply=$'\n000'
+            code=${reply##*$'\n'}
+            body=$(printf '%s' "${reply%$'\n'*}" | tr -d '\n' | head -c 300)
+            [ "$code" = 200 ] && break
+            echo "::warning::OBS answered HTTP $code (${body:-no body}), attempt $attempt of 3"
+            sleep $((attempt * 20))
+          done
+          if [ "$code" != 200 ] || [[ "$body" != *'code="ok"'* ]]; then
+            echo "::error::OBS did not queue the phomemo-driver service run: HTTP $code (${body:-no body})"
+            echo "OBS: service run refused (HTTP $code: ${body:-no body})" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "OBS: [phomemo-driver service run queued](https://build.opensuse.org/package/show/${OBS_PROJECT}/phomemo-driver)" >> "$GITHUB_STEP_SUMMARY"
