@@ -29,6 +29,11 @@
 #             version locked in uv.lock, and installed; then phomemo-driver
 #             built against it and installed. Catches a lock update Fedora
 #             cannot satisfy before it reaches main.
+#   floor     the library's version floors (Python 3.12, bleak 0.21, Pillow
+#             10.1): the Python tests on Ubuntu 24.04 with the distribution's
+#             own python3, bleak, Pillow, pytest and pytest-asyncio packages.
+#             Catches library code that needs a newer dependency than the
+#             declared range promises.
 #
 # Renovate automerges dependency updates once this workflow is green: what it
 # does not check, a dependency update can break unnoticed.
@@ -47,8 +52,7 @@ jobs:
     name: Fedora releases
     runs-on: ubuntu-latest
     env:
-      # Older releases lack the dependency versions phomemo requires
-      # (Fedora 43 ships Pillow 11.3, phomemo needs 12.1).
+      # The oldest release the RPM packages are built and tested for.
       MIN_FEDORA: 44
     outputs:
       all: ${{ steps.bodhi.outputs.all }}
@@ -241,3 +245,54 @@ jobs:
           if [ "$FEDORA" = rawhide ] && { [ "$SOURCES" = failure ] || [ "$BUILD" = failure ]; }; then
             echo "::warning::Rawhide: RPM build failed (informational, see the summary)"
           fi
+
+  # The declared floors, with the packages an LTS distribution ships: no uv,
+  # no lock file. The printer application is not built here; its end-to-end
+  # module skips without the binary. uv comes from PyPI because the packaging
+  # tests build the wheel and sdist with it.
+  floor:
+    name: Version floors (Ubuntu 24.04)
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - name: Install the distribution's packages
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            python3 python3-pip python3-bleak python3-pil \
+            python3-pytest python3-pytest-asyncio git ca-certificates
+          pip install --break-system-packages uv
+      - uses: actions/checkout@v4
+      - name: Install the library against the distribution's dependencies
+        run: pip install --break-system-packages --no-deps ./src/phomemo
+      - name: Versions
+        run: >
+          python3 -c "import sys, importlib.metadata as m, pytest, pytest_asyncio;
+          print('Python', sys.version.split()[0], 'bleak', m.version('bleak'),
+          'Pillow', m.version('pillow'), 'pytest', pytest.__version__,
+          'pytest-asyncio', pytest_asyncio.__version__)" | tee /tmp/versions.txt
+      - name: Python tests
+        id: pytests
+        shell: bash
+        working-directory: src/phomemo
+        run: set -o pipefail; python3 -m pytest -q tests 2>&1 | tee /tmp/pytest.log
+      - name: Summary
+        if: always()
+        shell: bash
+        env:
+          PYTESTS: ${{ steps.pytests.outcome }}
+        run: |
+          counts=$({ tail -n 1 /tmp/pytest.log 2>/dev/null || true; } | sed 's/^=* *//; s/ *=*$//')
+          {
+            echo "### Version floors (Ubuntu 24.04)"
+            echo
+            echo "$(cat /tmp/versions.txt 2>/dev/null)"
+            echo
+            case "$PYTESTS" in
+              success) echo "✅ Python tests${counts:+ ($counts)}" ;;
+              failure) echo "❌ Python tests${counts:+ ($counts)}" ;;
+              *) echo "Python tests: ${PYTESTS:-skipped}" ;;
+            esac
+          } >> "$GITHUB_STEP_SUMMARY"

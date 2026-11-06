@@ -26,6 +26,7 @@ from phomemo.bridge.server import BridgeConfig, start_server
 from phomemo.registry import get_profile
 from PIL import Image
 
+from tests.conftest import stop_server
 from tests.test_bridge_server import FakePrinter
 
 
@@ -39,8 +40,7 @@ async def served(tmp_path: Path) -> AsyncIterator[BridgeConfig]:
     try:
         yield config
     finally:
-        server.close()
-        server.close_clients()
+        await stop_server(server)
 
 
 @pytest.mark.asyncio

@@ -14,7 +14,7 @@ The package also ships `phomemo-bridge`, the service the [phomemo-driver](https:
 pip install phomemo
 ```
 
-Python 3.13 or later, and a platform with Bluetooth Low Energy (Linux with BlueZ is tested).
+Python 3.12 or later, and a platform with Bluetooth Low Energy (Linux with BlueZ is tested).
 
 ## Print a page
 

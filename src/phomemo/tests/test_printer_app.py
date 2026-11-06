@@ -43,6 +43,7 @@ from phomemo.events import LidState, PaperState
 from phomemo.printer import SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
+from tests.conftest import make_ble_device, stop_server
 from tests.test_bridge_server import FakePrinter
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -109,9 +110,7 @@ async def fake_bridge(
 
     param = getattr(request, "param", {})
     in_range: list[BLEDevice] = (
-        []
-        if param.get("none_in_range")
-        else [BLEDevice(address=ADDRESS, name="M08F", details=None)]
+        [] if param.get("none_in_range") else [make_ble_device(ADDRESS, "M08F")]
     )
 
     async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
@@ -154,8 +153,7 @@ async def fake_bridge(
     try:
         yield bridge
     finally:
-        bridge.server.close()
-        bridge.server.close_clients()
+        await stop_server(bridge.server)
 
 
 class AppServer:
@@ -657,8 +655,7 @@ async def test_bridge_down_pauses_queue_until_bridge_returns(
     try:
         attrs = await finish_job(task)
     finally:
-        late.close()
-        late.close_clients()
+        await stop_server(late)
     assert attrs["job-state"] == "completed", attrs
     assert attrs["job-id"] == job_id
     assert printer.bridge.printer.printed == [(210 * A4_ROWS, A4_ROWS, "MEDIUM")]

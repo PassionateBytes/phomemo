@@ -19,7 +19,7 @@ name = "phomemo"
 version = "0.4.0"
 description = "Async BLE driver library for Phomemo thermal printers"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 license = "LGPL-3.0-or-later"
 license-files = ["COPYING", "COPYING.LESSER"]
 authors = [{ name = "Paul Bütof, Passionate Bytes Solutions" }]
@@ -30,13 +30,15 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Printing",
     "Topic :: System :: Hardware :: Hardware Drivers",
 ]
 dependencies = [
-    "bleak>=3.0.0,<4",
-    "pillow>=12.1.0,<14",
+    "bleak>=0.21.0,<4",
+    "pillow>=10.1.0,<14",
 ]
 
 [project.urls]

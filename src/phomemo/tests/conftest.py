@@ -16,6 +16,9 @@
 
 """Shared fixtures: no test scans for real Bluetooth devices."""
 
+import asyncio
+import contextlib
+import inspect
 import json
 import shutil
 from pathlib import Path
@@ -31,6 +34,45 @@ MODELS = Path(__file__).parents[2] / "models"
 VARIANT_CODE = "Q999"
 VARIANT_SERIAL = "TESTQ999SERIAL0"
 PLAIN_SERIAL = "TESTSERIAL00000"
+
+# bleak below 1.0 requires ``rssi`` on BLEDevice; later versions only warn
+# when it is passed.
+_RSSI_PARAMETER = inspect.signature(BLEDevice).parameters.get("rssi")
+_BLE_DEVICE_NEEDS_RSSI = (
+    _RSSI_PARAMETER is not None and _RSSI_PARAMETER.default is inspect.Parameter.empty
+)
+
+
+def make_ble_device(address: str, name: str) -> BLEDevice:
+    """Build a BLEDevice the installed bleak accepts.
+
+    Args:
+        address: Bluetooth address.
+        name: Advertised name.
+
+    Returns:
+        A device with no backend details.
+    """
+    if _BLE_DEVICE_NEEDS_RSSI:
+        return BLEDevice(address=address, name=name, details=None, rssi=0)
+    return BLEDevice(address=address, name=name, details=None)
+
+
+async def stop_server(server: asyncio.AbstractServer) -> None:
+    """Stop a bridge server and the sessions it still serves.
+
+    ``AbstractServer.close_clients`` exists from Python 3.13 on; without it,
+    the sessions end with the event loop, so the wait is bounded.
+
+    Args:
+        server: The server returned by ``start_server``.
+    """
+    server.close()
+    close_clients = getattr(server, "close_clients", None)
+    if close_clients is not None:
+        close_clients()
+    with contextlib.suppress(TimeoutError):
+        await asyncio.wait_for(server.wait_closed(), timeout=1.0)
 
 
 @pytest.fixture
@@ -67,7 +109,7 @@ def variant_registered(
 @pytest.fixture(autouse=True)
 def one_m08f_in_range(monkeypatch: pytest.MonkeyPatch) -> list[BLEDevice]:
     """Make the bridge's scans find one M08F; tests may change the list."""
-    in_range = [BLEDevice(address=IN_RANGE_ADDRESS, name="M08F", details=None)]
+    in_range = [make_ble_device(IN_RANGE_ADDRESS, "M08F")]
 
     async def fake_discover(name_pattern: str, timeout: float) -> list[BLEDevice]:
         return list(in_range)
