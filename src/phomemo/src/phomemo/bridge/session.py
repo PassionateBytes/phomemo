@@ -237,13 +237,18 @@ class Session:
         self, obj: dict[str, Any], _payload: bytes
     ) -> dict[str, Any]:
         timeout = float(obj.get("timeout", 5.0))
-        found = await self._bridge.discover(timeout)
-        return {
-            "printers": [
-                {"name": device.name, "address": device.address, "model": profile.name}
-                for device, profile in found
-            ]
-        }
+        printers = []
+        for found in await self._bridge.discover(timeout):
+            entry: dict[str, Any] = {
+                "name": found.device.name,
+                "address": found.device.address,
+                "model": found.profile.name,
+            }
+            if found.resolved is not None:
+                entry["serial"] = found.serial
+                entry["resolved"] = found.resolved
+            printers.append(entry)
+        return {"printers": printers}
 
     async def _cmd_open(self, obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         """Connect if reachable; ``wait_ready`` keeps retrying otherwise."""
@@ -259,7 +264,9 @@ class Session:
         except ConnectionError as exc:
             logger.info("Printer not reachable at open: %s", exc)
             return {"connected": False, "reason": str(exc)}
-        return {"connected": True}
+        printer = self._bridge.printer
+        assert printer is not None
+        return {"connected": True, "model": printer.profile.name}
 
     async def _cmd_close(self, _obj: dict[str, Any], _payload: bytes) -> dict[str, Any]:
         self._bridge.start_hold()

@@ -17,6 +17,7 @@
 """Tests for the bridge with a scripted fake printer."""
 
 import asyncio
+import logging
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,8 @@ from phomemo.events import LidState, PaperState
 from phomemo.printer import DeviceInfo, PrintAborted, SheetRanOut
 from phomemo.registry import PrinterProfile, get_profile
 
+from .conftest import PLAIN_SERIAL, VARIANT_SERIAL
+
 A4 = get_profile("m08f")
 
 
@@ -37,12 +40,18 @@ class FakePrinter:
     """Scripted stand-in for ``phomemo.Printer``."""
 
     instances: list["FakePrinter"] = []
+    # Starting values of printers the bridge creates on its own.
+    serial_default: str | None = "<serial>"
+    reachable_default = True
 
     def __init__(self, profile: PrinterProfile, address: object = None) -> None:
         self.profile = profile
         # Like Printer.address: a device found by a scan stands for its address.
         self.address = getattr(address, "address", address)
-        self.reachable = True
+        # Like Printer.advertised_name: known from the scan, else learnt at connect.
+        self.advertised_name = getattr(address, "name", "M08F")
+        self.serial = FakePrinter.serial_default
+        self.reachable = FakePrinter.reachable_default
         self.connect_error = "Device not found"
         self.connected = False
         self.connects = 0
@@ -87,13 +96,19 @@ class FakePrinter:
     async def query_paper(self, timeout: float = 1.0) -> PaperState | None:
         return None if self.muted else self.paper
 
+    async def query_serial(self, timeout: float = 1.0) -> str | None:
+        return None if self.muted else self.serial
+
+    def use_profile(self, profile: PrinterProfile) -> None:
+        self.profile = profile
+
     async def query_device_info(self, timeout: float = 1.0) -> DeviceInfo:
         return DeviceInfo(
             battery=self.battery,
             lid=self.lid,
             paper=self.paper,
             firmware="1.1.3",
-            serial="<serial>",
+            serial=self.serial,
             auto_off_minutes=self.auto_off,
         )
 
@@ -207,6 +222,8 @@ def config(tmp_path: Path) -> BridgeConfig:
 @pytest.fixture
 async def bridge(config: BridgeConfig) -> AsyncIterator[BridgeConfig]:
     FakePrinter.instances.clear()
+    FakePrinter.serial_default = "<serial>"
+    FakePrinter.reachable_default = True
     server = await start_server(config, printer_factory=FakePrinter)
     try:
         yield config
@@ -239,6 +256,185 @@ async def test_discover_lists_known_models_only(
         "cmd": "discover",
         "printers": [{"name": "M08F", "address": "AA:BB:CC:DD:EE:FF", "model": "m08f"}],
     }
+    await client.close()
+
+
+@pytest.fixture
+def variant_in_range(variant_registered: PrinterProfile) -> PrinterProfile:
+    """The M08F in range answers with a serial carrying the variant's code."""
+    FakePrinter.serial_default = VARIANT_SERIAL
+    return variant_registered
+
+
+@pytest.mark.asyncio
+async def test_discover_with_one_candidate_does_not_connect(
+    bridge: BridgeConfig,
+) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "discover", "timeout": 1})
+    assert reply["printers"] == [
+        {"name": "M08F", "address": "AA:BB:CC:DD:EE:FF", "model": "m08f"}
+    ]
+    assert FakePrinter.instances == []
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_discover_with_several_candidates_resolves_by_serial(
+    bridge: BridgeConfig, variant_in_range: PrinterProfile
+) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "discover", "timeout": 1})
+    assert reply["printers"] == [
+        {
+            "name": "M08F",
+            "address": "AA:BB:CC:DD:EE:FF",
+            "model": "m08f-test",
+            "serial": VARIANT_SERIAL,
+            "resolved": True,
+        }
+    ]
+    probe = _printer()
+    assert probe.connects == 1 and probe.connected is False
+    status = await client.call({"cmd": "status", "address": "AA:BB:CC:DD:EE:FF"})
+    assert status["connected"] is False
+    assert status["last_seen"]["serial"] == VARIANT_SERIAL
+    assert status["last_seen"]["model"] == "m08f-test"
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_discover_serial_without_code_gives_the_generic_model(
+    bridge: BridgeConfig, variant_registered: PrinterProfile
+) -> None:
+    FakePrinter.serial_default = PLAIN_SERIAL
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "discover", "timeout": 1})
+    assert reply["printers"][0]["model"] == "m08f"
+    assert reply["printers"][0]["resolved"] is True
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_discover_unreachable_printer_is_reported_unresolved(
+    bridge: BridgeConfig, variant_in_range: PrinterProfile
+) -> None:
+    FakePrinter.reachable_default = False
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "discover", "timeout": 1})
+    assert reply["printers"] == [
+        {
+            "name": "M08F",
+            "address": "AA:BB:CC:DD:EE:FF",
+            "model": "m08f",
+            "serial": None,
+            "resolved": False,
+        }
+    ]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_discover_uses_the_held_connection_for_its_own_printer(
+    bridge: BridgeConfig, variant_in_range: PrinterProfile
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    held = _printer()
+    reply = await client.call({"cmd": "discover", "timeout": 1})
+    assert reply["printers"][0]["model"] == "m08f-test"
+    assert FakePrinter.instances == [held]
+    assert held.connected is True
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_without_a_model_switches_to_the_model_the_serial_names(
+    bridge: BridgeConfig, variant_in_range: PrinterProfile
+) -> None:
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    assert reply == {"ok": True, "cmd": "open", "connected": True, "model": "m08f-test"}
+    assert _printer().profile == variant_in_range
+    assert _printer().connects == 1
+    status = await client.call({"cmd": "status"})
+    assert status["model"] == "m08f-test"
+    info = await client.call({"cmd": "info"})
+    assert (info["model"], info["serial"]) == ("m08f-test", VARIANT_SERIAL)
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_without_a_model_keeps_the_generic_model_for_a_plain_serial(
+    bridge: BridgeConfig, variant_registered: PrinterProfile
+) -> None:
+    FakePrinter.serial_default = PLAIN_SERIAL
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    assert reply["model"] == "m08f"
+    assert _printer().profile == A4
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_without_a_serial_answer_keeps_the_name_match(
+    bridge: BridgeConfig, variant_registered: PrinterProfile
+) -> None:
+    FakePrinter.serial_default = None
+    client = await _connect(bridge)
+    reply = await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF"})
+    assert reply == {"ok": True, "cmd": "open", "connected": True, "model": "m08f"}
+    assert _printer().profile == A4
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_with_a_model_keeps_it_and_warns_about_the_serial(
+    bridge: BridgeConfig,
+    variant_in_range: PrinterProfile,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client = await _connect(bridge)
+    with caplog.at_level(logging.WARNING, logger="phomemo.bridge.server"):
+        reply = await client.call(
+            {"cmd": "open", "address": "AA:BB:CC:DD:EE:FF", "model": "m08f"}
+        )
+    assert reply["model"] == "m08f"
+    assert _printer().profile == A4
+    assert any(
+        "m08f-test" in record.getMessage() and "m08f" in record.getMessage()
+        for record in caplog.records
+        if record.levelno == logging.WARNING
+    )
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_open_with_the_model_the_serial_names_does_not_warn(
+    bridge: BridgeConfig,
+    variant_in_range: PrinterProfile,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    client = await _connect(bridge)
+    with caplog.at_level(logging.WARNING, logger="phomemo.bridge.server"):
+        reply = await client.call(
+            {"cmd": "open", "address": "AA:BB:CC:DD:EE:FF", "model": "m08f-test"}
+        )
+    assert reply["model"] == "m08f-test"
+    assert not [r for r in caplog.records if r.levelno == logging.WARNING]
+    await client.close()
+
+
+@pytest.mark.asyncio
+async def test_reconnect_keeps_the_explicit_model(
+    bridge: BridgeConfig, variant_in_range: PrinterProfile
+) -> None:
+    client = await _connect(bridge)
+    await client.call({"cmd": "open", "address": "AA:BB:CC:DD:EE:FF", "model": "m08f"})
+    _printer().connected = False
+    await client.call({"cmd": "wait_ready", "settle": 0})
+    assert _printer().connects == 2
+    assert _printer().profile == A4
     await client.close()
 
 
