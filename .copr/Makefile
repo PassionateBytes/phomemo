@@ -43,6 +43,7 @@ srpm:
 	    version=$$(sed -n 's/^Version:[[:space:]]*//p' "$$spec"); \
 	    git archive --format=tar.gz --prefix=phomemo-driver-$$version/ \
 	      -o "$(outdir)/phomemo-driver-$$version.tar.gz" "$$tag" ;; \
-	  *) spectool -g -C "$(outdir)" "$$spec" ;; \
+	  *) cp "$$spec" "$(outdir)/"; spec="$(outdir)/$$(basename "$$spec")"; \
+	     spectool -g -C "$(outdir)" "$$spec" ;; \
 	esac; \
 	rpmbuild -bs --define "_sourcedir $(outdir)" --define "_srcrpmdir $(outdir)" "$$spec"
