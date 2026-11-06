@@ -334,17 +334,10 @@ prefix, not by which query was sent.
 `1f 11 09` is answered with `1a 08` followed by the serial as 15 ASCII bytes,
 no terminator. The serial carries a hardware revision code of the form
 `Qnnn` **[assumed]**: the vendor's own CUPS driver (QY_Printer 2.1.0.3)
-selects printer behaviour by searching the serial for such codes, and its
-USB model list names revisions as suffixes (`M08F-WS-Q629`, `B821-Q648`,
-`A28U-Q647`). Codes the vendor driver knows:
-
-| Code in serial | Vendor behaviour |
-| -------------- | ---------------- |
-| `Q630`, `Q629`, `Q616` | Treated like the M08D: 14 mm lead-in at the top of the sheet instead of the M08F's 12 mm |
-
-No code for the M08F's Letter variant (216 mm paper) is known. The driver
-stack uses the same mechanism to tell variants apart: a model manifest's
-`serial_codes` (see the documentation on printer models).
+selects printer behaviour by searching the serial for such codes. No code
+for any M08F variant (such as the Letter version with 216 mm paper) is
+known yet. The driver stack uses the same mechanism to tell variants apart:
+a model manifest's `serial_codes` (see the documentation on printer models).
 
 ### Non-Responding Query Bytes
 
