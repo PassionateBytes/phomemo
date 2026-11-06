@@ -449,9 +449,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="12"><span class="p">))</span>
 </span><span data-line="13">
 </span><span data-line="14"><span class="n">profile_for_name</span><span class="p">(</span><span class="s2">&quot;M08F&quot;</span><span class="p">)</span>    <span class="c1"># profile whose ble_name_pattern matches, or None</span>
-</span><span data-line="15">
-</span><span data-line="16"><span class="k">async</span> <span class="k">with</span> <span class="n">Printer</span><span class="p">(</span><span class="s2">&quot;m02s&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">printer</span><span class="p">:</span>
-</span><span data-line="17">    <span class="o">...</span>
+</span><span data-line="15"><span class="n">profile_for_name</span><span class="p">(</span><span class="s2">&quot;M08F&quot;</span><span class="p">,</span> <span class="n">serial</span><span class="p">)</span>   <span class="c1"># the same, refined by the serial&#39;s codes</span>
+</span><span data-line="16"><span class="n">profiles_for_name</span><span class="p">(</span><span class="s2">&quot;M08F&quot;</span><span class="p">)</span>   <span class="c1"># every matching profile; more than one = ask the serial</span>
+</span><span data-line="17">
+</span><span data-line="18"><span class="k">async</span> <span class="k">with</span> <span class="n">Printer</span><span class="p">(</span><span class="s2">&quot;m02s&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">printer</span><span class="p">:</span>
+</span><span data-line="19">    <span class="o">...</span>
 </span></pre></div>
 </div>
 <div class="table-wrapper colwidths-auto docutils container">
@@ -467,6 +469,12 @@ data-aria-dark="Switch to auto color mode">
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">register_profile(profile)</span></code></p></td>
 <td><p>Adds a profile, replacing one of the same name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">profiles_for_name(ble_name)</span></code></p></td>
+<td><p>Every profile whose <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> matches, in identifier order</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">profile_for_name(ble_name,</span> <span class="pre">serial=None)</span></code></p></td>
+<td><p>The profile for a printer: with a serial, the candidate whose <code class="docutils literal notranslate"><span class="pre">serial_codes</span></code> entry occurs in it; else the candidate without codes; else the first. <code class="docutils literal notranslate"><span class="pre">None</span></code> when no pattern matches</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">get_profile(name)</span></code></p></td>
 <td><p>Looks a profile up; <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> lists the known names</p></td>

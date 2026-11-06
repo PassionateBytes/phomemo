@@ -254,6 +254,8 @@ register_profile(PrinterProfile(
 ))
 
 profile_for_name("M08F")    # profile whose ble_name_pattern matches, or None
+profile_for_name("M08F", serial)   # the same, refined by the serial's codes
+profiles_for_name("M08F")   # every matching profile; more than one = ask the serial
 
 async with Printer("m02s") as printer:
     ...
@@ -263,6 +265,8 @@ async with Printer("m02s") as printer:
 |---|---|
 | `load_manifest(path)` | Builds a profile from a model manifest directory; a missing or mistyped field raises `ValueError` naming file and field |
 | `register_profile(profile)` | Adds a profile, replacing one of the same name |
+| `profiles_for_name(ble_name)` | Every profile whose `ble_name_pattern` matches, in identifier order |
+| `profile_for_name(ble_name, serial=None)` | The profile for a printer: with a serial, the candidate whose `serial_codes` entry occurs in it; else the candidate without codes; else the first. `None` when no pattern matches |
 | `get_profile(name)` | Looks a profile up; `KeyError` lists the known names |
 | `list_profiles()` | Sorted profile names |
 | `profile_for_name(ble_name)` | The profile whose `ble_name_pattern` matches an advertised name, or `None` |

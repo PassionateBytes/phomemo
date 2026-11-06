@@ -319,7 +319,7 @@ ESC/POS). Write to `ff02`; responses arrive on **`ff01`** in `1a <sub-type>
 | ---------- | -------------- | --------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `1f 11 08` | Battery        | `1a 04 <pct>`               | `1a 04 41` = 65%          | Live value, changes with charge state                                                                                                                                                                                                 |
 | `1f 11 07` | Firmware       | `1a 07 <maj> <min> <patch>` | `1a 07 01 01 03` = v1.1.3 |                                                                                                                                                                                                                                       |
-| `1f 11 09` | Serial (ASCII) | `1a 08 <string>`            | `1a 08 <15 ASCII chars>`   | Full serial number                                                                                                                                                                                                                    |
+| `1f 11 09` | Serial (ASCII) | `1a 08 <string>`            | `1a 08 <15 ASCII chars>`   | Full serial number; see [Serial number](#serial-number)                                                                                                                                                                               |
 | `1f 11 13` | Serial (short) | `1a 03 <byte>`              | `1a 03 a8`                | Possibly hardware revision                                                                                                                                                                                                            |
 | `1f 11 11` | Paper state    | `1a 06 <state>`             | `88`=absent, `89`=present | Reports the **combined** state of all three optical sensors (see Physical Characteristics). `89` means paper is fully loaded past the print head. **Unreliable with lid open** — reports present even without paper. Query lid first. |
 | `1f 11 12` | Lid state      | `1a 05 <state>`             | `98`=closed, `99`=open    | Reliable in all conditions                                                                                                                                                                                                            |
@@ -328,6 +328,16 @@ ESC/POS). Write to `ff02`; responses arrive on **`ff01`** in `1a <sub-type>
 **Response routing:** The sub-type byte in the response does NOT always match
 the query parameter. Parsers must identify responses by the `1a <sub-type>`
 prefix, not by which query was sent.
+
+#### Serial number
+
+`1f 11 09` is answered with `1a 08` followed by the serial as 15 ASCII bytes,
+no terminator. The serial carries a hardware revision code of the form
+`Qnnn` **[assumed]**: the vendor's own CUPS driver (QY_Printer 2.1.0.3)
+selects printer behaviour by searching the serial for such codes. No code
+for any M08F variant (such as the Letter version with 216 mm paper) is
+known yet. The driver stack uses the same mechanism to tell variants apart:
+a model manifest's `serial_codes` (see the documentation on printer models).
 
 ### Non-Responding Query Bytes
 

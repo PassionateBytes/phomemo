@@ -137,7 +137,10 @@ in the tested case reconnecting) restores query responses. A driver that waits
 for a sheet must therefore treat query timeouts as &#8220;not ready&#8221; rather than as
 a transport failure.</a></li>
 <li><a class="reference internal" href="#device-information-and-status-queries">Device Information and Status Queries</a><ul>
-<li><a class="reference internal" href="#phomemo-custom-commands-1f-11-xx">Phomemo Custom Commands (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code>)</a></li>
+<li><a class="reference internal" href="#phomemo-custom-commands-1f-11-xx">Phomemo Custom Commands (<code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">XX</span></code>)</a><ul>
+<li><a class="reference internal" href="#serial-number">Serial number</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#non-responding-query-bytes">Non-Responding Query Bytes</a></li>
 <li><a class="reference internal" href="#standard-esc-pos-queries-non-functional">Standard ESC/POS Queries (Non-Functional)</a></li>
 </ul>
@@ -745,7 +748,7 @@ ESC/POS). Write to <code class="docutils literal notranslate"><span class="pre">
 <td><p>Serial (ASCII)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">08</span> <span class="pre">&lt;string&gt;</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">08</span> <span class="pre">&lt;15</span> <span class="pre">ASCII</span> <span class="pre">chars&gt;</span></code></p></td>
-<td><p>Full serial number</p></td>
+<td><p>Full serial number; see <a class="reference internal" href="#serial-number"><span class="xref myst">Serial number</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">13</span></code></p></td>
 <td><p>Serial (short)</p></td>
@@ -777,6 +780,16 @@ ESC/POS). Write to <code class="docutils literal notranslate"><span class="pre">
 <p><strong>Response routing:</strong> The sub-type byte in the response does NOT always match
 the query parameter. Parsers must identify responses by the <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">&lt;sub-type&gt;</span></code>
 prefix, not by which query was sent.</p>
+<section id="serial-number">
+<h4>Serial number<a class="headerlink" href="#serial-number" title="Link to this heading">#</a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">1f</span> <span class="pre">11</span> <span class="pre">09</span></code> is answered with <code class="docutils literal notranslate"><span class="pre">1a</span> <span class="pre">08</span></code> followed by the serial as 15 ASCII bytes,
+no terminator. The serial carries a hardware revision code of the form
+<code class="docutils literal notranslate"><span class="pre">Qnnn</span></code> <strong>[assumed]</strong>: the vendor’s own CUPS driver (QY_Printer 2.1.0.3)
+selects printer behaviour by searching the serial for such codes. No code
+for any M08F variant (such as the Letter version with 216 mm paper) is
+known yet. The driver stack uses the same mechanism to tell variants apart:
+a model manifest’s <code class="docutils literal notranslate"><span class="pre">serial_codes</span></code> (see the documentation on printer models).</p>
+</section>
 </section>
 <section id="non-responding-query-bytes">
 <h3>Non-Responding Query Bytes<a class="headerlink" href="#non-responding-query-bytes" title="Link to this heading">#</a></h3>

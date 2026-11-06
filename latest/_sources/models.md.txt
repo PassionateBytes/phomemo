@@ -33,6 +33,7 @@ Here is the M08F's manifest:
   "make": "Phomemo",
   "name": "M08F",
   "ble_name_pattern": "^M08F",
+  "serial_codes": [],
   "print_width_px": 1680,
   "dpi": 203,
   "band_height": 256,
@@ -66,7 +67,8 @@ And what each field means:
 |---|---|
 | `id` | The identifier; must equal the directory name |
 | `make`, `name` | Manufacturer and model as users see them: make-and-model "Phomemo M08F", device ID `MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;` |
-| `ble_name_pattern` | Regular expression matched against the name the printer advertises over Bluetooth; it decides which model a printer is |
+| `ble_name_pattern` | Regular expression matched against the name the printer advertises over Bluetooth; it decides which model a printer is at scan time |
+| `serial_codes` | Optional: substrings of the printer serial that mark a hardware variant. A model with codes takes only printers whose serial contains one of them; a model without codes takes every printer its name pattern matches that no code claims. See [How a printer is matched](#how-a-printer-is-matched) |
 | `print_width_px`, `dpi` | Print head width in dots and resolution |
 | `band_height` | Rows per `GS v 0` raster command |
 | `sheet_length_mm` | Default sheet length in the feed direction |
@@ -79,6 +81,31 @@ And what each field means:
 ```{note}
 A manifest with a missing or mistyped field is rejected, with the file and the field named in the error.
 ```
+
+## How a printer is matched
+
+A printer is matched to a model in two steps:
+
+1. **At scan time, by name.** The name the printer advertises over Bluetooth is matched against every manifest's `ble_name_pattern`. Devices of no known model are left out.
+2. **After connecting, by serial.** When the name matches several manifests, the bridge reads the printer's serial and picks the manifest whose `serial_codes` entry occurs in it (a substring match, case-sensitive). Without a matching code the manifest without codes wins; when every candidate carries codes, the first in identifier order. A printer that does not answer the serial query keeps the name match.
+
+Phomemo sells some models in hardware variants under the same name, with a code in the serial to tell them apart. The variant's manifest shares the generic model's `ble_name_pattern` and lists its codes:
+
+```json
+{
+  "id": "m08f-letter",
+  "ble_name_pattern": "^M08F",
+  "serial_codes": ["Q123"]
+}
+```
+
+With this, `phomemo-bridge devices` connects briefly to each printer whose name matches both manifests, reads the serial and reports the resolved model; a printer it cannot reach is listed as the generic model and marked unconfirmed. An `open` without an explicit model (`phomemo-bridge connect`, printers registered by older versions of the printer app) switches to the resolved model after connecting; the printer app's `open` always names the model from the device URI, and that choice stands: the bridge only logs a warning when the serial points to another model.
+
+```{note}
+Variants that share an advertised name must share the `ble` block too: the serial can only be read over a connection, which is set up with the generic model's parameters.
+```
+
+No shipped manifest carries serial codes yet. The M08F's Letter variant (216 mm paper) is known to exist, but its code is not: if you own one, `phomemo-bridge status` shows your serial once connected, and a manifest with its `Qnnn` code is a welcome contribution.
 
 ## How the stack reads them
 
@@ -121,6 +148,7 @@ Got a Phomemo printer that speaks the same protocol? [Open a new-model issue](ht
 
 1. Create `src/models/<id>/` with a `model.json`, starting from the M08F's.
 2. Find the name it advertises and write `ble_name_pattern` for it. `phomemo-bridge devices` lists only known models; `bluetoothctl scan on` shows all devices.
+   A hardware variant of a listed model, sold under the same name, gets the same pattern plus `serial_codes` with the code from its serial (see [How a printer is matched](#how-a-printer-is-matched)).
 3. Measure the head width and the margins.
 4. Pick the density values.
 5. Add the three icons.

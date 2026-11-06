@@ -287,6 +287,7 @@ data-aria-dark="Switch to auto color mode">
 </span></pre></div>
 </div>
 <p>Scans for printers of every known model. One line per printer: Bluetooth address, model, advertised name. A printer shows up only while it is switched on and not connected to another host. With none in range it prints <code class="docutils literal notranslate"><span class="pre">no</span> <span class="pre">printer</span> <span class="pre">in</span> <span class="pre">range</span></code> to stderr and exits with status 1.</p>
+<p>When several models share an advertised name (hardware variants), the bridge connects briefly to such a printer and reads its serial to tell them apart. A printer it cannot reach is listed as the generic model with <code class="docutils literal notranslate"><span class="pre">(model</span> <span class="pre">unconfirmed:</span> <span class="pre">the</span> <span class="pre">printer</span> <span class="pre">did</span> <span class="pre">not</span> <span class="pre">answer)</span></code> after the name. See <a class="reference internal" href="models.html#how-a-printer-is-matched"><span class="std std-ref">How a printer is matched</span></a>.</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
 <thead>

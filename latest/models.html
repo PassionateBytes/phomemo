@@ -100,6 +100,7 @@ data-aria-dark="Switch to auto color mode">
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#layout">Layout</a></li>
 <li><a class="reference internal" href="#model-json">model.json</a></li>
+<li><a class="reference internal" href="#how-a-printer-is-matched">How a printer is matched</a></li>
 <li><a class="reference internal" href="#how-the-stack-reads-them">How the stack reads them</a></li>
 <li><a class="reference internal" href="#add-a-model">Add a model</a></li>
 <li><a class="reference internal" href="#licence">Licence</a></li>
@@ -178,31 +179,32 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="3"><span class="w">  </span><span class="nt">&quot;make&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Phomemo&quot;</span><span class="p">,</span>
 </span><span data-line="4"><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;M08F&quot;</span><span class="p">,</span>
 </span><span data-line="5"><span class="w">  </span><span class="nt">&quot;ble_name_pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^M08F&quot;</span><span class="p">,</span>
-</span><span data-line="6"><span class="w">  </span><span class="nt">&quot;print_width_px&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1680</span><span class="p">,</span>
-</span><span data-line="7"><span class="w">  </span><span class="nt">&quot;dpi&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">203</span><span class="p">,</span>
-</span><span data-line="8"><span class="w">  </span><span class="nt">&quot;band_height&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span>
-</span><span data-line="9"><span class="w">  </span><span class="nt">&quot;sheet_length_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">297.0</span><span class="p">,</span>
-</span><span data-line="10"><span class="w">  </span><span class="nt">&quot;top_margin_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span>
-</span><span data-line="11"><span class="w">  </span><span class="nt">&quot;bottom_margin_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.0</span><span class="p">,</span>
-</span><span data-line="12"><span class="w">  </span><span class="nt">&quot;density&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;medium&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">},</span>
-</span><span data-line="13"><span class="w">  </span><span class="nt">&quot;media&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-</span><span data-line="14"><span class="w">    </span><span class="p">{</span><span class="nt">&quot;pwg&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_a4_210x297mm&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span>
-</span><span data-line="15"><span class="w">    </span><span class="p">{</span><span class="nt">&quot;pwg&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_a5_148x210mm&quot;</span><span class="p">}</span>
-</span><span data-line="16"><span class="w">  </span><span class="p">],</span>
-</span><span data-line="17"><span class="w">  </span><span class="nt">&quot;ble&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span data-line="18"><span class="w">    </span><span class="nt">&quot;max_chunk_bytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">244</span><span class="p">,</span>
-</span><span data-line="19"><span class="w">    </span><span class="nt">&quot;negotiate_mtu&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-</span><span data-line="20"><span class="w">    </span><span class="nt">&quot;write_with_response&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-</span><span data-line="21"><span class="w">    </span><span class="nt">&quot;chunk_delay_s&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
-</span><span data-line="22"><span class="w">    </span><span class="nt">&quot;service_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0000ff00-0000-1000-8000-00805f9b34fb&quot;</span><span class="p">,</span>
-</span><span data-line="23"><span class="w">    </span><span class="nt">&quot;write_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff02&quot;</span><span class="p">,</span>
-</span><span data-line="24"><span class="w">    </span><span class="nt">&quot;notify_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff01&quot;</span><span class="p">,</span>
-</span><span data-line="25"><span class="w">    </span><span class="nt">&quot;status_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff03&quot;</span>
-</span><span data-line="26"><span class="w">  </span><span class="p">},</span>
-</span><span data-line="27"><span class="w">  </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span data-line="28"><span class="w">    </span><span class="nt">&quot;escpos_queries&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
-</span><span data-line="29"><span class="w">  </span><span class="p">}</span>
-</span><span data-line="30"><span class="p">}</span>
+</span><span data-line="6"><span class="w">  </span><span class="nt">&quot;serial_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+</span><span data-line="7"><span class="w">  </span><span class="nt">&quot;print_width_px&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1680</span><span class="p">,</span>
+</span><span data-line="8"><span class="w">  </span><span class="nt">&quot;dpi&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">203</span><span class="p">,</span>
+</span><span data-line="9"><span class="w">  </span><span class="nt">&quot;band_height&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">256</span><span class="p">,</span>
+</span><span data-line="10"><span class="w">  </span><span class="nt">&quot;sheet_length_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">297.0</span><span class="p">,</span>
+</span><span data-line="11"><span class="w">  </span><span class="nt">&quot;top_margin_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.0</span><span class="p">,</span>
+</span><span data-line="12"><span class="w">  </span><span class="nt">&quot;bottom_margin_mm&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.0</span><span class="p">,</span>
+</span><span data-line="13"><span class="w">  </span><span class="nt">&quot;density&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;low&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;medium&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;high&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">},</span>
+</span><span data-line="14"><span class="w">  </span><span class="nt">&quot;media&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span data-line="15"><span class="w">    </span><span class="p">{</span><span class="nt">&quot;pwg&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_a4_210x297mm&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;default&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span>
+</span><span data-line="16"><span class="w">    </span><span class="p">{</span><span class="nt">&quot;pwg&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_a5_148x210mm&quot;</span><span class="p">}</span>
+</span><span data-line="17"><span class="w">  </span><span class="p">],</span>
+</span><span data-line="18"><span class="w">  </span><span class="nt">&quot;ble&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="19"><span class="w">    </span><span class="nt">&quot;max_chunk_bytes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">244</span><span class="p">,</span>
+</span><span data-line="20"><span class="w">    </span><span class="nt">&quot;negotiate_mtu&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span data-line="21"><span class="w">    </span><span class="nt">&quot;write_with_response&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span data-line="22"><span class="w">    </span><span class="nt">&quot;chunk_delay_s&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span>
+</span><span data-line="23"><span class="w">    </span><span class="nt">&quot;service_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0000ff00-0000-1000-8000-00805f9b34fb&quot;</span><span class="p">,</span>
+</span><span data-line="24"><span class="w">    </span><span class="nt">&quot;write_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff02&quot;</span><span class="p">,</span>
+</span><span data-line="25"><span class="w">    </span><span class="nt">&quot;notify_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff01&quot;</span><span class="p">,</span>
+</span><span data-line="26"><span class="w">    </span><span class="nt">&quot;status_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;00000000-0000-0000-0000-00000000ff03&quot;</span>
+</span><span data-line="27"><span class="w">  </span><span class="p">},</span>
+</span><span data-line="28"><span class="w">  </span><span class="nt">&quot;features&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="29"><span class="w">    </span><span class="nt">&quot;escpos_queries&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+</span><span data-line="30"><span class="w">  </span><span class="p">}</span>
+</span><span data-line="31"><span class="p">}</span>
 </span></pre></div>
 </div>
 <p>And what each field means:</p>
@@ -221,30 +223,33 @@ data-aria-dark="Switch to auto color mode">
 <td><p>Manufacturer and model as users see them: make-and-model “Phomemo M08F”, device ID <code class="docutils literal notranslate"><span class="pre">MFG:Phomemo;MDL:M08F;CMD:PHOMEMO;</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code></p></td>
-<td><p>Regular expression matched against the name the printer advertises over Bluetooth; it decides which model a printer is</p></td>
+<td><p>Regular expression matched against the name the printer advertises over Bluetooth; it decides which model a printer is at scan time</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">print_width_px</span></code>, <code class="docutils literal notranslate"><span class="pre">dpi</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">serial_codes</span></code></p></td>
+<td><p>Optional: substrings of the printer serial that mark a hardware variant. A model with codes takes only printers whose serial contains one of them; a model without codes takes every printer its name pattern matches that no code claims. See <a class="reference internal" href="#how-a-printer-is-matched">How a printer is matched</a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">print_width_px</span></code>, <code class="docutils literal notranslate"><span class="pre">dpi</span></code></p></td>
 <td><p>Print head width in dots and resolution</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">band_height</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">band_height</span></code></p></td>
 <td><p>Rows per <code class="docutils literal notranslate"><span class="pre">GS</span> <span class="pre">v</span> <span class="pre">0</span></code> raster command</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sheet_length_mm</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sheet_length_mm</span></code></p></td>
 <td><p>Default sheet length in the feed direction</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">top_margin_mm</span></code>, <code class="docutils literal notranslate"><span class="pre">bottom_margin_mm</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">top_margin_mm</span></code>, <code class="docutils literal notranslate"><span class="pre">bottom_margin_mm</span></code></p></td>
 <td><p>Unprintable lead at the top of a sheet, and the space kept free at its end</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">density</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">density</span></code></p></td>
 <td><p>Optional: the <code class="docutils literal notranslate"><span class="pre">ESC</span> <span class="pre">N</span> <span class="pre">04</span></code> concentration values for <code class="docutils literal notranslate"><span class="pre">low</span></code>, <code class="docutils literal notranslate"><span class="pre">medium</span></code> and <code class="docutils literal notranslate"><span class="pre">high</span></code>; without it the model has no density control</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">media</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">media</span></code></p></td>
 <td><p>Sheet sizes as PWG names; exactly one has <code class="docutils literal notranslate"><span class="pre">&quot;default&quot;:</span> <span class="pre">true</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ble</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ble</span></code></p></td>
 <td><p>Connection parameters: <code class="docutils literal notranslate"><span class="pre">max_chunk_bytes</span></code>, <code class="docutils literal notranslate"><span class="pre">negotiate_mtu</span></code>, <code class="docutils literal notranslate"><span class="pre">write_with_response</span></code>, <code class="docutils literal notranslate"><span class="pre">chunk_delay_s</span></code> and the four characteristic UUIDs</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">features</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">features</span></code></p></td>
 <td><p>Optional: <code class="docutils literal notranslate"><span class="pre">escpos_queries</span></code> when standard ESC/POS queries answer</p></td>
 </tr>
 </tbody>
@@ -254,6 +259,28 @@ data-aria-dark="Switch to auto color mode">
 <p class="admonition-title">Note</p>
 <p>A manifest with a missing or mistyped field is rejected, with the file and the field named in the error.</p>
 </div>
+</section>
+<section id="how-a-printer-is-matched">
+<h2>How a printer is matched<a class="headerlink" href="#how-a-printer-is-matched" title="Link to this heading">#</a></h2>
+<p>A printer is matched to a model in two steps:</p>
+<ol class="arabic simple">
+<li><p><strong>At scan time, by name.</strong> The name the printer advertises over Bluetooth is matched against every manifest’s <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code>. Devices of no known model are left out.</p></li>
+<li><p><strong>After connecting, by serial.</strong> When the name matches several manifests, the bridge reads the printer’s serial and picks the manifest whose <code class="docutils literal notranslate"><span class="pre">serial_codes</span></code> entry occurs in it (a substring match, case-sensitive). Without a matching code the manifest without codes wins; when every candidate carries codes, the first in identifier order. A printer that does not answer the serial query keeps the name match.</p></li>
+</ol>
+<p>Phomemo sells some models in hardware variants under the same name, with a code in the serial to tell them apart. The variant’s manifest shares the generic model’s <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> and lists its codes:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2"><span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;m08f-letter&quot;</span><span class="p">,</span>
+</span><span data-line="3"><span class="w">  </span><span class="nt">&quot;ble_name_pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^M08F&quot;</span><span class="p">,</span>
+</span><span data-line="4"><span class="w">  </span><span class="nt">&quot;serial_codes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;Q123&quot;</span><span class="p">]</span>
+</span><span data-line="5"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>With this, <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">devices</span></code> connects briefly to each printer whose name matches both manifests, reads the serial and reports the resolved model; a printer it cannot reach is listed as the generic model and marked unconfirmed. An <code class="docutils literal notranslate"><span class="pre">open</span></code> without an explicit model (<code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">connect</span></code>, printers registered by older versions of the printer app) switches to the resolved model after connecting; the printer app’s <code class="docutils literal notranslate"><span class="pre">open</span></code> always names the model from the device URI, and that choice stands: the bridge only logs a warning when the serial points to another model.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Variants that share an advertised name must share the <code class="docutils literal notranslate"><span class="pre">ble</span></code> block too: the serial can only be read over a connection, which is set up with the generic model’s parameters.</p>
+</div>
+<p>No shipped manifest carries serial codes yet. The M08F’s Letter variant (216 mm paper) is known to exist, but its code is not: if you own one, <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">status</span></code> shows your serial once connected, and a manifest with its <code class="docutils literal notranslate"><span class="pre">Qnnn</span></code> code is a welcome contribution.</p>
 </section>
 <section id="how-the-stack-reads-them">
 <h2>How the stack reads them<a class="headerlink" href="#how-the-stack-reads-them" title="Link to this heading">#</a></h2>
@@ -303,7 +330,8 @@ data-aria-dark="Switch to auto color mode">
 <p>Got a Phomemo printer that speaks the same protocol? <a class="reference external" href="https://github.com/PassionateBytes/phomemo-driver/issues/new?template=new-model.yml">Open a new-model issue</a> if you would rather have someone else write the manifest; you answer a few questions and run the test prints. To add it yourself:</p>
 <ol class="arabic">
 <li><p>Create <code class="docutils literal notranslate"><span class="pre">src/models/&lt;id&gt;/</span></code> with a <code class="docutils literal notranslate"><span class="pre">model.json</span></code>, starting from the M08F’s.</p></li>
-<li><p>Find the name it advertises and write <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> for it. <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">devices</span></code> lists only known models; <code class="docutils literal notranslate"><span class="pre">bluetoothctl</span> <span class="pre">scan</span> <span class="pre">on</span></code> shows all devices.</p></li>
+<li><p>Find the name it advertises and write <code class="docutils literal notranslate"><span class="pre">ble_name_pattern</span></code> for it. <code class="docutils literal notranslate"><span class="pre">phomemo-bridge</span> <span class="pre">devices</span></code> lists only known models; <code class="docutils literal notranslate"><span class="pre">bluetoothctl</span> <span class="pre">scan</span> <span class="pre">on</span></code> shows all devices.
+A hardware variant of a listed model, sold under the same name, gets the same pattern plus <code class="docutils literal notranslate"><span class="pre">serial_codes</span></code> with the code from its serial (see <a class="reference internal" href="#how-a-printer-is-matched">How a printer is matched</a>).</p></li>
 <li><p>Measure the head width and the margins.</p></li>
 <li><p>Pick the density values.</p></li>
 <li><p>Add the three icons.</p></li>
