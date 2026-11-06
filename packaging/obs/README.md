@@ -9,7 +9,7 @@ repository at every service run.
 
 | Package | Source | Targets |
 |---|---|---|
-| `phomemo-driver` | Newest `v*` tag: tarball, `packaging/rpm/phomemo-driver.spec`, `packaging/debian/*` | All |
+| `phomemo-driver` | Newest `v*` tag: tarball (made on the server), `packaging/rpm/phomemo-driver.spec`, `packaging/debian/*` | All |
 | `python-bleak` | `packaging/rpm/python-bleak.spec` from `main`, bleak sdist from PyPI | RPM targets only (Debian and Ubuntu ship `python3-bleak`) |
 
 ## Project setup
@@ -47,11 +47,6 @@ logged in (`osc` asks for the credentials on first use).
        <arch>x86_64</arch>
        <arch>aarch64</arch>
      </repository>
-     <repository name="Debian_Testing">
-       <path project="Debian:Testing" repository="update"/>
-       <arch>x86_64</arch>
-       <arch>aarch64</arch>
-     </repository>
      <repository name="Debian_13">
        <path project="Debian:13" repository="update"/>
        <arch>x86_64</arch>
@@ -75,12 +70,30 @@ logged in (`osc` asks for the credentials on first use).
    </project>
    ```
 
+   Debian testing is left out: pappl is not in it (removed from forky,
+   check `https://tracker.debian.org/pkg/pappl` before adding it back).
+
    The repository names are the directory names users see under
    `download.opensuse.org/repositories/home:/passionatebytes:/phomemo-driver/`
    and the ones `docs/installation.md` lists. The web UI's "Add from a
    Distribution" dialog creates the same entries.
 
-2. Create the two packages and upload their service files:
+2. Set the project configuration, which tells the resolver which of
+   several providers to install:
+
+   ```bash
+   osc meta prjconf -e home:passionatebytes:phomemo-driver
+   ```
+
+   ```
+   # Debian: libjpeg-dev is provided by two packages
+   Prefer: libjpeg-dev
+   ```
+
+   A target that reports `have choice for X needed by Y: A B` wants another
+   `Prefer:` line here.
+
+3. Create the two packages and upload their service files:
 
    ```bash
    osc meta pkg -e home:passionatebytes:phomemo-driver phomemo-driver
@@ -97,7 +110,6 @@ logged in (`osc` asks for the credentials on first use).
      <description>Bluetooth Low Energy client for Python, for the Fedora targets (Debian and Ubuntu ship python3-bleak).</description>
      <build>
        <disable repository="Debian_Unstable"/>
-       <disable repository="Debian_Testing"/>
        <disable repository="Debian_13"/>
        <disable repository="xUbuntu_26.04"/>
        <disable repository="xUbuntu_25.10"/>
@@ -128,7 +140,7 @@ logged in (`osc` asks for the credentials on first use).
    once they are merged), commit, and set it back to `@PARENT_TAG@` after
    the next release. The version still comes from the newest tag.
 
-3. Create the token the release workflow uses and store it in GitHub. The
+4. Create the token the release workflow uses and store it in GitHub. The
    token is written to a file in your runtime directory, never shown:
 
    ```bash
@@ -144,7 +156,7 @@ logged in (`osc` asks for the credentials on first use).
    request. `osc token` lists the tokens, `osc token --delete <ID>` revokes
    one.
 
-4. Check a service run by hand before the first release:
+5. Check a service run by hand before the first release:
 
    ```bash
    osc token --trigger <TOKEN> --operation runservice home:passionatebytes:phomemo-driver phomemo-driver

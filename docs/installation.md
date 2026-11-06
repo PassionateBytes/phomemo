@@ -40,7 +40,7 @@ The first command adds the COPR repository [passionatebytes/phomemo-driver](http
 
 ### APT (Debian, Ubuntu)
 
-The Debian packages are built on the [Open Build Service](https://build.opensuse.org/project/show/home:passionatebytes:phomemo-driver) for Debian 13 (trixie), Debian testing and unstable, Ubuntu 24.04 LTS and the current Ubuntu releases. Pick the directory that matches your release (`Debian_13`, `Debian_Testing`, `Debian_Unstable`, `xUbuntu_24.04`, `xUbuntu_25.10`, `xUbuntu_26.04`, ...):
+The Debian packages are built on the [Open Build Service](https://build.opensuse.org/project/show/home:passionatebytes:phomemo-driver) for Debian 13 (trixie) and unstable, Ubuntu 24.04 LTS and the current Ubuntu releases. Pick the directory that matches your release (`Debian_13`, `Debian_Unstable`, `xUbuntu_24.04`, `xUbuntu_25.10`, `xUbuntu_26.04`, ...):
 
 ```bash
 distro=Debian_13

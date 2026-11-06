@@ -17,7 +17,8 @@ along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 Source service of the OBS package "phomemo-driver": checks out the newest
 v* tag reachable from main, packs it as phomemo-driver-<version>.tar.gz and
-takes the RPM spec and the Debian packaging files from that tag. A service
+takes the RPM spec and the Debian packaging files from that tag. The tarball
+is made on the server, so no build target needs the service packages. A service
 run (commit, "Trigger services" in the web UI, or the token the release
 workflow uses) rebuilds every target from the newest release.
 -->
@@ -37,8 +38,8 @@ workflow uses) rebuilds every target from the newest release.
     <param name="extract">packaging/debian/debian.rules</param>
     <param name="extract">packaging/debian/debian.phomemo-driver.install</param>
   </service>
-  <service name="tar" mode="buildtime"/>
-  <service name="recompress" mode="buildtime">
+  <service name="tar"/>
+  <service name="recompress">
     <param name="file">*.tar</param>
     <param name="compression">gz</param>
   </service>
