@@ -117,7 +117,7 @@ More on profiles in the [library guide](library.md#profiles-and-model-manifests)
 
 ## Add a model
 
-Got a Phomemo printer that speaks the same protocol? Here is how to add it:
+Got a Phomemo printer that speaks the same protocol? [Open a new-model issue](https://github.com/PassionateBytes/phomemo-driver/issues/new?template=new-model.yml) if you would rather have someone else write the manifest; you answer a few questions and run the test prints. To add it yourself:
 
 1. Create `src/models/<id>/` with a `model.json`, starting from the M08F's.
 2. Find the name it advertises and write `ble_name_pattern` for it. `phomemo-bridge devices` lists only known models; `bluetoothctl scan on` shows all devices.
