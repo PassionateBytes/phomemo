@@ -120,6 +120,14 @@ logged in (`osc` asks for the credentials on first use).
    The commit runs the services on the server: the sources appear as
    `_service:obs_scm:*` files and the builds start.
 
+   `phomemo-driver` checks out the newest `v*` tag. Until a release
+   carries `packaging/debian/`, its service fails with
+   `packaging/debian/phomemo-driver.dsc: No such file or directory`. For
+   that first run, set `revision` in the OBS copy of
+   `phomemo-driver/_service` to the branch that has the files (`main`
+   once they are merged), commit, and set it back to `@PARENT_TAG@` after
+   the next release. The version still comes from the newest tag.
+
 3. Create the token the release workflow uses and store it in GitHub. The
    token is written to a file in your runtime directory, never shown:
 
