@@ -1,0 +1,6 @@
+usr/bin/phomemo-printer-app
+usr/lib/systemd/system/phomemo-printer-app.service
+usr/lib/systemd/system/phomemo-bridge.service
+usr/lib/sysusers.d/phomemo.conf
+etc/phomemo/bridge.toml
+etc/phomemo-printer-app.conf

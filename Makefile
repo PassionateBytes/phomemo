@@ -31,7 +31,7 @@ SYSCONF   ?= /etc
 PYTHON    ?= python3
 VENV       = $(PREFIX)/lib/phomemo
 
-.PHONY: help build install uninstall check dist tarball srpm release clean
+.PHONY: help build install uninstall check dist tarball srpm deb release clean
 
 help:  ## List the targets
 	@echo "Usage: make [target] [VAR=value]"
@@ -97,6 +97,19 @@ srpm: tarball  ## Source RPM into dist/ (needs rpm-build)
 	rpmbuild -bs --define "_sourcedir $(CURDIR)/$(DIST)" \
 	  --define "_srcrpmdir $(CURDIR)/$(DIST)" packaging/rpm/phomemo-driver.spec
 
+# debian/ is assembled from packaging/debian/debian.* the way OBS does it
+# (debian.X becomes debian/X) and removed again; dpkg-buildpackage writes
+# the packages next to the checkout, from where they move into dist/.
+deb:  ## Debian packages into dist/ (needs dpkg-dev, debhelper and the build dependencies)
+	rm -rf debian
+	mkdir -p debian/source $(DIST)
+	for f in packaging/debian/debian.*; do cp "$$f" "debian/$${f##*/debian.}"; done
+	echo "3.0 (quilt)" > debian/source/format
+	dpkg-buildpackage -b -us -uc
+	mv ../phomemo-driver_$(VERSION)-*.deb ../python3-phomemo_$(VERSION)-*.deb $(DIST)/
+	rm -f ../phomemo-driver_$(VERSION)-*.buildinfo ../phomemo-driver_$(VERSION)-*.changes
+	rm -rf debian .pybuild
+
 release:  ## Set the version everywhere, commit and tag it (VERSION=x.y.z|major|minor|patch); you push
 	@test -n "$(VERSION)" || { echo "usage: make release VERSION=x.y.z|major|minor|patch"; exit 1; }
 	@test -z "$$(git status --porcelain)" || { echo "working tree not clean"; exit 1; }
@@ -118,8 +131,14 @@ release:  ## Set the version everywhere, commit and tag it (VERSION=x.y.z|major|
 	sed -i "s/^#define PHOMEMO_VERSION \".*\"/#define PHOMEMO_VERSION \"$$new\"/" src/printer-app/phomemo.h; \
 	entry="* $$(LC_ALL=C date '+%a %b %d %Y') $$(git config user.name) - $$new-1\n- Release $$new\n"; \
 	sed -i "/^%changelog$$/a $$entry" packaging/rpm/phomemo-driver.spec; \
+	sed -i "s/^Version: .*/Version: $$new-1/" packaging/debian/phomemo-driver.dsc; \
+	{ printf 'phomemo-driver (%s-1) unstable; urgency=medium\n\n  * Release %s\n\n -- %s <%s>  %s\n\n' \
+	    "$$new" "$$new" "$$(git config user.name)" "$$(git config user.email)" "$$(LC_ALL=C date -R)"; \
+	  cat packaging/debian/debian.changelog; } > packaging/debian/debian.changelog.new; \
+	mv packaging/debian/debian.changelog.new packaging/debian/debian.changelog; \
 	uv lock; \
-	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock; \
+	git add src/phomemo/pyproject.toml packaging/rpm/phomemo-driver.spec src/printer-app/phomemo.h uv.lock \
+	  packaging/debian/phomemo-driver.dsc packaging/debian/debian.changelog; \
 	git commit -q -m "chore: version $$new"; \
 	git tag -a "v$$new" -m "phomemo-driver $$new"; \
 	echo; \
@@ -127,5 +146,5 @@ release:  ## Set the version everywhere, commit and tag it (VERSION=x.y.z|major|
 	echo "  git push && git push origin v$$new"
 
 clean:  ## Remove build output
-	rm -rf $(DIST)
+	rm -rf $(DIST) debian .pybuild
 	$(MAKE) -C src/printer-app clean

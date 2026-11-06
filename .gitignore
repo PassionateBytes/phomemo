@@ -16,3 +16,7 @@ docs/superpowers/
 
 # Sphinx output
 docs/_build/
+
+# Debian build tree assembled by make deb
+/debian/
+.pybuild/

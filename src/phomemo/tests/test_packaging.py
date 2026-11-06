@@ -123,3 +123,69 @@ def test_spec_changelog_starts_with_the_current_version() -> None:
     release = re.search(r"^Release:\s+(\d+)", spec, re.M).group(1)
     first_entry = spec.split("%changelog\n")[1].splitlines()[0]
     assert first_entry.endswith(f" - {version}-{release}")
+
+
+DEBIAN = REPO / "packaging" / "debian"
+
+
+def _project_version() -> str:
+    import tomllib
+
+    pyproject = (REPO / "src" / "phomemo" / "pyproject.toml").read_text()
+    return tomllib.loads(pyproject)["project"]["version"]
+
+
+def _control_field(text: str, field: str) -> str:
+    """Returns a multi-line field of a Debian control file, folded to one line."""
+    match = re.search(rf"^{field}:(.*(?:\n[ \t].*)*)", text, re.M)
+    assert match, field
+    return " ".join(match.group(1).split())
+
+
+def test_debian_changelog_and_dsc_carry_the_current_version() -> None:
+    version = _project_version()
+    changelog = (DEBIAN / "debian.changelog").read_text()
+    assert changelog.startswith(f"phomemo-driver ({version}-1) ")
+    dsc = (DEBIAN / "phomemo-driver.dsc").read_text()
+    assert re.search(rf"^Version: {re.escape(version)}-1$", dsc, re.M)
+
+
+def test_dsc_mirrors_the_control_file() -> None:
+    control = (DEBIAN / "debian.control").read_text()
+    dsc = (DEBIAN / "phomemo-driver.dsc").read_text()
+    for field in ("Source", "Maintainer", "Standards-Version", "Build-Depends"):
+        assert _control_field(dsc, field) == _control_field(control, field), field
+    packages = re.findall(r"^Package: (\S+)", control, re.M)
+    assert _control_field(dsc, "Binary").split(", ") == packages
+    assert re.search(r"^Format: 3\.0 \(quilt\)$", dsc, re.M)
+
+
+def test_release_bumps_the_debian_files_too() -> None:
+    makefile = (REPO / "Makefile").read_text()
+    release = makefile.split("\nrelease:")[1].split("\nclean:")[0]
+    assert "packaging/debian/phomemo-driver.dsc" in release
+    assert "packaging/debian/debian.changelog" in release
+
+
+def test_obs_service_extracts_every_debian_file() -> None:
+    service = (REPO / "packaging" / "obs" / "phomemo-driver" / "_service").read_text()
+    extracted = set(re.findall(r'<param name="extract">(.*?)</param>', service))
+    expected = {
+        f"packaging/debian/{path.name}" for path in DEBIAN.iterdir() if path.is_file()
+    }
+    expected.add("packaging/rpm/phomemo-driver.spec")
+    assert extracted == expected
+
+
+def test_python_bleak_spec_version_is_inside_the_library_range() -> None:
+    import tomllib
+
+    spec = (REPO / "packaging" / "rpm" / "python-bleak.spec").read_text()
+    version = re.search(r"^Version:\s+(\S+)", spec, re.M).group(1)
+    pyproject = tomllib.loads((REPO / "src" / "phomemo" / "pyproject.toml").read_text())
+    requirement = next(
+        d for d in pyproject["project"]["dependencies"] if d.startswith("bleak")
+    )
+    low, high = re.search(r">=([\d.]+),<([\d.]+)", requirement).groups()
+    as_tuple = lambda v: tuple(int(part) for part in v.split("."))  # noqa: E731
+    assert as_tuple(low) <= as_tuple(version) < as_tuple(high)
