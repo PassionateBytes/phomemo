@@ -118,6 +118,12 @@ fi
 %{_bindir}/phomemo-bridge
 
 %changelog
+* Fri Nov 06 2026 Paul Bütof - 0.4.0-1
+- Test page text samples sized in points, inch scales added
+- Printer app links the system cJSON
+- COPR builds releases and new bleak versions only; Rawhide in CI
+- One make release target sets the version, commits and tags
+
 * Wed Nov 04 2026 Paul Bütof - 0.3.0-1
 - First beta release
 - Printer models described once in model manifests, built into the printer app

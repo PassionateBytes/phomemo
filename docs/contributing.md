@@ -162,7 +162,7 @@ make release VERSION=minor      # or major, patch, or an explicit x.y.z
 git push && git push origin vx.y.z
 ```
 
-`make release` runs on a clean `main`: it sets the version in `src/phomemo/pyproject.toml`, the RPM spec and `src/printer-app/phomemo.h`, updates `uv.lock`, commits and creates the annotated tag `vx.y.z`. It refuses a tag that exists. The push is yours: pushing the tag publishes.
+`make release` runs on a clean `main`: it sets the version in `src/phomemo/pyproject.toml`, the RPM spec and `src/printer-app/phomemo.h`, starts a `%changelog` entry in the spec (one line, `Release x.y.z`), updates `uv.lock`, commits and creates the annotated tag `vx.y.z`. It refuses a tag that exists. The push is yours: pushing the tag publishes. Notes for the RPM changelog go into the spec before the release, in their own commit; the stub line marks releases without notes.
 
 Pushing the tag runs `.github/workflows/release.yml`:
 
