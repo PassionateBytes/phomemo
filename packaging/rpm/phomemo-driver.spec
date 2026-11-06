@@ -15,7 +15,7 @@
 # along with phomemo-driver.  If not, see <https://www.gnu.org/licenses/>.
 
 Name:           phomemo-driver
-Version:        0.3.0
+Version:        0.4.0
 Release:        1%{?dist}
 Summary:        Printer driver for the Phomemo M08F thermal printer
 
